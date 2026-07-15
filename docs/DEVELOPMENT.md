@@ -52,6 +52,18 @@ xcodebuild \
 ./scripts/verify_docs.sh
 ```
 
+### Import a local image test closet
+
+For deterministic results, keep test garments in one folder and include the type in each filename, such as `blue-shirt.jpg`, `dark-jeans.png`, `white-sneakers.jpeg`, `rain-jacket.jpg`, or `black-watch.png`. Open **Closet → + → Import image files** and multi-select the images.
+
+To test the PhotosPicker route, copy the folder into the currently booted simulator:
+
+```sh
+xcrun simctl addmedia booted ~/Desktop/test-closet/*
+```
+
+Open **Closet → Import** and multi-select up to 50 images. This route may not preserve filenames, so the importer falls back to Apple's on-device Vision classifier. Any low-confidence or unmatched image defaults safely and is called out for manual review. Imported names are automatically suffixed when a batch would create duplicates.
+
 ## 4. Prototype launch arguments
 
 Debug-only arguments support deterministic smoke tests:
@@ -74,6 +86,7 @@ These must remain guarded by `#if DEBUG` and must not become production administ
 | `OutfitEngine.swift` | Pure generation constraints, scoring, and explanations |
 | `WeatherService.swift` | Location/city acquisition and forecast adapter |
 | `ImageUtilities.swift` | Image normalization and palette suggestion |
+| `ClothingTypeDetector.swift` | Filename/Vision type suggestion and batch-import defaults |
 | `*View.swift` | SwiftUI presentation and short-lived interaction state |
 | `Components.swift` | Shared visual primitives and theme |
 

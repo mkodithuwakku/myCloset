@@ -1,10 +1,10 @@
 # Testing Strategy and Guide
 
-**Current automated inventory:** 30 unit tests + 3 UI tests
+**Current automated inventory:** 37 unit tests + 3 UI tests
 **Current verified environment:** Xcode 26.3, iPhone 17 Pro simulator, iOS 26.3
 **Minimum deployment target:** iOS 17.0
 
-Latest recorded evidence: [Test Execution Report — 2026-07-14](testing/TEST_EXECUTION_2026-07-14.md) (33 passed, 0 failed).
+Latest recorded evidence: [Test Execution Report — 2026-07-14](testing/TEST_EXECUTION_2026-07-14.md) (40 passed, 0 failed).
 
 ## 1. Objectives
 
@@ -49,11 +49,12 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 | Cold-weather outerwear | REC-003–REC-004 |
 | Explanation includes lock and weather | COMP-017, REC-008 |
 
-### 3.2 `ClosetStoreTests` — 10 tests
+### 3.2 `ClosetStoreTests` — 11 tests
 
 | Coverage | SRS relationship |
 |---|---|
 | Atomic persistence/reload | OFF-001, REL-007 |
+| Batch import persistence | ITEM-006, OFF-001 |
 | Normalized duplicate-name warning | ITEM-013–ITEM-014 |
 | Edit exclusion from duplicate warning | ITEM-013 |
 | Complete twelve-piece sample fixture | Prototype verification |
@@ -77,7 +78,17 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 | Dominant red extraction | ITEM-009–ITEM-010 |
 | Invalid-image graceful failure | ITEM-019 |
 
-### 3.4 `MyClosetUITests` — 3 tests
+### 3.4 `ClothingTypeDetectorTests` — 6 tests
+
+| Coverage | SRS relationship |
+|---|---|
+| Filename mapping across all garment categories | ITEM-007–ITEM-008 |
+| Human-readable imported names | ITEM-001, ITEM-013 |
+| Generic camera-name fallback | ITEM-001 |
+
+The suite tests deterministic filename behavior rather than asserting Apple's OS-owned Vision labels, which may evolve between system releases.
+
+### 3.5 `MyClosetUITests` — 3 tests
 
 | Journey | Primary assertion |
 |---|---|

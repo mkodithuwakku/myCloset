@@ -25,6 +25,18 @@ final class ClosetStoreTests: XCTestCase {
         XCTAssertEqual(persisted?.createdAt.timeIntervalSince1970 ?? 0, shirt.createdAt.timeIntervalSince1970, accuracy: 1)
     }
 
+    func testBatchUpsertPersistsAllImportedItems() {
+        let url = temporaryStorageURL()
+        let store = ClosetStore(storageURL: url)
+        let shirt = TestFixtures.item("Blue Shirt", category: .top)
+        let jeans = TestFixtures.item("Dark Jeans", category: .bottom)
+
+        store.upsert([shirt, jeans])
+        let reloaded = ClosetStore(storageURL: url)
+
+        XCTAssertEqual(Set(reloaded.items.map(\.id)), Set([shirt.id, jeans.id]))
+    }
+
     func testDuplicateNameIgnoresCaseAndRepeatedWhitespace() {
         let store = makeStore()
         store.upsert(TestFixtures.item("Blue Shirt", category: .top))

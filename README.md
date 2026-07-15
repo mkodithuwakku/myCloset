@@ -27,15 +27,15 @@ The long-term product is designed around three principles:
 | Area | Working in Phase 0 |
 |---|---|
 | Home | Minimal Outfit of the Day canvas that composes garment images into one look, with compact weather context and secondary actions |
-| Closet | Local creation, editing, search, category filtering, favorites, availability, archive, and deletion |
-| Item intelligence | Photo import, resizing, sampled dominant/accent color suggestions, manual color confirmation, season and multi-formality metadata |
+| Closet | Local creation, bulk image import, editing, search, category filtering, favorites, availability, archive, and deletion |
+| Item intelligence | Filename-first and on-device Vision clothing-type suggestions, resizing, sampled dominant/accent color suggestions, manual confirmation, season and multi-formality metadata |
 | Generator | Occasion presets, six formality levels, locked pieces, complete outfit generation, one-piece reroll, unlocked reroll, and explanations |
 | Weather | Optional approximate current location, manual city lookup, Open-Meteo conditions, or date-derived season fallback |
 | History | Separate saved and worn outfit collections using immutable snapshots |
 | Profile | Local display name, handle, biography, and profile image editing |
 | Following | A deliberate preview explaining the safety/backend requirements; no fake social service |
 | Persistence | Local JSON application-support storage that survives relaunches |
-| Tests | 30 unit tests and 3 end-to-end UI smoke tests |
+| Tests | 37 unit tests and 3 end-to-end UI smoke tests |
 
 The authoritative implementation boundary is maintained in [Prototype Status](PROTOTYPE_STATUS.md).
 
@@ -55,6 +55,18 @@ The authoritative implementation boundary is maintained in [Prototype Status](PR
 4. Press **Run**.
 5. Choose **Load sample closet** for an immediate usable wardrobe, or add your own pieces from the Closet tab.
 6. Open Generate, select an occasion and formality, optionally lock a piece, and create an outfit.
+
+### Seed a test closet from laptop images
+
+1. Put up to 50 garment images in a folder. Descriptive names make classification deterministic, for example `navy-shirt.jpg`, `black-jeans.png`, `white-sneakers.jpeg`, `camel-coat.jpg`, and `silver-watch.png`.
+2. In the iOS Simulator, open **Closet**, tap the **+** menu, choose **Import image files**, and select the folder's images. The app suggests names, clothing types, dominant/accent colors, seasons, and formalities, then saves the batch locally.
+3. Alternatively, add the folder to the booted simulator's Photos library:
+
+```sh
+xcrun simctl addmedia booted ~/Desktop/test-closet/*
+```
+
+Then tap **Import** in Closet and multi-select the images. Photos library imports do not expose original filenames consistently, so the app uses on-device image classification and may ask you to review uncertain types. Tap any imported piece to correct its details.
 
 Command-line build:
 
@@ -92,7 +104,7 @@ flowchart LR
     UI --> Weather["WeatherService"]
     Store --> Engine["OutfitEngine"]
     Store --> Disk["Local Codable persistence"]
-    UI --> Images["ImageUtilities"]
+    UI --> Images["ImageUtilities + ClothingTypeDetector"]
     Weather --> Location["Core Location / Geocoder"]
     Weather --> Forecast["Open-Meteo"]
     Engine --> Rules["Structure + availability + locks"]

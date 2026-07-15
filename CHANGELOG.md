@@ -11,6 +11,8 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 ### Added
 
 - Added a root `AGENTS.md` durable Codex handoff covering current product boundaries, architecture, commands, testing expectations, documentation synchronization, and phase priorities.
+- Added bulk Photos and Files closet import for up to 50 images, with filename-first and on-device Vision clothing-type suggestions, automatic color/default metadata, duplicate-name suffixing, progress, and review feedback.
+- Added deterministic clothing-type and batch-persistence coverage, bringing the suite to 37 unit tests and 3 UI tests.
 
 ### Changed
 

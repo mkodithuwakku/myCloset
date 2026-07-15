@@ -1,5 +1,6 @@
 import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ClosetView: View {
     @EnvironmentObject private var store: ClosetStore
@@ -7,6 +8,13 @@ struct ClosetView: View {
     @State private var selectedCategory: ClothingCategory?
     @State private var showingEditor = false
     @State private var editingItem: ClosetItem?
+    @State private var selectedImportPhotos: [PhotosPickerItem] = []
+    @State private var showingFileImporter = false
+    @State private var isImporting = false
+    @State private var importProgress = 0
+    @State private var importTotal = 0
+    @State private var importMessage = ""
+    @State private var showingImportResult = false
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
@@ -20,14 +28,42 @@ struct ClosetView: View {
                             .foregroundStyle(.secondary)
                             .accessibilityIdentifier("closet-piece-count")
                         Spacer()
-                        Button {
-                            editingItem = nil
-                            showingEditor = true
-                        } label: {
-                            Label("Add piece", systemImage: "plus")
+                        if isImporting {
+                            ProgressView(value: Double(importProgress), total: Double(max(importTotal, 1)))
+                                .frame(width: 72)
+                                .accessibilityLabel("Importing closet photos")
+                        } else {
+                            PhotosPicker(
+                                selection: $selectedImportPhotos,
+                                maxSelectionCount: 50,
+                                matching: .images
+                            ) {
+                                Label("Import", systemImage: "photo.stack")
+                            }
+                            .buttonStyle(.bordered)
+                            .buttonBorderShape(.capsule)
+                            .accessibilityIdentifier("bulk-photo-import")
+
+                            Menu {
+                                Button {
+                                    editingItem = nil
+                                    showingEditor = true
+                                } label: {
+                                    Label("Add one manually", systemImage: "plus")
+                                }
+                                Button {
+                                    showingFileImporter = true
+                                } label: {
+                                    Label("Import image files", systemImage: "folder")
+                                }
+                            } label: {
+                                Image(systemName: "plus")
+                                    .frame(width: 22, height: 22)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .buttonBorderShape(.circle)
+                            .accessibilityLabel("Add closet pieces")
                         }
-                        .buttonStyle(.borderedProminent)
-                        .buttonBorderShape(.capsule)
                     }
                     .padding(.horizontal, 16)
                     categoryFilters
@@ -69,6 +105,23 @@ struct ClosetView: View {
             .sheet(isPresented: $showingEditor) {
                 ClosetItemEditor(existingItem: editingItem)
             }
+            .fileImporter(
+                isPresented: $showingFileImporter,
+                allowedContentTypes: [.image],
+                allowsMultipleSelection: true
+            ) { result in
+                guard case .success(let urls) = result else { return }
+                Task { await importFiles(urls) }
+            }
+            .onChange(of: selectedImportPhotos) { _, photos in
+                guard !photos.isEmpty else { return }
+                Task { await importPhotos(photos) }
+            }
+            .alert("Test closet import", isPresented: $showingImportResult) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(importMessage)
+            }
         }
     }
 
@@ -99,6 +152,97 @@ struct ClosetView: View {
                 }
             }
             .padding(.horizontal, 16)
+        }
+    }
+
+    @MainActor
+    private func importPhotos(_ photos: [PhotosPickerItem]) async {
+        beginImport(total: photos.count)
+        var imported: [ImportedClosetPiece] = []
+        var failures = 0
+
+        for (offset, photo) in photos.enumerated() {
+            defer { importProgress = offset + 1 }
+            guard let data = try? await photo.loadTransferable(type: Data.self),
+                  let piece = await TestClosetImageImporter.makePiece(
+                    from: data,
+                    index: store.items.count + offset + 1
+                  ) else {
+                failures += 1
+                continue
+            }
+            imported.append(piece)
+        }
+
+        finishImport(imported, failures: failures)
+        selectedImportPhotos = []
+    }
+
+    @MainActor
+    private func importFiles(_ urls: [URL]) async {
+        beginImport(total: urls.count)
+        var imported: [ImportedClosetPiece] = []
+        var failures = 0
+
+        for (offset, url) in urls.enumerated() {
+            defer { importProgress = offset + 1 }
+            let hasAccess = url.startAccessingSecurityScopedResource()
+            defer {
+                if hasAccess { url.stopAccessingSecurityScopedResource() }
+            }
+            guard let data = try? Data(contentsOf: url),
+                  let piece = await TestClosetImageImporter.makePiece(
+                    from: data,
+                    filename: url.lastPathComponent,
+                    index: store.items.count + offset + 1
+                  ) else {
+                failures += 1
+                continue
+            }
+            imported.append(piece)
+        }
+
+        finishImport(imported, failures: failures)
+    }
+
+    @MainActor
+    private func beginImport(total: Int) {
+        isImporting = true
+        importProgress = 0
+        importTotal = total
+    }
+
+    @MainActor
+    private func finishImport(_ pieces: [ImportedClosetPiece], failures: Int) {
+        let uniqueItems = uniqueNames(for: pieces.map(\.item))
+        store.upsert(uniqueItems)
+        let reviewCount = pieces.filter(\.detection.needsReview).count
+        isImporting = false
+
+        var details = ["Imported \(uniqueItems.count) piece\(uniqueItems.count == 1 ? "" : "s")."]
+        if reviewCount > 0 {
+            details.append("Tap \(reviewCount) uncertain piece\(reviewCount == 1 ? "" : "s") to check the suggested type.")
+        }
+        if failures > 0 {
+            details.append("\(failures) image\(failures == 1 ? "" : "s") could not be read.")
+        }
+        importMessage = details.joined(separator: " ")
+        showingImportResult = true
+    }
+
+    private func uniqueNames(for importedItems: [ClosetItem]) -> [ClosetItem] {
+        var used = Set(store.items.map { $0.name.lowercased() })
+        return importedItems.map { original in
+            var item = original
+            var candidate = item.name
+            var suffix = 2
+            while used.contains(candidate.lowercased()) {
+                candidate = "\(item.name) \(suffix)"
+                suffix += 1
+            }
+            item.name = candidate
+            used.insert(candidate.lowercased())
+            return item
         }
     }
 }

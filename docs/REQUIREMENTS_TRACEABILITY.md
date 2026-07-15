@@ -51,6 +51,7 @@ This document maps SRS requirement groups to implementation phases and current v
 | Local persistence and history | `myCloset/ClosetStore.swift` | `ClosetStoreTests` |
 | Outfit constraints/scoring | `myCloset/OutfitEngine.swift` | `OutfitEngineTests` |
 | Photo preparation/colors | `myCloset/ImageUtilities.swift` | `ModelsAndImageTests` |
+| Batch image type suggestions | `myCloset/ClothingTypeDetector.swift`, `myCloset/ClosetView.swift` | `ClothingTypeDetectorTests`, `ClosetStoreTests` |
 | Empty → daily outfit | `HomeView`, `ClosetStore` | `MyClosetUITests.testEmptyClosetCanLoadSamplesAndCreateDailyOutfit` |
 | Closet → Generate | `ClosetView`, `GeneratorView` | `MyClosetUITests.testCoreClosetAndGeneratorJourney` |
 | Social honesty/safety boundary | `FollowingView` | `MyClosetUITests.testFollowingExplainsSafetyBoundary` |

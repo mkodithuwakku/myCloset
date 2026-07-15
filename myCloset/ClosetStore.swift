@@ -55,6 +55,19 @@ final class ClosetStore: ObservableObject {
         persistAndRefresh()
     }
 
+    func upsert(_ newItems: [ClosetItem]) {
+        guard !newItems.isEmpty else { return }
+        for item in newItems {
+            if let index = items.firstIndex(where: { $0.id == item.id }) {
+                items[index] = item
+            } else {
+                items.append(item)
+            }
+        }
+        items.sort { $0.createdAt > $1.createdAt }
+        persistAndRefresh()
+    }
+
     func setAvailability(_ availability: ItemAvailability, for id: UUID) {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
         items[index].availability = availability

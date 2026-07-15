@@ -33,7 +33,9 @@ flowchart TB
     Profile --> Store
     Generate --> Engine["OutfitEngine"]
     Home --> Engine
-    Closet --> Images["ImageUtilities"]
+    Closet --> Importer["TestClosetImageImporter"]
+    Importer --> Types["ClothingTypeDetector"]
+    Importer --> Images["ImageUtilities"]
 
     Store --> JSON["Atomic local JSON file"]
     Home --> Weather["WeatherService"]
@@ -86,6 +88,8 @@ Hard constraints and soft scoring are intentionally separate. Tests assert that 
 - samples a 40 × 40 pixel grid;
 - maps pixels to a curated clothing palette;
 - returns editable dominant and accent suggestions.
+
+`ClothingTypeDetector` first maps descriptive filenames to the wardrobe taxonomy, then uses Apple's on-device general image classifier when filenames are unavailable. `TestClosetImageImporter` combines those suggestions with image preparation and conservative season/formality defaults. Classification remains advisory: the UI reports uncertain batches and every imported record stays editable.
 
 Phase 1 must isolate the garment before color sampling, add quality/confidence states, and support user mask/crop correction.
 

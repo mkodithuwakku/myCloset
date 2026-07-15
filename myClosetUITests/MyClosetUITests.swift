@@ -29,6 +29,7 @@ final class MyClosetUITests: XCTestCase {
         app.tabBars.buttons["Closet"].tap()
         XCTAssertTrue(app.staticTexts["12 pieces"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Navy Oxford Shirt"].exists)
+        XCTAssertTrue(app.buttons["bulk-photo-import"].exists)
 
         app.tabBars.buttons["Generate"].tap()
         let generate = app.buttons["generate-outfit-button"]

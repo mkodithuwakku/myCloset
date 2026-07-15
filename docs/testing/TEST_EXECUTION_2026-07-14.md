@@ -5,9 +5,9 @@
 | Gate | Result |
 |---|---|
 | Full shared-scheme suite | **Passed** |
-| Unit tests | 30 passed, 0 failed |
+| Unit tests | 37 passed, 0 failed |
 | UI journey tests | 3 passed, 0 failed |
-| Total | **33 passed, 0 failed** |
+| Total | **40 passed, 0 failed** |
 | Documentation validation | Passed |
 | Xcode project parsing | Passed |
 
@@ -49,9 +49,9 @@ xcodebuild -project myCloset.xcodeproj -list
 ## Scope exercised
 
 - outfit structure, availability, lock conflicts, exclusions, weather outerwear, and explanations;
-- local persistence, duplicate-name detection, sample-data integrity, archive/availability state, saved outfits, immutable worn snapshots, and reset;
-- season mapping, formality ordering, color mapping/extraction, image resizing, corrupt-image handling, and weather presentation;
-- empty-closet recovery, closet-to-generator flow, and the Following feature's explicit safety boundary.
+- local persistence, batch persistence, duplicate-name detection, sample-data integrity, archive/availability state, saved outfits, immutable worn snapshots, and reset;
+- season mapping, formality ordering, color mapping/extraction, image resizing, corrupt-image handling, filename-based clothing-type mapping, and weather presentation;
+- empty-closet recovery, bulk-import entry-point availability, closet-to-generator flow, and the Following feature's explicit safety boundary.
 
 ## Defects found and resolved during execution
 

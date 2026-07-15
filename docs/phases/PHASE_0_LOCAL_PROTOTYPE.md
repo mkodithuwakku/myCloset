@@ -12,8 +12,8 @@ A user can launch a native iPhone app, load sample pieces or create private loca
 
 - Five-tab SwiftUI application shell.
 - Local `Codable` wardrobe/profile/history persistence.
-- Closet add/edit/search/filter/favorite/availability/archive/delete.
-- Garment photo import, resizing, palette suggestion, and manual confirmation.
+- Closet add/bulk-import/edit/search/filter/favorite/availability/archive/delete.
+- Garment Photos/Files import, filename/Vision type suggestion, resizing, palette suggestion, and manual confirmation.
 - Multi-season and multi-formality metadata.
 - Duplicate-name warning without forced merge.
 - Optional current-location/city weather and season fallback.
@@ -22,7 +22,7 @@ A user can launch a native iPhone app, load sample pieces or create private loca
 - Daily recommendation, generator, individual reroll, unlocked reroll.
 - Saved and worn immutable snapshots.
 - Honest Following placeholder pending safety/backend work.
-- Shared Xcode scheme, CI workflow, 30 unit and 3 UI tests.
+- Shared Xcode scheme, CI workflow, 37 unit and 3 UI tests.
 - SRS, roadmap, architecture, testing, traceability, and contributor documentation.
 
 ## Explicit exclusions
@@ -44,7 +44,7 @@ A user can launch a native iPhone app, load sample pieces or create private loca
 ## Verification evidence
 
 - Generic iOS Simulator build passes.
-- `myClosetTests`: 30 passing tests.
+- `myClosetTests`: 37 passing tests.
 - `myClosetUITests`: 3 passing journeys.
 - Runtime verified on iPhone 17 Pro simulator / iOS 26.3.
 - Empty and seeded Home states visually reviewed.

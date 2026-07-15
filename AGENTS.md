@@ -35,7 +35,7 @@ The prototype is usable locally. It is not an App Store release candidate and ha
 5. Users may lock pieces and reroll an unavailable or unwanted piece while preserving the remaining valid outfit.
 6. Weather falls back from current location to manual city to date-derived season. The app must remain usable when location and weather are unavailable.
 7. Duplicate clothing records are allowed. Duplicate normalized names produce a warning, not a blocked save.
-8. Garment category is user-selected. Dominant and accent colors are suggested automatically but remain user-confirmed and editable.
+8. Garment category and colors may be suggested from a filename or on-device analysis, but remain user-confirmed and editable.
 9. Garments support multiple seasons and formality levels.
 10. Saved and worn outfits are immutable snapshots; later closet edits must not rewrite history.
 11. Social publishing cannot ship without authorization, detached media, reporting, blocking, moderation, deletion propagation, and operational ownership.
@@ -46,8 +46,8 @@ The prototype is usable locally. It is not an App Store release candidate and ha
 The five tabs are Home, Closet, Generate, Following, and Profile.
 
 - Home: minimalist Outfit of the Day canvas that composes garment images into one look, plus compact season/weather context and secondary actions.
-- Closet: local create/edit/search/filter/favorite/archive/delete and availability management.
-- Item intelligence: Photos import, fixed 1,200-pixel resizing, palette-based dominant/accent suggestions, and editable metadata.
+- Closet: local create/bulk-import/edit/search/filter/favorite/archive/delete and availability management.
+- Item intelligence: Photos/Files batch import, filename-first and on-device Vision type suggestions, fixed 1,200-pixel resizing, palette-based dominant/accent suggestions, and editable metadata.
 - Generator: occasion presets, six formality levels, locks, full/unlocked/single-piece rerolls, and explanations.
 - Weather: foreground approximate location, manual city through Apple geocoding, Open-Meteo current conditions, and season fallback.
 - History: separate saved and worn collections backed by immutable snapshots.
@@ -69,14 +69,14 @@ MyClosetApp
     └── ProfileView ──────────┘          └── OutfitEngine
 
 HomeView / GeneratorView ── WeatherService ── Core Location / Geocoder / Open-Meteo
-ClosetView ── ImageUtilities
+ClosetView ── TestClosetImageImporter ── ClothingTypeDetector / ImageUtilities
 ```
 
 Important boundaries:
 
 - `ClosetStore` currently combines observable application state, persistence, and recommendation orchestration. This is accepted prototype debt, not the production service shape.
 - `OutfitEngine` is a stateless domain service. Keep hard filtering/validation separate from soft scoring.
-- `ImageUtilities` handles decoding, resizing, compression, and simple color sampling. Background isolation and editable segmentation belong to Phase 1.
+- `TestClosetImageImporter` coordinates batch defaults. `ClothingTypeDetector` uses deterministic filename rules before best-effort Apple Vision classification. `ImageUtilities` handles decoding, resizing, compression, and simple color sampling. Background isolation and editable segmentation belong to Phase 1.
 - `WeatherService` owns location/city/provider behavior. Do not spread transport code into views.
 - Views may own temporary UI state but should not own persistence, transport, or recommendation rules.
 
@@ -135,7 +135,7 @@ Run narrower suites with `-only-testing:myClosetTests` or `-only-testing:myClose
 ./scripts/verify_docs.sh
 ```
 
-Current automated inventory: 30 unit tests and 3 UI tests. The latest recorded execution evidence is [docs/testing/TEST_EXECUTION_2026-07-14.md](docs/testing/TEST_EXECUTION_2026-07-14.md).
+Current automated inventory: 37 unit tests and 3 UI tests. The latest recorded execution evidence is [docs/testing/TEST_EXECUTION_2026-07-14.md](docs/testing/TEST_EXECUTION_2026-07-14.md).
 
 Debug-only UI launch arguments are:
 
