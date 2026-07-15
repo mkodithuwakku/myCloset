@@ -1,0 +1,54 @@
+name: Feature proposal
+description: Propose a scoped product or engineering improvement
+title: "[Proposal]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Describe the problem and evidence, not only a solution.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+    validations:
+      required: true
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Proposed roadmap phase
+      options:
+        - Phase 1 - Capture and wardrobe
+        - Phase 2 - Identity and private cloud
+        - Phase 3 - Recommendations
+        - Phase 4 - Social and safety
+        - Phase 5 - Trips and offline
+        - Phase 6 - Release
+        - Phase 7 - Future evolution
+        - Unsure
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: SRS requirements affected
+      placeholder: ITEM-007, COMP-016, or proposed SRS amendment
+  - type: textarea
+    id: safety
+    attributes:
+      label: Privacy, safety, accessibility, and operational impact
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance and test criteria
+    validations:
+      required: true
+  - type: textarea
+    id: exclusions
+    attributes:
+      label: Explicitly out of scope

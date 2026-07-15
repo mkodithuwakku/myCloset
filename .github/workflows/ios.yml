@@ -1,0 +1,73 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Select Xcode 26.3
+        run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
+
+      - name: Show Apple toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+          xcrun simctl list runtimes
+
+      - name: Validate documentation structure
+        run: ./scripts/verify_docs.sh
+
+      - name: Select an iPhone simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          device_id="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone 17 Pro/{print $2; exit}')"
+          if [[ -z "$device_id" ]]; then
+            device_id="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/{print $2; exit}')"
+          fi
+          if [[ -z "$device_id" ]]; then
+            echo "No available iPhone simulator was found."
+            exit 1
+          fi
+          echo "SIMULATOR_ID=$device_id" >> "$GITHUB_ENV"
+          echo "Using simulator $device_id"
+
+      - name: Build and run all tests
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project myCloset.xcodeproj \
+            -scheme myCloset \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/myClosetDerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/myClosetTests.xcresult" \
+            -enableCodeCoverage YES \
+            clean test
+
+      - name: Upload failed test result bundle
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: myCloset-test-results
+          path: ${{ runner.temp }}/myClosetTests.xcresult
+          if-no-files-found: warn
+          retention-days: 14

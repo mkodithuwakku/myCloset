@@ -1,0 +1,38 @@
+# Xcode user data and build products
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager (if introduced later)
+.build/
+.swiftpm/
+Package.resolved
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.mobileprovision
+*.p12
+*.cer
+*.key
+
+# macOS and editors
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+
+# Test artifacts
+*.xcresult
+TestResults/
+coverage/
