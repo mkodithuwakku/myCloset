@@ -38,17 +38,17 @@ if [[ "$phase_count" != "8" ]]; then
   exit 1
 fi
 
-if ! rg -q 'Phase 0 local functional prototype is complete' README.md; then
+if ! grep -q 'Phase 0 local functional prototype is complete' README.md; then
   echo "README current-phase statement is missing or stale."
   exit 1
 fi
 
-if ! rg -q '30 unit tests and 3' README.md docs/TESTING.md; then
+if ! grep -q '30 unit tests and 3' README.md docs/TESTING.md; then
   echo "Documented automated test inventory is missing or stale."
   exit 1
 fi
 
-if ! rg -q 'Phase 0 complete; Phase 1 next' docs/ROADMAP.md; then
+if ! grep -q 'Phase 0 complete; Phase 1 next' docs/ROADMAP.md; then
   echo "Roadmap current-phase statement is missing or stale."
   exit 1
 fi

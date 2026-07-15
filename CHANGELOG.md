@@ -4,6 +4,10 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 
 ## [Unreleased]
 
+### Fixed
+
+- Made the documentation gate portable to a clean GitHub-hosted macOS runner without assuming `ripgrep` is installed.
+
 ### Planned
 
 - Phase 1 guided camera capture, foreground isolation, crop correction, and improved color confidence.
