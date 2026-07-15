@@ -40,4 +40,14 @@ final class MyClosetUITests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Lock'")).firstMatch.exists)
     }
 
+    func testFollowingIsClearlyMarkedComingSoon() {
+        app.launchArguments = ["-resetPrototypeData"]
+        app.launch()
+
+        app.tabBars.buttons["Following"].tap()
+
+        XCTAssertTrue(app.staticTexts["Coming soon"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Profiles and outfit inspiration are planned for after launch."].exists)
+        XCTAssertTrue(app.staticTexts["Your closet will always stay private."].exists)
+    }
 }

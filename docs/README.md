@@ -23,12 +23,13 @@ This directory is the maintained engineering and delivery knowledge base for myC
 |---:|---|---|
 | 0 | [Local Prototype and Foundation](phases/PHASE_0_LOCAL_PROTOTYPE.md) | Complete |
 | 1 | [Capture and Wardrobe Quality](phases/PHASE_1_CAPTURE_WARDROBE.md) | Next |
-| 2 | [Cloud Identity and Private Data](phases/PHASE_2_CLOUD_IDENTITY.md) | Deferred / unfunded |
+| 2 | [Conventional Cloud Identity and Private Data](phases/PHASE_2_CLOUD_IDENTITY.md) | Superseded reference |
 | 3 | [Recommendation Quality](phases/PHASE_3_RECOMMENDATIONS.md) | Planned |
-| 4 | [Social and Safety](phases/PHASE_4_SOCIAL_SAFETY.md) | Deferred / unfunded |
+| 4 | [Conventional Social and Safety](phases/PHASE_4_SOCIAL_SAFETY.md) | Superseded reference |
 | 5 | [Trips and Offline](phases/PHASE_5_TRIPS_OFFLINE.md) | Planned |
 | 6 | [Beta and App Store Release](phases/PHASE_6_BETA_RELEASE.md) | Planned |
-| 7 | [Scale and Product Evolution](phases/PHASE_7_SCALE_EVOLUTION.md) | Future |
+| 7 | [Post-Release CloudKit Social](phases/PHASE_7_CLOUDKIT_SOCIAL.md) | Planned after release; gated |
+| 8 | [Scale and Product Evolution](phases/PHASE_8_SCALE_EVOLUTION.md) | Future |
 
 ## Architecture decisions
 
@@ -37,6 +38,7 @@ This directory is the maintained engineering and delivery knowledge base for myC
 | [ADR-0001](decisions/0001-local-first-prototype.md) | Start with a local-first functional prototype |
 | [ADR-0002](decisions/0002-hybrid-recommendation-engine.md) | Keep deterministic constraints around any intelligent ranking |
 | [ADR-0003](decisions/0003-zero-backend-app-store-release.md) | Ship the first App Store release without a backend or recurring runtime service |
+| [ADR-0004](decisions/0004-post-release-cloudkit-social.md) | Add low-cost CloudKit profiles and following only after release interest and safety gates |
 
 ## Documentation quality rules
 

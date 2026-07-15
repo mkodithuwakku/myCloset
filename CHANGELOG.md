@@ -12,20 +12,22 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 
 - Added a root `AGENTS.md` durable Codex handoff covering current product boundaries, architecture, commands, testing expectations, documentation synchronization, and phase priorities.
 - Added bulk Photos and Files closet import for up to 50 images, with filename-first and on-device Vision clothing-type suggestions, automatic color/default metadata, duplicate-name suffixing, progress, and review feedback.
-- Added deterministic clothing-type and batch-persistence coverage; the current suite contains 37 unit tests and 2 UI tests.
+- Added deterministic clothing-type and batch-persistence coverage; the current suite contains 37 unit tests and 3 UI tests.
 - Added a repository-local `TestClosetImages/` workflow and simulator loader script; test photos remain ignored by Git.
 - Added ADR-0003 and SRS 1.1 to establish a zero-backend, on-device App Store release with no mandatory recurring service cost beyond Apple Developer Program membership.
+- Added ADR-0004, SRS 1.2, and a dedicated post-release phase for gated CloudKit profiles, following, controlled outfit posts, and required safety operations.
 
 ### Changed
 
 - Reworked Home into a minimal, whitespace-led experience with compact weather context, a composed garment-image outfit canvas, one primary worn action, and a secondary bookmark action.
 - Replaced the placeholder-name greeting with a natural “there” fallback until the user edits their profile.
-- Removed the backend-dependent Following placeholder from primary navigation; the app now has Home, Closet, Generate, and Profile tabs.
-- Deferred authentication, cloud sync, hosted media, cloud AI, and social operations unless a later explicitly funded product decision reactivates them.
+- Restored Following as a minimal Coming Soon tab with no fake profiles, posts, counts, or service behavior.
+- Kept the first release local-only while approving CloudKit social after release interest and safety gates pass; conventional backend, cloud AI, and private-closet upload remain unapproved.
 
 ### Planned
 
 - Phase 1 guided camera capture, foreground isolation, crop correction, and improved color confidence.
+- Phase 7 CloudKit profiles and following after the first App Store release demonstrates user interest.
 
 ## [0.1.0] - 2026-07-14
 

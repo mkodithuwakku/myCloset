@@ -8,7 +8,7 @@
 
 myCloset is a native SwiftUI iPhone application that turns a private wardrobe into practical outfit recommendations. Users can add clothing, confirm detected colors and metadata, generate outfits for an occasion and formality level, lock pieces they want to wear, reroll the remaining pieces, and retain saved or worn outfit history.
 
-> **Project status:** Phase 0 local functional prototype is complete. The approved App Store path remains account-free and local-only: no production backend, hosted media, cloud AI, or social feed. Capture quality, local trips, accessibility, release assets, and App Store qualification remain to be completed.
+> **Project status:** Phase 0 local functional prototype is complete. The approved first App Store release remains account-free and local-only; Following is a truthful Coming Soon screen. If released users show interest, Phase 7 adds CloudKit profiles and following without uploading private closets or introducing a separate hosting subscription.
 
 ![myCloset Home prototype](docs/assets/prototype-home.png)
 
@@ -18,9 +18,9 @@ Choosing an outfit is a constraint problem: the pieces must belong to the user, 
 
 The long-term product is designed around three principles:
 
-1. **Private by default.** Closet, profile, history, trip, and image data stay in the app container.
+1. **Private by default.** Closet, history, trips, preferences, and original garment images stay in the app container; later public social data is explicit and detached.
 2. **Explainable recommendations.** Hard rules remain deterministic; ranking and future AI assistance cannot bypass ownership, privacy, or outfit validity.
-3. **Zero-backend operation.** Core functionality runs on-device and introduces no mandatory recurring service cost beyond Apple Developer Program membership.
+3. **Zero-operated-backend core.** Core functionality runs on-device; optional post-release social uses CloudKit within Apple Developer Program membership.
 
 ## Current capabilities
 
@@ -33,8 +33,9 @@ The long-term product is designed around three principles:
 | Weather | Optional approximate current location, manual city lookup, Open-Meteo conditions, or date-derived season fallback |
 | History | Separate saved and worn outfit collections using immutable snapshots |
 | Profile | Local display name, handle, biography, and profile image editing |
+| Following | Minimal Coming Soon state for the gated post-release CloudKit social phase; no fake profiles or posts |
 | Persistence | Local JSON application-support storage that survives relaunches |
-| Tests | 37 unit tests and 2 end-to-end UI smoke tests |
+| Tests | 37 unit tests and 3 end-to-end UI smoke tests |
 
 The authoritative implementation boundary is maintained in [Prototype Status](PROTOTYPE_STATUS.md).
 
@@ -111,7 +112,7 @@ flowchart LR
     Engine --> Score["Season + formality + colors + favorites"]
 ```
 
-The current build and approved release are deliberately local-only. Persistence evolution, data boundaries, and the zero-backend guardrails are documented in [Architecture](docs/ARCHITECTURE.md) and [ADR-0003](docs/decisions/0003-zero-backend-app-store-release.md).
+The current build and first release are deliberately local-only. Persistence evolution and the launch boundary are documented in [Architecture](docs/ARCHITECTURE.md) and [ADR-0003](docs/decisions/0003-zero-backend-app-store-release.md); [ADR-0004](docs/decisions/0004-post-release-cloudkit-social.md) governs the later CloudKit social addition.
 
 ## Repository structure
 
@@ -141,12 +142,13 @@ The current build and approved release are deliberately local-only. Persistence 
 |---:|---|---|
 | 0 | Local functional prototype and engineering foundation | **Complete** |
 | 1 | Production-quality garment capture and wardrobe data | Next |
-| 2 | Identity, backend, sync, and hosted media | **Deferred / unfunded** |
+| 2 | Conventional identity, backend, sync, and hosted media | **Superseded reference** |
 | 3 | Local recommendation quality, feedback, weather resilience, and explainability | Planned |
-| 4 | Social profiles, following, posting, and moderation | **Deferred / unfunded** |
+| 4 | Conventional server-based social architecture | **Superseded reference** |
 | 5 | Local trip outfits, packing, and availability conflicts | Planned |
 | 6 | TestFlight, privacy/security hardening, and zero-backend App Store release | Planned |
-| 7 | Scale, localization, advanced personalization, and measured evolution | Future |
+| 7 | Post-release CloudKit profiles, following, controlled outfit posts, and safety | Planned after release; gated |
+| 8 | Scale, localization, advanced personalization, and measured evolution | Future |
 
 Read the [Master Roadmap](docs/ROADMAP.md) and the linked phase documents for entry criteria, workstreams, test obligations, exit gates, risks, and deliverables.
 
@@ -183,13 +185,13 @@ CI verifies that required documents and phase files remain present. Reviewers en
 
 ## Contributing
 
-Start with [CONTRIBUTING.md](CONTRIBUTING.md). Small, reviewable branches with tests and documentation are preferred. Do not add authentication, cloud storage/AI, paid APIs, or social publishing without an explicit product-owner cost decision, SRS revision, and ADR.
+Start with [CONTRIBUTING.md](CONTRIBUTING.md). Small, reviewable branches with tests and documentation are preferred. CloudKit social must follow ADR-0004 and Phase 7; do not add a conventional backend, private-closet upload, cloud AI, paid API, or broader public media without a new product-owner decision.
 
 ## Privacy and safety
 
 The current prototype stores wardrobe and profile content locally in the app container. Location is optional and used only for an explicit weather request. The app removes the need for weather access by supporting a date-derived season fallback.
 
-The approved release keeps private content in the iOS app container and performs clothing/outfit intelligence on-device. It has no account, cloud recovery, public posting, or developer-operated media service. See the [SRS](SRS.md) and [Security Policy](SECURITY.md).
+The first release keeps private content in the iOS app container and performs clothing/outfit intelligence on-device. It has no account, cloud recovery, public posting, or developer-operated media service. Later CloudKit social may publish only explicit detached public records and must never expose the closet. See the [SRS](SRS.md) and [Security Policy](SECURITY.md).
 
 ## License
 

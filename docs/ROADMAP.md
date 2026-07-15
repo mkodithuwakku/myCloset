@@ -1,6 +1,6 @@
 # Product and Engineering Roadmap
 
-**Baseline:** SRS 1.1
+**Baseline:** SRS 1.2
 **Current phase:** Phase 0 complete; Phase 1 next
 **Planning model:** exit-gate driven, not date-driven
 
@@ -13,7 +13,7 @@ The roadmap sequences myCloset so that each phase produces a testable product in
 1. Improve wardrobe input quality before spending heavily on recommendation intelligence.
 2. Keep core behavior, intelligence, photos, and user data on-device.
 3. Introduce no mandatory recurring service charge beyond Apple Developer Program membership.
-4. Treat identity, cloud sync, and social features as unfunded P2 ideas, not release dependencies.
+4. Keep conventional identity/backend work as P2; treat CloudKit social as a gated post-release P1 addition.
 5. Treat App Store readiness as an operational phase, not a final metadata task.
 6. Use friend/beta feedback to justify any later complexity or cost.
 
@@ -23,12 +23,13 @@ The roadmap sequences myCloset so that each phase produces a testable product in
 |---:|---|---|---|---|
 | 0 | Local Prototype and Foundation | Validate the wardrobe-to-outfit loop | Complete | SRS baseline |
 | 1 | Capture and Wardrobe Quality | Produce reliable isolated garment records | Next | Phase 0 |
-| 2 | Cloud Identity and Private Data | Optional cloud/account architecture | **Deferred / unfunded** | Explicit recurring-cost approval |
+| 2 | Conventional Cloud Identity and Private Data | Superseded backend/account reference design | **Superseded** | A new ADR only if CloudKit is insufficient |
 | 3 | Recommendation Quality | Better local personalization and explainability | Planned | Phase 1 wardrobe quality |
-| 4 | Social and Safety | Optional safe profile/follow/post experience | **Deferred / unfunded** | Phase 2 plus operations budget |
+| 4 | Conventional Social and Safety | Superseded server-based social reference design | **Superseded** | A new ADR only if CloudKit is insufficient |
 | 5 | Local Trips and Offline | Multi-outfit travel planning stored on-device | Planned | Phase 3 generation |
 | 6 | Beta and App Store Release | Compliant zero-backend public release | Planned | Phases 1, 3, and approved local scope |
-| 7 | Scale and Product Evolution | Measured expansion without weakening trust | Future | Production evidence |
+| 7 | Post-Release CloudKit Social | Low-cost profiles, following, feed, and safety | Planned — post-release gated | Phase 6 plus interest and safety gates |
+| 8 | Scale and Product Evolution | Measured expansion without weakening trust | Future | Production evidence |
 
 ## 4. Cross-phase quality gates
 
@@ -51,8 +52,9 @@ flowchart LR
     P1 --> P3["3 Local recommendation quality"]
     P3 --> P5
     P5 --> P6
-    P6 --> P7["7 Scale + evolution"]
-    P2["2 Cloud identity (deferred)"] -.-> P4["4 Social + safety (deferred)"]
+    P6 --> P7["7 CloudKit social"]
+    P7 --> P8["8 Scale + evolution"]
+    P2["2 Conventional cloud (superseded)"] -.-> P4["4 Conventional social (superseded)"]
 ```
 
 ## 6. Phase summaries
@@ -69,9 +71,9 @@ Deliver direct guided camera capture, Vision foreground segmentation, adjustable
 
 Exit gate: supported garment categories meet agreed segmentation/color accuracy thresholds and users can recover every automated failure manually.
 
-### Phase 2 — Cloud Identity and Private Data
+### Phase 2 — Conventional Cloud Identity and Private Data
 
-This phase is deferred and unfunded. It is not required for App Store release. It may be reconsidered only if the product owner explicitly accepts recurring infrastructure, security, privacy, support, and migration costs.
+This server-based phase is superseded by ADR-0004 and retained only as a reference design. It is not required for App Store release or the approved CloudKit social addition. It may be reconsidered only if CloudKit cannot meet a demonstrated requirement and the product owner explicitly accepts recurring infrastructure, security, privacy, support, and migration costs.
 
 Exit gate if reactivated: multi-account isolation and deletion pass adversarial tests; no social capability is enabled yet.
 
@@ -81,9 +83,9 @@ Deliver versioned on-device deterministic rules, richer weather/occasion inputs,
 
 Exit gate: locks/ownership/availability/structure remain invariant and beta users meet an approved acceptance-rate target.
 
-### Phase 4 — Social and Safety
+### Phase 4 — Conventional Social and Safety
 
-This phase is deferred and unfunded. Social publishing remains excluded because it requires accounts, hosted media, reporting, blocking, moderation, deletion operations, and ongoing support. Likes/comments remain excluded in any future design.
+This server-based phase is superseded by the narrower Phase 7 CloudKit social plan. It remains useful as a reference for a future multi-platform service but is not an approved dependency. Likes/comments remain excluded in either architecture.
 
 Exit gate: trust-and-safety response operations exist and public content cannot reveal live closet/trip data.
 
@@ -99,7 +101,13 @@ Deliver internal/external TestFlight, local-data security/privacy/accessibility 
 
 Exit gate: every applicable local-only SRS P0 release gate is evidenced or formally waived, and the cost review confirms no mandatory recurring service beyond Apple Developer Program membership.
 
-### Phase 7 — Scale and Product Evolution
+### Phase 7 — Post-Release CloudKit Social
+
+After the local App Store release demonstrates interest, deliver iCloud-scoped public profiles, handles, preset avatars, following, a reverse-chronological feed, and explicit generated-outfit composition posts through CloudKit. Private closet data remains local. Reporting, blocking, filtering, deletion, public policies/contact, manual moderation, quota monitoring, and a kill switch are part of the slice, not follow-up work.
+
+Exit gate: social activation passes the interest gate, CloudKit access-control and detached-snapshot tests, the complete follow/block/report matrix, App Store user-generated-content review, and the Apple-membership-only cost check.
+
+### Phase 8 — Scale and Product Evolution
 
 Use production evidence to prioritize localization, advanced on-device personalization, analytics insights, optional calendar integration, wear/cost analytics, and scale improvements. Avoid speculative complexity.
 
@@ -121,11 +129,12 @@ Urgent security or data-integrity work may interrupt the roadmap. Cosmetic addit
 
 ## 8. Progress reporting
 
-Phase status uses four values:
+Phase status uses five values:
 
 - **Planned:** scope exists but entry criteria are not met.
 - **Ready:** dependencies and design decisions are sufficient to start.
 - **In progress:** implementation is active with an accountable owner.
 - **Complete:** exit criteria have linked evidence.
+- **Superseded:** retained for traceability but replaced by an approved architecture or phase.
 
 Update this roadmap and the README in the same pull request that changes a phase status.

@@ -1,20 +1,21 @@
 # Architecture
 
-**Status:** Phase 0 implemented; zero-backend App Store target approved
+**Status:** Phase 0 implemented; local first release and gated post-release CloudKit social target approved
 **Last reviewed:** 2026-07-14
 
 ## 1. Purpose
 
-This document describes the current iPhone prototype and the approved local-only App Store architecture. Cloud and social systems are optional unfunded ideas, not release dependencies.
+This document describes the current iPhone prototype, the approved local-only first App Store release, and the separately gated post-release CloudKit social architecture.
 
 ## 2. Architectural principles
 
-1. **Privacy is local by default.** Wardrobe, profile, history, trip, and image data stay in the app container.
+1. **Privacy is local by default.** Wardrobe, launch profile, history, trip, and image data stay in the app container; later public profile fields are explicit detached copies.
 2. **Hard constraints are deterministic.** Availability, structural validity, locked pieces, and safety cannot be delegated to probabilistic output.
 3. **No backend is a product constraint.** Core functionality cannot depend on hosted storage, accounts, cloud AI, or a paid runtime service.
 4. **Optional weather stays behind an adapter.** Live weather can change provider or degrade to season without rewriting views or recommendation rules.
 5. **Offline and degraded states are product states.** The app must explain whether it used current weather, city weather, season, or neutral context.
 6. **Historical records use snapshots.** Edits to current closet items do not rewrite what a user saved, wore, or packed previously.
+7. **Public social data is explicit and detached.** A later CloudKit post cannot reference or expose live closet, trip, preference, or private-history data.
 
 ## 3. Current Phase 0 architecture
 
@@ -24,6 +25,7 @@ flowchart TB
     Tabs --> Home["HomeView"]
     Tabs --> Closet["ClosetView"]
     Tabs --> Generate["GeneratorView"]
+    Tabs --> Following["FollowingView / Coming Soon"]
     Tabs --> Profile["ProfileView"]
 
     Home --> Store["ClosetStore @MainActor"]
@@ -112,6 +114,7 @@ The prototype has no provider cache, quota controls, severe-weather rules, or du
 | Closet item metadata and image | Local app container | Current device/app only |
 | Saved/worn snapshots | Local app container | Current device/app only |
 | Profile | Local app container | Current device/app only |
+| Following | No data source | Static Coming Soon presentation only |
 | Generator locks | Memory for active screen session | Current process only |
 | Location | Used transiently for explicit weather request | Weather service request only |
 
@@ -146,9 +149,33 @@ flowchart TB
 3. Outfit and image intelligence have no per-use API charge.
 4. Live-weather failure never prevents generation.
 5. Clear Local Data removes applicable user content from the app container.
-6. Adding a backend, cloud AI, public content, or recurring provider charge requires a new ADR and product-owner approval.
+6. ADR-0004 permits only the gated post-release CloudKit social scope; a conventional backend, cloud AI, private data upload, broader public media, or recurring provider charge requires a new ADR and product-owner approval.
 
-## 6. Local persistence evolution
+## 6. Post-release CloudKit social architecture
+
+Phase 7 may be implemented only after release interest and safety gates pass:
+
+```mermaid
+flowchart LR
+    SocialUI["Following + public profile UI"] --> SocialRepo["SocialRepository"]
+    SocialRepo --> CloudKit["CloudKit public records/assets"]
+    Local["Local closet + outfit engine"] --> Snapshot["Detached generated outfit snapshot"]
+    Snapshot --> SocialRepo
+    Safety["Filter + report + block + delete"] --> SocialRepo
+    Local -.->|never uploaded directly| PrivateBoundary["Private app container"]
+```
+
+Required boundaries:
+
+- iCloud identity is used only to scope social ownership; local wardrobe features remain account-free.
+- Public profiles initially use app-specific handles and preset avatars.
+- Public posts initially use locally generated detached outfit compositions, not arbitrary body/profile photographs.
+- `SocialRepository` isolates CloudKit from views and makes failure, testing, and kill-switch behavior explicit.
+- CloudKit public records contain no live closet IDs, original garment media, trips, feedback, precise location, or private history.
+- Filtering, reporting, blocking, deletion, public policies/contact, and manual moderation must exist before social writes are enabled.
+- Social writes can be disabled without affecting local closet, generation, history, weather fallback, or trips.
+
+## 7. Local persistence evolution
 
 Before App Store release, introduce repository boundaries and schema migration without adding networking:
 
@@ -168,7 +195,7 @@ The current store can be split into:
 
 Migration must preserve stable identifiers so saved/worn/trip snapshots remain consistent.
 
-## 7. Quality attributes
+## 8. Quality attributes
 
 | Attribute | Architectural response |
 |---|---|
@@ -178,9 +205,9 @@ Migration must preserve stable identifiers so saved/worn/trip snapshots remain c
 | Maintainability | domain models separate from views, versioned phase/ADR documentation |
 | Performance | image resizing and bounded local data sets |
 | Accessibility | native controls, explicit labels, text color names, non-color cues |
-| Evolvability | weather adapter, versioned rules, repository boundaries |
+| Evolvability | weather adapter, versioned rules, repository boundaries, optional CloudKit social repository |
 
-## 8. Known architecture debt
+## 9. Known architecture debt
 
 - `ClosetStore` combines repository, application state, and daily recommendation orchestration.
 - Persistence has no schema version or migration mechanism.
@@ -192,6 +219,6 @@ Migration must preserve stable identifiers so saved/worn/trip snapshots remain c
 
 These are accepted Phase 0 tradeoffs and are assigned to later local phases; they should not be normalized into the App Store architecture.
 
-## 9. Decision process
+## 10. Decision process
 
 Material changes to authentication, data ownership, storage, recommendation constraints, AI providers, media visibility, or service boundaries require an Architecture Decision Record under `docs/decisions/`.

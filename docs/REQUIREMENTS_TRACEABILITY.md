@@ -13,10 +13,10 @@ This document maps SRS requirement groups to implementation phases and current v
 
 | SRS group | Phase | Current status | Implementation/evidence |
 |---|---:|---|---|
-| AUTH — authentication/account lifecycle | 2 | Excluded | Deferred/unfunded; no account in approved release |
+| AUTH — authentication/account lifecycle | 2 | Excluded | Conventional account backend is superseded; Phase 7 uses iCloud-scoped CloudKit ownership only after release |
 | ONB — onboarding/permissions | 1, 6 | Partial | Empty/sample flow exists; account-free onboarding remains |
-| PROF — local profile | 0, 6 | Partial | Local profile editing implemented; no public profile |
-| SOC — following/feed | 4 | Excluded | Deferred/unfunded; no social navigation or service |
+| PROF — local/public profile | 0, 6, 7 | Partial | Local profile editing implemented; controlled CloudKit public profile planned after release |
+| SOC — following/feed | 7 | Planned | Coming Soon navigation implemented; CloudKit service gated on interest and safety |
 | ITEM — capture/creation | 0, 1 | Partial | Import/metadata/colors implemented; guided camera/segmentation Phase 1 |
 | CLO — closet management/privacy | 0, 1 | Partial | Local CRUD/filter/availability implemented; capture quality remains |
 | WEA — weather/season | 0, 3 | Partial | Location/city/season works; resilience/caching/safety Phase 3 |
@@ -26,23 +26,23 @@ This document maps SRS requirement groups to implementation phases and current v
 | REC — recommendation engine | 0, 3 | Partial | Deterministic local rules/scoring; versioning/replay/feedback Phase 3 |
 | FB — feedback | 3 | Planned | Save/worn signals only; explicit feedback/preferences deferred |
 | HIST — saved/worn history | 0, 3 | Partial | Local immutable snapshots; local filters/preferences remain |
-| POST — outfit posts | 4 | Excluded | Deferred/unfunded; would require identity, hosted media, and safety operations |
+| POST — outfit posts | 7 | Planned | Detached generated-outfit composition posts planned through CloudKit after release |
 | TRIP — trip planning | 5 | Planned | Local-only Phase 5 |
 | NOTIF — notifications | 5 | Excluded | No notification service in approved release |
-| SAFE — reporting/moderation | 4 | Excluded | Not applicable without public user-generated content |
+| SAFE — reporting/moderation | 7 | Planned | Required before CloudKit social activation; not active in first release |
 | SET — settings/help/legal | 0, 6 | Partial | Local settings/reset implemented; release legal/help remains |
 | ADM — administration | 2, 4 | Excluded | No backend or remote administration |
-| ARCH | 0, 1, 3, 5, 6 | Partial | Approved target is on-device with local repository boundaries |
-| SEC | 0, 1, 6 | Partial | Local-container and mobile security controls only |
-| PRIV | 0, 1, 6 | Partial | Local/private boundary; formal release assessment remains |
+| ARCH | 0, 1, 3, 5, 6, 7 | Partial | First release is local; optional CloudKit social stays behind a repository boundary |
+| SEC | 0, 1, 6, 7 | Partial | Local-container controls exist; CloudKit ownership/block/report controls are Phase 7 gates |
+| PRIV | 0, 1, 6, 7 | Partial | Local/private boundary; detached public-snapshot review is required before Phase 7 activation |
 | A11Y | Every phase | Partial | Native/label foundations; full manual audit Phase 6 |
-| PERF/REL/SCALE | 3, 6, 7 | Planned | Phase 0 functional measurements only |
+| PERF/REL/SCALE | 3, 6, 7, 8 | Planned | Phase 0 functional measurements only |
 | OFF | 0, 5 | Partial | Local reads work; local trips/recovery Phase 5 |
 | OBS | 6 | Excluded | No paid/hosted telemetry; Apple-provided diagnostics may be used |
 | ENG | Every phase | Partial | Shared scheme, CI, tests, docs; expands continuously |
 | COMPAT | 0, 6 | Partial | iPhone/iOS 17 target; release matrix Phase 6 |
 | STORE | 6 | Planned | Phase 6 release work |
-| COST | Every phase | Implemented | ADR-0003 prohibits required backend/paid runtime services |
+| COST | Every phase | Implemented | ADR-0003 protects the local release; ADR-0004 limits later social to included CloudKit capacity |
 
 ## Phase 0 verification links
 
@@ -55,6 +55,7 @@ This document maps SRS requirement groups to implementation phases and current v
 | Batch image type suggestions | `myCloset/ClothingTypeDetector.swift`, `myCloset/ClosetView.swift` | `ClothingTypeDetectorTests`, `ClosetStoreTests` |
 | Empty → daily outfit | `HomeView`, `ClosetStore` | `MyClosetUITests.testEmptyClosetCanLoadSamplesAndCreateDailyOutfit` |
 | Closet → Generate | `ClosetView`, `GeneratorView` | `MyClosetUITests.testCoreClosetAndGeneratorJourney` |
+| Following roadmap state | `FollowingView` | `MyClosetUITests.testFollowingIsClearlyMarkedComingSoon` |
 
 ## Traceability workflow
 

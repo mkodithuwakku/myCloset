@@ -1,6 +1,46 @@
 import PhotosUI
 import SwiftUI
 
+struct FollowingView: View {
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 18) {
+                Spacer()
+
+                Image(systemName: "person.2.fill")
+                    .font(.system(size: 42, weight: .medium))
+                    .foregroundStyle(ClosetTheme.accent)
+                    .frame(width: 88, height: 88)
+                    .background(ClosetTheme.accentSoft, in: Circle())
+
+                VStack(spacing: 8) {
+                    Text("Coming soon")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(ClosetTheme.ink)
+
+                    Text("Profiles and outfit inspiration are planned for after launch.")
+                        .font(.body)
+                        .foregroundStyle(ClosetTheme.secondaryInk)
+                        .multilineTextAlignment(.center)
+
+                    Text("Your closet will always stay private.")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(ClosetTheme.ink)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: 320)
+
+                Spacer()
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(ClosetTheme.canvas.ignoresSafeArea())
+            .navigationTitle("Following")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
 struct ProfileView: View {
     @EnvironmentObject private var store: ClosetStore
     @State private var segment: ProfileSegment = .worn

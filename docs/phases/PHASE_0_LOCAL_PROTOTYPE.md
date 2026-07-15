@@ -10,7 +10,7 @@ A user can launch a native iPhone app, load sample pieces or create private loca
 
 ## Delivered scope
 
-- Four-tab SwiftUI application shell.
+- Five-tab SwiftUI application shell with a truthful Following Coming Soon state.
 - Local `Codable` wardrobe/profile/history persistence.
 - Closet add/bulk-import/edit/search/filter/favorite/availability/archive/delete.
 - Garment Photos/Files import, filename/Vision type suggestion, resizing, palette suggestion, and manual confirmation.
@@ -21,7 +21,7 @@ A user can launch a native iPhone app, load sample pieces or create private loca
 - Soft scoring for formality, color relationship, favorites, and variety.
 - Daily recommendation, generator, individual reroll, unlocked reroll.
 - Saved and worn immutable snapshots.
-- Shared Xcode scheme, CI workflow, 37 unit and 2 UI tests.
+- Shared Xcode scheme, CI workflow, 37 unit and 3 UI tests.
 - SRS, roadmap, architecture, testing, traceability, and contributor documentation.
 
 ## Explicit exclusions
@@ -37,21 +37,21 @@ A user can launch a native iPhone app, load sample pieces or create private loca
 
 - Local-first prototype: [ADR-0001](../decisions/0001-local-first-prototype.md).
 - Deterministic constraints around scoring: [ADR-0002](../decisions/0002-hybrid-recommendation-engine.md).
-- No fake social data or social placeholder in the approved local-only release navigation.
+- No fake social data; the Following placeholder communicates the approved post-release plan without simulating activity.
 - No third-party package dependency for Phase 0.
 
 ## Verification evidence
 
 - Generic iOS Simulator build passes.
 - `myClosetTests`: 37 passing tests.
-- `myClosetUITests`: 2 passing journeys.
+- `myClosetUITests`: 3 passing journeys.
 - Runtime verified on iPhone 17 Pro simulator / iOS 26.3.
 - Empty and seeded Home states visually reviewed.
 - Generated result with lock/reroll controls visually reviewed.
 
 See [Prototype Status](../../PROTOTYPE_STATUS.md) and [Testing](../TESTING.md).
 
-## Accepted debt handed to Phase 1/2
+## Accepted debt handed to later phases
 
 - Store combines state/repository/orchestration.
 - Persistence lacks schema version and uses embedded image data.

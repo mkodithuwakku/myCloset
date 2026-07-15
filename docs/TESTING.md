@@ -1,10 +1,10 @@
 # Testing Strategy and Guide
 
-**Current automated inventory:** 37 unit tests + 2 UI tests
+**Current automated inventory:** 37 unit tests + 3 UI tests
 **Current verified environment:** Xcode 26.3, iPhone 17 Pro simulator, iOS 26.3
 **Minimum deployment target:** iOS 17.0
 
-Latest recorded evidence: [Test Execution Report — 2026-07-14](testing/TEST_EXECUTION_2026-07-14.md) (39 passed, 0 failed).
+Latest recorded evidence: [Test Execution Report — 2026-07-14](testing/TEST_EXECUTION_2026-07-14.md) (40 passed, 0 failed).
 
 ## 1. Objectives
 
@@ -29,7 +29,7 @@ flowchart TB
     UI --> Integration --> Unit
 ```
 
-Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke suite. Later approved phases add local media-pipeline, migration, performance, security, accessibility, trip, and App Store qualification tests. Backend/social suites are required only if those unfunded phases are explicitly reactivated.
+Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke suite. Later approved phases add local media-pipeline, migration, performance, security, accessibility, trip, and App Store qualification tests. Phase 7 must add CloudKit ownership, detached-snapshot, follow/block/report/delete, moderation, quota, and failure suites before social activation.
 
 ## 3. Automated suite inventory
 
@@ -88,12 +88,13 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 
 The suite tests deterministic filename behavior rather than asserting Apple's OS-owned Vision labels, which may evolve between system releases.
 
-### 3.5 `MyClosetUITests` — 2 tests
+### 3.5 `MyClosetUITests` — 3 tests
 
 | Journey | Primary assertion |
 |---|---|
 | Empty closet → load samples → daily outfit | Empty state is recoverable and produces a real outfit |
 | Closet → generator → outfit | Stored pieces reach a generated result with lock controls |
+| Following tab → Coming Soon | Social roadmap is visible without fake profiles, posts, or service behavior |
 
 ## 4. Running tests
 

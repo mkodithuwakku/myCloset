@@ -42,4 +42,4 @@ The first public release is a self-contained iPhone application:
 - Do not add sign-in merely for identity presentation; there is no account-backed service.
 - Keep deterministic generation and date-derived season functional without network access.
 - App Store copy and in-app settings must clearly describe local-only storage and deletion behavior.
-- Social and cloud phase documents remain optional reference material and are not release dependencies.
+- ADR-0004 permits a separately gated CloudKit social addition only after the first release; it is not a release dependency and cannot weaken this local product baseline.

@@ -2,7 +2,7 @@
 
 > **Working title:** myCloset (provisional; trademark and App Store name availability have not been confirmed)
 > **Document type:** Software Requirements Specification (SRS)
-> **Document version:** 1.1
+> **Document version:** 1.2
 > **Status:** Product baseline
 > **Target release:** Public iPhone App Store release
 > **Prepared:** July 14, 2026
@@ -19,6 +19,7 @@
 |---|---:|---|---|
 | 1.0 | 2026-07-14 | Product baseline | Initial enterprise-level requirements based on confirmed product decisions |
 | 1.1 | 2026-07-14 | Approved release amendment | First App Store release changed to local-only operation with no recurring service cost beyond the Apple Developer Program |
+| 1.2 | 2026-07-14 | Approved roadmap amendment | CloudKit profiles and following approved as a gated post-release addition; launch navigation restores a truthful Coming Soon tab |
 
 ### 1.2 Approval Roles
 
@@ -45,8 +46,8 @@ The words **shall**, **should**, and **may** have specific meanings in this docu
 | Priority | Meaning |
 |---|---|
 | P0 | Required for the first public App Store release, subject to the authoritative release-applicability matrix in Section 3.5 |
-| P1 | Planned local enhancement after launch; it must not require a paid backend |
-| P2 | Optional future opportunity requiring a new product, privacy, safety, and recurring-cost decision |
+| P1 | Approved post-launch enhancement that must preserve the Apple-membership-only cash-cost target |
+| P2 | Optional future opportunity requiring a new product, privacy, safety, or recurring-cost decision |
 
 ---
 
@@ -56,7 +57,7 @@ The words **shall**, **should**, and **may** have specific meanings in this docu
 
 This SRS defines the functional, data, interface, security, privacy, operational, and quality requirements for myCloset, a native Swift iPhone application that digitizes a user's wardrobe and produces practical outfit recommendations.
 
-The specification is intended to serve as a shared implementation contract for product management, design, iOS engineering, quality assurance, privacy, security, and App Store release work. Backend, cloud, and social requirements are retained only as optional future scope and are not release dependencies.
+The specification is intended to serve as a shared implementation contract for product management, design, iOS engineering, quality assurance, privacy, security, and App Store release work. CloudKit social requirements are an approved post-release roadmap item, not a dependency of the first public release.
 
 ### 2.2 Product Vision
 
@@ -119,13 +120,22 @@ The first public App Store release shall include:
 - local trip outfit planning and packing checklist support;
 - local reset/deletion controls, help, privacy information, and support links;
 - on-device outfit generation, image analysis, and persistence;
-- a four-tab navigation model: Home, Closet, Generate, and Profile;
+- a five-tab navigation model: Home, Closet, Generate, Following, and Profile;
+- a non-interactive Following screen clearly labelled Coming Soon, with no fake profiles, posts, or network behavior;
 - release testing, accessibility review, App Store metadata, and support readiness that do not require a paid runtime service.
 
-### 3.2 Post-Launch Scope (P1)
+### 3.2 Approved Post-Launch Scope (P1)
 
-The following local capabilities are recommended but are not required for the first public release:
+The following capabilities are approved roadmap additions but are not required for the first public release:
 
+- CloudKit-backed public profiles using an app-specific handle and iCloud-scoped identity;
+- follow and unfollow relationships plus a reverse-chronological Following feed;
+- explicit publishing of detached generated-outfit compositions that reveal no live closet records;
+- content filtering, reporting, blocking, public support/contact information, deletion, and manual moderation controls before social activation;
+- continued exclusion of likes, reactions, comments, direct messages, and engagement ranking;
+- preservation of the private local closet and on-device recommendation engine;
+- an initial controlled-content model using generated outfit compositions and preset avatars; arbitrary public photographs require a later moderation/privacy approval;
+- CloudKit usage within the storage and service allowance included with Apple Developer Program membership, with usage monitoring and a kill switch if terms or cost change;
 - iPad-optimized interface;
 - Apple Watch companion experience;
 - optional calendar integration for planned outfits;
@@ -137,17 +147,17 @@ The following local capabilities are recommended but are not required for the fi
 - on-device recommendation personalization models;
 - import from supported retailer receipts or product catalogs.
 
-Authentication, cloud synchronization, social profiles, following, public posting, moderation, and remote administration are not committed post-launch work. They may be reconsidered only after the product owner explicitly approves recurring infrastructure and operational costs.
+The CloudKit social addition shall begin only after the first App Store release demonstrates interest and an accountable person accepts report-response and moderation duties. A conventional backend, Google authentication, private-closet synchronization, cloud AI, or paid hosted-media service remains unapproved.
 
-### 3.3 Explicitly Out of Scope
+### 3.3 Explicitly Out of Scope for the First Public Release
 
-The following are not included in this SRS:
+The following are not included in the first public release:
 
 - Android, web, macOS, or visionOS clients;
 - a production backend, hosted database, hosted media storage, or cross-device synchronization;
 - Sign in with Apple, Google authentication, or any required user account;
-- following, public profiles, feeds, outfit posting, or other user-generated-content distribution;
-- reporting, blocking, moderation consoles, or remote administration while social features remain absent;
+- functioning following, public profiles, feeds, outfit posting, or other user-generated-content distribution beyond the Coming Soon screen;
+- active reporting, blocking, or moderation operations while social publishing remains disabled;
 - cloud-hosted AI or per-image/per-generation model APIs;
 - any runtime service that creates a mandatory recurring charge beyond the Apple Developer Program;
 - likes, reactions, comments, direct messages, or public popularity scores;
@@ -172,19 +182,22 @@ This SRS uses the following confirmed or necessary assumptions:
 6. Weather shall use an allowance included with the Apple Developer Program, a provider whose terms permit the free no-advertising app, or season-only behavior; it shall never require a paid runtime subscription.
 7. The launch language is English, while the implementation remains localization-ready.
 8. The product name remains provisional until legal and store-name checks are completed.
+9. The Coming Soon tab is a roadmap preview only and shall not display fabricated social activity.
+10. Post-release social identity shall use CloudKit/iCloud rather than a separately operated authentication backend unless a later decision supersedes ADR-0004.
 
 ### 3.5 Authoritative Release Applicability
 
 This matrix overrides conflicting row-level priorities in the original full-product requirement catalogue. Requirements outside the first-release profile remain useful design material but are not App Store release gates.
 
-| Requirement group | First-release applicability |
-|---|---|
-| ITEM, CLO, WEA, HOME, GEN, COMP, REC, FB, HIST, A11Y, COMPAT, STORE | Included where behavior is local/on-device |
-| ONB, PROF, TRIP, SET, PRIV, SEC, PERF, REL, OFF, ENG | Included only for the local, account-free architecture |
-| AUTH, SOC, POST, NOTIF, SAFE, ADM, backend/cloud portions of ARCH/OBS/SCALE | Excluded; P2 and unfunded |
-| Cloud AI, hosted media, remote configuration, cross-device sync | Excluded; P2 and unfunded |
+| Requirement group | First public release | Approved later path |
+|---|---|---|
+| ITEM, CLO, WEA, HOME, GEN, COMP, REC, FB, HIST, A11Y, COMPAT, STORE | Included where behavior is local/on-device | Continue locally |
+| ONB, PROF, TRIP, SET, PRIV, SEC, PERF, REL, OFF, ENG | Included for the local, account-free architecture | Extend only where the selected phase requires it |
+| SOC, POST, SAFE and social portions of PROF/PRIV/SEC/STORE | Coming Soon presentation only; no functioning service | P1 CloudKit social after release, interest validation, and safety gates |
+| AUTH, ADM and backend portions of ARCH/OBS/SCALE | Excluded | P2 unless a later decision proves CloudKit cannot meet an approved need |
+| Cloud AI, paid hosted media, remote configuration, private-closet sync | Excluded | P2 and unfunded |
 
-Any change that adds a recurring provider charge, backend, authentication, public content, or cloud processing requires an SRS revision and explicit product-owner approval before implementation.
+CloudKit social within the Apple Developer Program allowance is approved by ADR-0004. Any change that adds a separate recurring provider charge, conventional backend, cloud AI, or private-closet upload still requires an SRS revision and explicit product-owner approval before implementation.
 
 ---
 
@@ -231,7 +244,8 @@ The application shall use a persistent, accessible tab-based navigation model wi
 1. **Home** — Outfit of the Day, weather context, and quick actions.
 2. **Closet** — private inventory, filters, item creation, and item editing.
 3. **Generate** — occasion-based outfit generation, locking, rerolling, and saving.
-4. **Profile** — local profile editing, worn outfits, saved outfits, trips, settings, privacy information, and local data controls.
+4. **Following** — a launch-state Coming Soon screen; after the separately gated CloudKit social release, followed outfit inspiration and public-profile discovery.
+5. **Profile** — local profile editing, worn outfits, saved outfits, trips, settings, privacy information, and local data controls.
 
 Trips and outfit history may be presented as secondary destinations within Profile, provided they remain reachable within two deliberate navigation actions.
 
@@ -263,12 +277,13 @@ The application shall support these end-to-end journeys:
 7. Save a generated outfit for later or confirm it as worn.
 8. Create a trip, generate multiple trip outfits, and manage a packing checklist locally.
 9. Clear local app data after explicit confirmation.
+10. Open Following and receive an honest Coming Soon state without fabricated profiles or posts.
 
 ---
 
 ## 6. Functional Requirements
 
-The Section 3.5 release-applicability matrix is normative. In particular, AUTH, SOC, POST, NOTIF, SAFE, ADM, backend, cloud-sync, and cloud-AI rows below are retained as P2 reference requirements even where their original row priority still reads P0; they are not requirements or gates for the approved local-only App Store release.
+The Section 3.5 release-applicability matrix is normative. AUTH, ADM, conventional-backend, cloud-sync, and cloud-AI rows below remain P2 reference requirements. SOC, POST, SAFE, and public-profile rows are P1 requirements for the separately gated post-release CloudKit social addition even where their original row priority reads P0; none are gates for the first local-only App Store release.
 
 ### 6.1 Authentication and Account Lifecycle
 
@@ -664,7 +679,7 @@ All functionality defined as P0 shall be available without payment. No dark patt
 
 ### 8.1 Core Entities
 
-For the first release, only local `UserProfile`, `UserPreference`, `ClosetItem`, garment image, outfit, snapshot, feedback, worn history, trip, trip outfit, and packing entities apply. Account, social, post, report, moderation, consent-service, and centralized audit entities are P2 reference designs.
+For the first release, only local `UserProfile`, `UserPreference`, `ClosetItem`, garment image, outfit, snapshot, feedback, worn history, trip, trip outfit, and packing entities apply. Social profile, follow, post, block, report, and social-deletion entities are P1 Phase 7 designs. Conventional account, consent-service, and centralized audit entities remain P2 references.
 
 | Entity | Purpose | Representative fields |
 |---|---|---|
@@ -783,7 +798,7 @@ The first-release architecture is a self-contained native iPhone application. Th
 4. **Image pipeline** — local decoding, validation, resizing, segmentation, color extraction, and editable results.
 5. **Weather adapter** — optional Apple-included/no-charge current conditions with date-derived season and neutral fallback.
 
-Identity, API, hosted storage, social, moderation, centralized analytics, and remote-administration components are P2 and deliberately absent.
+Identity, API, hosted storage, social, moderation, centralized analytics, and remote-administration components are deliberately absent from the first release. Phase 7 may add only the CloudKit social repository and safety boundaries approved by ADR-0004; conventional service components remain P2.
 
 ### 10.2 Architectural Requirements
 
@@ -983,7 +998,7 @@ Targets apply under documented representative network and device conditions.
 | STORE-005 | P0 | Camera, photo-library, notification, and location usage descriptions shall be specific, truthful, and aligned with actual behavior. |
 | STORE-006 | P0 | App Store privacy nutrition labels shall match production data collection and third-party SDK behavior. |
 | STORE-007 | P0 | The product shall provide a public Privacy Policy URL, support URL, and Terms of Use using no-charge hosting where practical. |
-| STORE-008 | P2 | User-generated-content controls are required before any future social publishing is enabled. |
+| STORE-008 | P1 | User-generated-content controls are required before the post-release CloudKit social capability is enabled. |
 | STORE-009 | P0 | The team shall possess rights or licenses for all fonts, icons, photography, datasets, SDKs, and other shipped content. |
 | STORE-010 | P0 | The app shall not imply affiliation with Airbnb or reproduce Airbnb's proprietary branding or trade dress. |
 | STORE-011 | P0 | Export-compliance, age-rating, content-rights, and regional availability declarations shall be completed accurately. |
@@ -1177,7 +1192,7 @@ A requirement is complete only when:
 | Reroll | Replace one or more unlocked pieces while retaining applicable constraints |
 | Outfit snapshot | An immutable historical representation of the pieces used at a point in time |
 | Worn outfit | A private outfit record that the user confirms they wore on a date |
-| Outfit post | User-generated public-facing content containing a photo and a safe outfit snapshot |
+| Outfit post | Explicit public-facing content containing a generated composition or separately approved photo plus a safe detached outfit snapshot |
 | Dominant color | A principal confirmed color of an isolated garment |
 | Accent color | A secondary confirmed color that materially contributes to garment matching |
 | Hard constraint | A rule the engine may not violate without explicit user action |
@@ -1213,5 +1228,7 @@ The following official Apple sources were checked on July 14, 2026. The live ver
 3. [TN3194: Handling account deletions and revoking tokens for Sign in with Apple](https://developer.apple.com/documentation/technotes/tn3194-handling-account-deletions-and-revoking-tokens-for-sign-in-with-apple) — Sign in with Apple token revocation during account deletion.
 4. [App privacy details on the App Store](https://developer.apple.com/app-store/app-privacy-details/) — declaration of data collected by the app and integrated third parties.
 5. [Configuring Sign in with Apple support](https://developer.apple.com/documentation/xcode/configuring-sign-in-with-apple) — application capability and identity integration guidance.
+6. [Apple Developer Program membership details](https://developer.apple.com/programs/whats-included/) — CloudKit and WeatherKit allowances included with membership.
+7. [CloudKit public database](https://developer.apple.com/documentation/cloudkit/ckcontainer/publicclouddatabase) — public-record availability, visibility, ownership, and storage-quota behavior.
 
 These references inform platform-release requirements but do not replace legal advice, jurisdiction-specific privacy review, or a current pre-submission compliance review.

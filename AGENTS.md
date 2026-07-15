@@ -24,13 +24,13 @@ This file is the durable handoff for Codex and other coding agents working in th
 - Current bundle identifier: `com.mkodi.myCloset.prototype`.
 - Cost model: completely free to users; the only authorized mandatory recurring cash cost is Apple Developer Program membership.
 
-The prototype is usable locally. The approved App Store target also has no production backend, account, hosted media, cloud AI, or social service.
+The prototype is usable locally. The first App Store release has no production backend, account, hosted media, cloud AI, or functioning social service. ADR-0004 approves a gated post-release CloudKit social phase.
 
 ## 3. Product rules that must survive every change
 
 1. Closet, profile, history, trip, preference, and image data stay in the app container for the approved release.
-2. Authentication, cloud sync, hosted media, following, feeds, and public outfit posts are P2 and unfunded.
-3. Do not add a backend, paid API, cloud AI, or mandatory recurring service without a new approved SRS revision and ADR.
+2. Launch social is only a Coming Soon screen. Phase 7 may later add CloudKit profiles, following, and controlled generated-outfit posts after interest and safety gates pass.
+3. Do not add a conventional backend, paid API, cloud AI, private-closet upload, or mandatory recurring service without a new approved SRS revision and ADR.
 4. Hard recommendation constraints are deterministic: ownership, availability, exclusions, valid outfit structure, and locked pieces cannot be overridden by random or AI ranking.
 5. Users may lock pieces and reroll an unavailable or unwanted piece while preserving the remaining valid outfit.
 6. Weather falls back from current location to manual city to date-derived season. The app must remain usable when location and weather are unavailable.
@@ -38,12 +38,12 @@ The prototype is usable locally. The approved App Store target also has no produ
 8. Garment category and colors may be suggested from a filename or on-device analysis, but remain user-confirmed and editable.
 9. Garments support multiple seasons and formality levels.
 10. Saved and worn outfits are immutable snapshots; later closet edits must not rewrite history.
-11. Outfit generation, clothing analysis, color detection, and preference processing remain on-device with no per-use API charge.
-12. Do not present optional cloud/social ideas, fake network data, or placeholder services as implemented.
+11. Outfit generation, clothing analysis, color detection, preferences, and private closet data remain on-device with no per-use API charge.
+12. The Following placeholder must remain truthful: no fake profiles, posts, counts, or network behavior. Future CloudKit social must use detached public snapshots and include filtering, reporting, blocking, deletion, and moderation before activation.
 
 ## 4. Current implemented vertical slice
 
-The four tabs are Home, Closet, Generate, and Profile.
+The five tabs are Home, Closet, Generate, Following, and Profile.
 
 - Home: minimalist Outfit of the Day canvas that composes garment images into one look, plus compact season/weather context and secondary actions.
 - Closet: local create/bulk-import/edit/search/filter/favorite/archive/delete and availability management.
@@ -52,6 +52,7 @@ The four tabs are Home, Closet, Generate, and Profile.
 - Weather: foreground approximate location, manual city through Apple geocoding, Open-Meteo current conditions, and season fallback.
 - History: separate saved and worn collections backed by immutable snapshots.
 - Profile: local display name, handle, biography, and profile image.
+- Following: a minimal Coming Soon screen for the post-release CloudKit social plan; it has no service or fabricated data.
 - Persistence: atomic local Codable JSON in Application Support.
 
 See [PROTOTYPE_STATUS.md](PROTOTYPE_STATUS.md) for the authoritative implemented/partial/deferred matrix.
@@ -64,6 +65,7 @@ MyClosetApp
     ├── HomeView ─────────────┐
     ├── ClosetView ───────────┤
     ├── GeneratorView ────────┼── ClosetStore (@MainActor) ── local JSON
+    ├── FollowingView (Coming Soon)
     └── ProfileView ──────────┘          └── OutfitEngine
 
 HomeView / GeneratorView ── WeatherService ── Core Location / Geocoder / Open-Meteo
@@ -141,7 +143,7 @@ Load Git-ignored project-local garment images into a booted Simulator with:
 ./scripts/load_test_closet_images.sh
 ```
 
-Current automated inventory: 37 unit tests and 2 UI tests. The latest recorded execution evidence is [docs/testing/TEST_EXECUTION_2026-07-14.md](docs/testing/TEST_EXECUTION_2026-07-14.md).
+Current automated inventory: 37 unit tests and 3 UI tests. The latest recorded execution evidence is [docs/testing/TEST_EXECUTION_2026-07-14.md](docs/testing/TEST_EXECUTION_2026-07-14.md).
 
 Debug-only UI launch arguments are:
 
@@ -188,7 +190,7 @@ Unless the user reprioritizes, the highest-value next slice is:
 4. photo quality/confidence states and retry guidance;
 5. persistence schema versioning and tests for capture failure/recovery.
 
-Phase 1 and the approved App Store release must remain useful without accounts or a backend. Phase 2 cloud work is deferred/unfunded under ADR-0003.
+Phase 1 and the first App Store release must remain useful without accounts or a backend. Conventional Phase 2 cloud work is superseded; the only approved social path is post-release Phase 7 under ADR-0004.
 
 ## 11. End-of-task handoff checklist
 

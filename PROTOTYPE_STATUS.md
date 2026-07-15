@@ -13,7 +13,7 @@ This slice provides a genuinely usable local wardrobe and outfit-generation loop
 
 | Capability | SRS area | Prototype behavior |
 |---|---|---|
-| Four-tab iPhone shell | 5.1 | Home, Closet, Generate, and Profile are present |
+| Five-tab iPhone shell | 5.1 | Home, Closet, Generate, Following, and Profile are present |
 | Local closet | CLO-001–CLO-011 | Create, bulk-import, edit, search, filter, favorite, archive, set availability, and delete |
 | Clothing metadata | ITEM-001–ITEM-018 | Name, category, dominant/accent colors, multiple seasons, multiple formalities, and confirmation form |
 | Duplicate-name warning | ITEM-013–ITEM-014 | Case- and whitespace-normalized warning without blocking save |
@@ -26,9 +26,10 @@ This slice provides a genuinely usable local wardrobe and outfit-generation loop
 | Locking and rerolling | COMP-005–COMP-016 | Pre-lock pieces, lock generated items, reroll one piece, or reroll all unlocked pieces |
 | Saved and worn history | HIST-001–HIST-009 | Immutable local snapshots, separate profile collections, and deletion |
 | Local profile | PROF-001–PROF-006 | Display name, handle, bio, and profile photo editing |
+| Following roadmap state | SOC | Minimal Coming Soon screen; no fake profiles, posts, or service behavior |
 | Accessibility foundations | A11Y | Dynamic native controls, text color names, accessibility labels on key icon controls, and no color-only status |
 | Local persistence | OFF-001 | Codable application-support storage survives relaunches |
-| Automated verification | ENG-004–ENG-006 | Shared scheme, 37 unit tests, 2 UI tests, and GitHub Actions CI |
+| Automated verification | ENG-004–ENG-006 | Shared scheme, 37 unit tests, 3 UI tests, and GitHub Actions CI |
 
 ## Partial or prototype-only
 
@@ -43,11 +44,11 @@ This slice provides a genuinely usable local wardrobe and outfit-generation loop
 | Offline behavior | Closet, history, profile, and generation work locally; cross-device synchronization is excluded by design |
 | Outfit completeness | Core tops/bottoms/one-piece/footwear/outerwear/accessory rules exist; production taxonomy and cultural/personal rule configuration remain |
 
-## Excluded from the approved App Store release
+## Excluded from the first App Store release
 
 - Sign in with Apple and Google.
 - Backend authorization, sync, hosted media, and account lifecycle.
-- Real user search, following, public profiles, feed, and outfit posting.
+- Functioning user search, following, public profiles, feed, and outfit posting; the tab is Coming Soon only.
 - Cloud AI, reporting, blocking, moderation, and administrator tools.
 - Trip planning and packing lists.
 - Push notifications.
@@ -55,7 +56,7 @@ This slice provides a genuinely usable local wardrobe and outfit-generation loop
 - Paid analytics/observability, cloud backups, and server incident operations.
 - App icon, final brand, App Store metadata, legal documents, and signing team configuration.
 
-These capabilities require a new approved recurring-cost decision before implementation. The release remains a useful local wardrobe and outfit application without them.
+CloudKit profiles and following are approved only as the gated post-release Phase 7 defined by ADR-0004. The other excluded capabilities still require their applicable product, cost, privacy, and safety decisions. The first release remains a useful local wardrobe and outfit application without them.
 
 ## Verification performed
 
@@ -66,7 +67,7 @@ These capabilities require a new approved recurring-cost decision before impleme
 5. Verified that Home produced a season-aware Outfit of the Day.
 6. Relaunched the installed app and verified local persistence.
 7. Opened Generate through a debug smoke-test launch argument and verified a generated outfit rendered with piece-level lock and reroll controls.
-8. Ran all 37 unit tests and both end-to-end UI tests successfully.
+8. Ran all 37 unit tests and all three end-to-end UI tests successfully.
 
 Build command:
 
@@ -90,4 +91,4 @@ The next highest-value vertical slice is **real garment capture and cleanup**:
 4. photo-quality checks and retry guidance;
 5. automated tests for duplicate naming, persistence, and locked-piece generation.
 
-This improves every recommendation while preserving the approved zero-backend architecture.
+This improves every recommendation while preserving the approved local-only first-release architecture.

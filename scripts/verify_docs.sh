@@ -23,7 +23,8 @@ required_files=(
   "docs/phases/PHASE_4_SOCIAL_SAFETY.md"
   "docs/phases/PHASE_5_TRIPS_OFFLINE.md"
   "docs/phases/PHASE_6_BETA_RELEASE.md"
-  "docs/phases/PHASE_7_SCALE_EVOLUTION.md"
+  "docs/phases/PHASE_7_CLOUDKIT_SOCIAL.md"
+  "docs/phases/PHASE_8_SCALE_EVOLUTION.md"
 )
 
 for file in "${required_files[@]}"; do
@@ -34,8 +35,8 @@ for file in "${required_files[@]}"; do
 done
 
 phase_count="$(find docs/phases -maxdepth 1 -name 'PHASE_*.md' | wc -l | tr -d ' ')"
-if [[ "$phase_count" != "8" ]]; then
-  echo "Expected 8 phase documents; found $phase_count"
+if [[ "$phase_count" != "9" ]]; then
+  echo "Expected 9 phase documents; found $phase_count"
   exit 1
 fi
 
@@ -44,7 +45,7 @@ if ! grep -q 'Phase 0 local functional prototype is complete' README.md; then
   exit 1
 fi
 
-if ! grep -q '37 unit tests and 2' README.md docs/TESTING.md; then
+if ! grep -q '37 unit tests and 3' README.md docs/TESTING.md; then
   echo "Documented automated test inventory is missing or stale."
   exit 1
 fi

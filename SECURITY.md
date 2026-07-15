@@ -28,7 +28,9 @@ The prototype:
 - makes optional foreground weather requests;
 - must not be used with real production secrets.
 
-The approved App Store architecture remains local-only. Release work must add mobile threat review, local schema migration/corruption handling, truthful privacy disclosures, clear-local-data verification, dependency review, and signing/entitlement checks. Server authorization, hosted media, token management, and moderation controls are required only if the deferred cloud/social scope is explicitly funded and reactivated.
+The first App Store architecture remains local-only. Release work must add mobile threat review, local schema migration/corruption handling, truthful privacy disclosures, clear-local-data verification, dependency review, and signing/entitlement checks.
+
+ADR-0004 approves CloudKit social only after release interest and safety gates pass. Before activation, every public record type requires creator/other-user access tests, posts must use detached snapshots, and the product must provide filtering, reporting, blocking, deletion, public contact/policy information, and an owned moderation response process. Private closet records and original garment media must never be uploaded for social functionality. A conventional backend or broader public-media model requires a separate security review and decision.
 
 ## Secrets and sensitive files
 

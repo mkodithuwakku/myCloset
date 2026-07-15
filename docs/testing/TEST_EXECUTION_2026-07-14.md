@@ -6,8 +6,8 @@
 |---|---|
 | Full shared-scheme suite | **Passed** |
 | Unit tests | 37 passed, 0 failed |
-| UI journey tests | 2 passed, 0 failed |
-| Total | **39 passed, 0 failed** |
+| UI journey tests | 3 passed, 0 failed |
+| Total | **40 passed, 0 failed** |
 | Documentation validation | Passed |
 | Xcode project parsing | Passed |
 
@@ -51,7 +51,7 @@ xcodebuild -project myCloset.xcodeproj -list
 - outfit structure, availability, lock conflicts, exclusions, weather outerwear, and explanations;
 - local persistence, batch persistence, duplicate-name detection, sample-data integrity, archive/availability state, saved outfits, immutable worn snapshots, and reset;
 - season mapping, formality ordering, color mapping/extraction, image resizing, corrupt-image handling, filename-based clothing-type mapping, and weather presentation;
-- empty-closet recovery, bulk-import entry-point availability, and the closet-to-generator flow.
+- empty-closet recovery, bulk-import entry-point availability, the closet-to-generator flow, and the truthful Following Coming Soon state.
 
 ## Defects found and resolved during execution
 
@@ -61,4 +61,4 @@ xcodebuild -project myCloset.xcodeproj -list
 
 ## Remaining qualification work
 
-This report is Phase 0 evidence, not App Store certification. The suite has not yet covered minimum-OS hardware, physical-device camera and Photos permissions, persistence migrations, trip planning, accessibility audit, security testing, or TestFlight/App Store review. Backend authorization, real social data, and service load testing are excluded from the approved local-only release and become obligations only if the deferred cloud/social phases are reactivated.
+This report is Phase 0 evidence, not App Store certification. The suite has not yet covered minimum-OS hardware, physical-device camera and Photos permissions, persistence migrations, trip planning, accessibility audit, security testing, or TestFlight/App Store review. CloudKit ownership, real social data, detached public snapshots, report/block/delete flows, moderation, and quota/failure testing become mandatory only when the approved post-release Phase 7 begins.

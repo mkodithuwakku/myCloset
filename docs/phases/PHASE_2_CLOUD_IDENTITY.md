@@ -1,10 +1,10 @@
-# Phase 2 — Cloud Identity and Private Data
+# Phase 2 — Conventional Cloud Identity and Private Data
 
-**Status:** Deferred / unfunded — not an App Store release dependency
+**Status:** Superseded reference design — not an App Store or CloudKit-social dependency
 **Primary SRS groups:** AUTH, CLO, DATA, ARCH, SEC, PRIV, OFF
 **Goal:** Add secure accounts and cross-device private data without weakening local usability.
 
-This phase may start only after an explicit product-owner decision to accept recurring backend and operational costs. ADR-0003 supersedes it for the approved first release.
+ADR-0004 selects a narrower post-release CloudKit design instead of this conventional backend. This document is retained for traceability and may start only if CloudKit cannot meet a demonstrated requirement and a new product-owner decision accepts recurring backend and operational costs.
 
 ## Entry criteria
 
@@ -88,4 +88,4 @@ Default is deny. Client-side hiding is not authorization.
 - [ ] Export and in-app deletion complete end-to-end.
 - [ ] Threat/privacy assessments are approved.
 - [ ] Monitoring, backup, restore, and incident runbooks exist.
-- [ ] Social publishing remains disabled until Phase 4 safety gates pass.
+- [ ] Any server-based social publishing remains disabled until a replacement ADR and all applicable safety gates pass; the approved CloudKit path is specified in Phase 7.

@@ -7,7 +7,7 @@
 ## Entry criteria
 
 - Product owner confirms which SRS P0 features enter the release candidate.
-- Required local phase exit gates are evidenced; deferred cloud/social phases are not dependencies.
+- Required local phase exit gates are evidenced; superseded conventional-cloud phases and post-release CloudKit social are not launch dependencies.
 - Final product name/brand ownership process is underway.
 - App support, signing, privacy, and release owners are assigned.
 
