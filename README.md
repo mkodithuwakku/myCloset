@@ -58,15 +58,16 @@ The authoritative implementation boundary is maintained in [Prototype Status](PR
 
 ### Seed a test closet from laptop images
 
-1. Put up to 50 garment images in a folder. Descriptive names make classification deterministic, for example `navy-shirt.jpg`, `black-jeans.png`, `white-sneakers.jpeg`, `camel-coat.jpg`, and `silver-watch.png`.
-2. In the iOS Simulator, open **Closet**, tap the **+** menu, choose **Import image files**, and select the folder's images. The app suggests names, clothing types, dominant/accent colors, seasons, and formalities, then saves the batch locally.
-3. Alternatively, add the folder to the booted simulator's Photos library:
+1. Put up to 50 garment images in a folder and boot the iPhone Simulator.
+2. Add the folder to the simulator's Photos library:
 
 ```sh
 xcrun simctl addmedia booted ~/Desktop/test-closet/*
 ```
 
-Then tap **Import** in Closet and multi-select the images. Photos library imports do not expose original filenames consistently, so the app uses on-device image classification and may ask you to review uncertain types. Tap any imported piece to correct its details.
+3. In the app, open **Closet**, tap **Import**, and multi-select the images. The app suggests names, clothing types, dominant/accent colors, seasons, and formalities, then saves the batch locally. Photos imports do not expose original filenames consistently, so the app uses on-device image classification and may ask you to review uncertain types. Tap any imported piece to correct its details.
+
+For deterministic type detection, use descriptive names such as `navy-shirt.jpg`, `black-jeans.png`, `white-sneakers.jpeg`, `camel-coat.jpg`, and `silver-watch.png`, make those files available in the simulator's Files app (for example through iCloud Drive), then choose **Closet → + → Import image files**. Filename rules take priority over image classification.
 
 Command-line build:
 
