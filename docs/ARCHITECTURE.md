@@ -1,20 +1,20 @@
 # Architecture
 
-**Status:** Phase 0 implemented; production target documented
+**Status:** Phase 0 implemented; zero-backend App Store target approved
 **Last reviewed:** 2026-07-14
 
 ## 1. Purpose
 
-This document describes the current iPhone prototype, its intentional boundaries, and the target service architecture required by later SRS phases. It is not a claim that future backend components already exist.
+This document describes the current iPhone prototype and the approved local-only App Store architecture. Cloud and social systems are optional unfunded ideas, not release dependencies.
 
 ## 2. Architectural principles
 
-1. **Privacy is a data boundary.** Public outfit posts must use detached snapshots; a live private closet record is never made public.
-2. **Hard constraints are deterministic.** Ownership, authorization, availability, structural validity, locked pieces, and safety cannot be delegated to probabilistic output.
-3. **Local usability precedes backend complexity.** The product can validate its core wardrobe loop before identity and social infrastructure exist.
-4. **External providers stay behind adapters.** Weather, identity, storage, and future AI providers should be replaceable without rewriting views or business rules.
+1. **Privacy is local by default.** Wardrobe, profile, history, trip, and image data stay in the app container.
+2. **Hard constraints are deterministic.** Availability, structural validity, locked pieces, and safety cannot be delegated to probabilistic output.
+3. **No backend is a product constraint.** Core functionality cannot depend on hosted storage, accounts, cloud AI, or a paid runtime service.
+4. **Optional weather stays behind an adapter.** Live weather can change provider or degrade to season without rewriting views or recommendation rules.
 5. **Offline and degraded states are product states.** The app must explain whether it used current weather, city weather, season, or neutral context.
-6. **Historical records use snapshots.** Edits to current closet items do not rewrite what a user saved, wore, packed, or posted previously.
+6. **Historical records use snapshots.** Edits to current closet items do not rewrite what a user saved, wore, or packed previously.
 
 ## 3. Current Phase 0 architecture
 
@@ -24,7 +24,6 @@ flowchart TB
     Tabs --> Home["HomeView"]
     Tabs --> Closet["ClosetView"]
     Tabs --> Generate["GeneratorView"]
-    Tabs --> Following["FollowingView"]
     Tabs --> Profile["ProfileView"]
 
     Home --> Store["ClosetStore @MainActor"]
@@ -61,7 +60,7 @@ Views do not own persistence encoding, weather transport, image sampling, or rec
 - the daily recommendation;
 - persistence and sample-data lifecycle.
 
-The store encodes `PersistedCloset` using `Codable` and writes atomically to Application Support. This is appropriate for a prototype with a small local data set. It is not the production synchronization or migration design.
+The store encodes `PersistedCloset` using `Codable` and writes atomically to Application Support. This is appropriate for the small expected audience. Before release, it still needs schema migration and recoverable corruption handling; it does not need synchronization.
 
 ### 3.3 Recommendation engine
 
@@ -115,58 +114,43 @@ The prototype has no provider cache, quota controls, severe-weather rules, or du
 | Profile | Local app container | Current device/app only |
 | Generator locks | Memory for active screen session | Current process only |
 | Location | Used transiently for explicit weather request | Weather service request only |
-| Social content | Not implemented | None |
 
-No production promise should be inferred from local storage. Device backup behavior and platform container protection still apply.
+The release must explain that no myCloset cloud backup or cross-device recovery exists. Device backup behavior and platform container protection still apply.
 
-## 5. Target production architecture
+## 5. Approved App Store architecture
 
 ```mermaid
-flowchart LR
-    iOS["Native iOS client"] --> API["Mobile API / BFF"]
-    API --> Identity["Identity + sessions"]
-    API --> ClosetSvc["Closet service"]
-    API --> Social["Profile/social service"]
-    API --> Trip["Trip service"]
-    API --> Rec["Recommendation service"]
-    API --> WeatherAdapter["Weather adapter"]
-
-    ClosetSvc --> DB[("Transactional database")]
-    Social --> DB
-    Trip --> DB
-    ClosetSvc --> Media["Private object storage"]
-    Social --> PublicMedia["Moderated post renditions"]
-    Rec --> Rules["Versioned rules + scoring"]
-    Rec --> Model["Optional reviewed model provider"]
-    Media --> Pipeline["Validation / segmentation / colors"]
-    Social --> Safety["Reports / blocking / moderation"]
-    API --> Obs["Logs / metrics / traces / audit"]
+flowchart TB
+    UI["SwiftUI views"] --> Store["Local application store"]
+    Store --> Persistence["Versioned app-container persistence"]
+    Store --> Engine["On-device outfit engine"]
+    UI --> Images["On-device Vision and image pipeline"]
+    UI --> Weather["Optional weather adapter"]
+    Weather --> Included["Apple-included or permitted no-charge weather"]
+    Weather --> Season["Date-derived season fallback"]
 ```
 
-### 5.1 Required service boundaries
+### 5.1 Required boundaries
 
-- **Mobile API/BFF:** token enforcement, request validation, rate limiting, compatibility, and aggregation.
-- **Identity:** Apple/Google token verification, internal identity linking, session revocation, deletion lifecycle.
-- **Closet:** owner-only metadata, availability, taxonomy, private media authorization.
-- **Recommendation:** versioned inputs, hard constraints, scoring, explanations, feedback, fallback.
-- **Social:** profiles, follows, blocks, detached post snapshots, feed, deletion.
-- **Trust and safety:** reports, review queues, enforcement, appeals, operator audit.
-- **Trips:** private trip context, outfit assignments, reuse, packing, overlap conflicts.
-- **Media:** validation, malware checks, EXIF stripping, isolation, derivatives, moderation, lifecycle.
+- **Views:** temporary interaction state only.
+- **Local store/repository:** profile, closet, history, feedback, and future trips with atomic writes and migrations.
+- **Recommendation engine:** versioned hard constraints and soft scoring that never fabricate items.
+- **Image pipeline:** local validation, resizing, segmentation, colors, and editable suggestions.
+- **Weather adapter:** foreground location/city lookup with season and neutral fallbacks.
+- **Release diagnostics:** Apple-provided crash/performance information and user-supplied support details only; no third-party analytics dependency.
 
-### 5.2 Production authorization invariants
+### 5.2 Release invariants
 
-1. Every protected request is authorized server-side.
-2. Closet ownership is checked independently of UI navigation.
-3. A follow relationship never grants closet access.
-4. Public posts reference detached, sanitized snapshots and approved renditions.
-5. Signed private-media URLs are short-lived and scoped.
-6. Operators receive least-privilege, audited, reason-bound access.
-7. Account deletion removes provider sessions, public content, private active data, derivatives, and later backup copies according to policy.
+1. Core behavior works without an account or network connection.
+2. Private wardrobe and profile media are not uploaded to a developer-operated service.
+3. Outfit and image intelligence have no per-use API charge.
+4. Live-weather failure never prevents generation.
+5. Clear Local Data removes applicable user content from the app container.
+6. Adding a backend, cloud AI, public content, or recurring provider charge requires a new ADR and product-owner approval.
 
-## 6. Migration path
+## 6. Local persistence evolution
 
-Phase 2 should introduce repository protocols before networking:
+Before App Store release, introduce repository boundaries and schema migration without adding networking:
 
 ```swift
 protocol ClosetRepository {
@@ -179,36 +163,34 @@ protocol ClosetRepository {
 The current store can be split into:
 
 - presentation-facing feature stores;
-- local cache/repository;
-- remote repositories;
-- synchronization coordinator;
-- conflict and migration policies.
+- local repositories for metadata and image files;
+- migration and corruption-recovery policies.
 
-Migration must preserve the local prototype's generated identifiers or explicitly map them to server identifiers so saved/worn snapshots remain consistent.
+Migration must preserve stable identifiers so saved/worn/trip snapshots remain consistent.
 
 ## 7. Quality attributes
 
 | Attribute | Architectural response |
 |---|---|
-| Privacy | owner-scoped services, snapshot isolation, minimization, deletion |
-| Reliability | deterministic fallback, queues, idempotency, cached local reads |
+| Privacy | app-container storage, data minimization, local deletion |
+| Reliability | deterministic fallback, atomic writes, migrations, local reads |
 | Testability | stateless engine, injectable storage URL, adapters, stable UI identifiers |
 | Maintainability | domain models separate from views, versioned phase/ADR documentation |
-| Performance | image resizing, bounded data sets, pagination in future APIs |
+| Performance | image resizing and bounded local data sets |
 | Accessibility | native controls, explicit labels, text color names, non-color cues |
-| Evolvability | provider adapters, versioned rules, modular feature/service boundaries |
+| Evolvability | weather adapter, versioned rules, repository boundaries |
 
 ## 8. Known architecture debt
 
 - `ClosetStore` combines repository, application state, and daily recommendation orchestration.
 - Persistence has no schema version or migration mechanism.
-- Images are embedded as base64 data inside JSON, which will not scale.
+- Images are embedded as data inside JSON, which is inefficient for larger local closets.
 - Weather transport is embedded in the service rather than injected behind a protocol.
 - Generator variety uses process randomness rather than an injectable random source.
 - Explicit feedback is not persisted or applied.
 - UI modules are file-separated but not separate Swift packages/targets.
 
-These are accepted Phase 0 tradeoffs and are assigned to later phases; they should not be normalized into the production architecture.
+These are accepted Phase 0 tradeoffs and are assigned to later local phases; they should not be normalized into the App Store architecture.
 
 ## 9. Decision process
 

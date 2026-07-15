@@ -28,7 +28,7 @@ The prototype:
 - makes optional foreground weather requests;
 - must not be used with real production secrets.
 
-Future phases must add the controls specified in `SRS.md`, including server-side authorization, short-lived private media access, token validation/revocation, role-based administration, audit logging, deletion, rate limiting, upload validation, privacy reviews, and incident response.
+The approved App Store architecture remains local-only. Release work must add mobile threat review, local schema migration/corruption handling, truthful privacy disclosures, clear-local-data verification, dependency review, and signing/entitlement checks. Server authorization, hosted media, token management, and moderation controls are required only if the deferred cloud/social scope is explicitly funded and reactivated.
 
 ## Secrets and sensitive files
 

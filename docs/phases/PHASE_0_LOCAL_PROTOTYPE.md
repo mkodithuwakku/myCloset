@@ -2,7 +2,7 @@
 
 **Status:** Complete
 **Release marker:** 0.1.0
-**Purpose:** Validate the private wardrobe-to-outfit loop before backend investment.
+**Purpose:** Validate the private wardrobe-to-outfit loop before broader product investment.
 
 ## Outcome
 
@@ -10,7 +10,7 @@ A user can launch a native iPhone app, load sample pieces or create private loca
 
 ## Delivered scope
 
-- Five-tab SwiftUI application shell.
+- Four-tab SwiftUI application shell.
 - Local `Codable` wardrobe/profile/history persistence.
 - Closet add/bulk-import/edit/search/filter/favorite/availability/archive/delete.
 - Garment Photos/Files import, filename/Vision type suggestion, resizing, palette suggestion, and manual confirmation.
@@ -21,8 +21,7 @@ A user can launch a native iPhone app, load sample pieces or create private loca
 - Soft scoring for formality, color relationship, favorites, and variety.
 - Daily recommendation, generator, individual reroll, unlocked reroll.
 - Saved and worn immutable snapshots.
-- Honest Following placeholder pending safety/backend work.
-- Shared Xcode scheme, CI workflow, 37 unit and 3 UI tests.
+- Shared Xcode scheme, CI workflow, 37 unit and 2 UI tests.
 - SRS, roadmap, architecture, testing, traceability, and contributor documentation.
 
 ## Explicit exclusions
@@ -38,14 +37,14 @@ A user can launch a native iPhone app, load sample pieces or create private loca
 
 - Local-first prototype: [ADR-0001](../decisions/0001-local-first-prototype.md).
 - Deterministic constraints around scoring: [ADR-0002](../decisions/0002-hybrid-recommendation-engine.md).
-- No fake social data; surface the dependency boundary.
+- No fake social data or social placeholder in the approved local-only release navigation.
 - No third-party package dependency for Phase 0.
 
 ## Verification evidence
 
 - Generic iOS Simulator build passes.
 - `myClosetTests`: 37 passing tests.
-- `myClosetUITests`: 3 passing journeys.
+- `myClosetUITests`: 2 passing journeys.
 - Runtime verified on iPhone 17 Pro simulator / iOS 26.3.
 - Empty and seeded Home states visually reviewed.
 - Generated result with lock/reroll controls visually reviewed.

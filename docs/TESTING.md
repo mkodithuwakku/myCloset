@@ -1,10 +1,10 @@
 # Testing Strategy and Guide
 
-**Current automated inventory:** 37 unit tests + 3 UI tests
+**Current automated inventory:** 37 unit tests + 2 UI tests
 **Current verified environment:** Xcode 26.3, iPhone 17 Pro simulator, iOS 26.3
 **Minimum deployment target:** iOS 17.0
 
-Latest recorded evidence: [Test Execution Report — 2026-07-14](testing/TEST_EXECUTION_2026-07-14.md) (40 passed, 0 failed).
+Latest recorded evidence: [Test Execution Report — 2026-07-14](testing/TEST_EXECUTION_2026-07-14.md) (39 passed, 0 failed).
 
 ## 1. Objectives
 
@@ -17,7 +17,7 @@ Testing must demonstrate that myCloset:
 - preserves historical snapshots after live item edits;
 - handles image and metadata failures safely;
 - keeps critical iPhone journeys usable and accessible;
-- can later prove account isolation, deletion, moderation, and degraded operation.
+- keeps applicable user data local and proves local deletion and degraded operation.
 
 ## 2. Test layers
 
@@ -29,7 +29,7 @@ flowchart TB
     UI --> Integration --> Unit
 ```
 
-Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke suite. Later phases add backend contract, authorization, media-pipeline, synchronization, performance, security, and moderation tests.
+Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke suite. Later approved phases add local media-pipeline, migration, performance, security, accessibility, trip, and App Store qualification tests. Backend/social suites are required only if those unfunded phases are explicitly reactivated.
 
 ## 3. Automated suite inventory
 
@@ -88,13 +88,12 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 
 The suite tests deterministic filename behavior rather than asserting Apple's OS-owned Vision labels, which may evolve between system releases.
 
-### 3.5 `MyClosetUITests` — 3 tests
+### 3.5 `MyClosetUITests` — 2 tests
 
 | Journey | Primary assertion |
 |---|---|
 | Empty closet → load samples → daily outfit | Empty state is recoverable and produces a real outfit |
 | Closet → generator → outfit | Stored pieces reach a generated result with lock controls |
-| Following safety boundary | Prototype does not pretend social services are operational |
 
 ## 4. Running tests
 
@@ -190,7 +189,7 @@ Coverage percentage is a diagnostic, not the definition of quality. Targets:
 - persistence migrations and deletion: 100% success and failure-path coverage;
 - domain/application logic: at least 85% line coverage by Phase 3;
 - view rendering: cover critical journeys rather than chasing generated-body line percentages;
-- authorization and privacy policies: complete allow/deny matrix once backend exists.
+- authorization and multi-user privacy policies: excluded from the approved release; complete an allow/deny matrix only if the deferred backend is explicitly reactivated.
 
 ## 9. Manual test charters
 

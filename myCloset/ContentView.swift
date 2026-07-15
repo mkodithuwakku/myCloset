@@ -19,13 +19,9 @@ struct ContentView: View {
                 .tabItem { Label("Generate", systemImage: "sparkles") }
                 .tag(2)
 
-            FollowingView()
-                .tabItem { Label("Following", systemImage: "person.2.fill") }
-                .tag(3)
-
             ProfileView()
                 .tabItem { Label("Profile", systemImage: "person.crop.circle.fill") }
-                .tag(4)
+                .tag(3)
         }
         .task {
 #if DEBUG

@@ -1,6 +1,6 @@
 # Product and Engineering Roadmap
 
-**Baseline:** SRS 1.0
+**Baseline:** SRS 1.1
 **Current phase:** Phase 0 complete; Phase 1 next
 **Planning model:** exit-gate driven, not date-driven
 
@@ -11,11 +11,11 @@ The roadmap sequences myCloset so that each phase produces a testable product in
 ## 2. Sequencing principles
 
 1. Improve wardrobe input quality before spending heavily on recommendation intelligence.
-2. Build identity and private-data authorization before real social features.
-3. Build reporting, blocking, moderation, and deletion with social publishing, not afterward.
-4. Keep a useful local/degraded product throughout backend introduction.
+2. Keep core behavior, intelligence, photos, and user data on-device.
+3. Introduce no mandatory recurring service charge beyond Apple Developer Program membership.
+4. Treat identity, cloud sync, and social features as unfunded P2 ideas, not release dependencies.
 5. Treat App Store readiness as an operational phase, not a final metadata task.
-6. Use measured user outcomes to justify Phase 7 complexity.
+6. Use friend/beta feedback to justify any later complexity or cost.
 
 ## 3. Phase overview
 
@@ -23,11 +23,11 @@ The roadmap sequences myCloset so that each phase produces a testable product in
 |---:|---|---|---|---|
 | 0 | Local Prototype and Foundation | Validate the wardrobe-to-outfit loop | Complete | SRS baseline |
 | 1 | Capture and Wardrobe Quality | Produce reliable isolated garment records | Next | Phase 0 |
-| 2 | Cloud Identity and Private Data | Secure accounts, sync, deletion, private media | Planned | Phase 1 data model |
-| 3 | Recommendation Quality | Reliable personalization and explainability | Planned | Phase 2 event/data foundation |
-| 4 | Social and Safety | Safe profile/follow/post experience | Planned | Phase 2 identity/media; Phase 3 snapshots |
-| 5 | Trips and Offline | Multi-outfit travel planning and sync | Planned | Phase 2 sync; Phase 3 generation |
-| 6 | Beta and App Store Release | Operable, compliant public release | Planned | Phases 1–5 P0 scope |
+| 2 | Cloud Identity and Private Data | Optional cloud/account architecture | **Deferred / unfunded** | Explicit recurring-cost approval |
+| 3 | Recommendation Quality | Better local personalization and explainability | Planned | Phase 1 wardrobe quality |
+| 4 | Social and Safety | Optional safe profile/follow/post experience | **Deferred / unfunded** | Phase 2 plus operations budget |
+| 5 | Local Trips and Offline | Multi-outfit travel planning stored on-device | Planned | Phase 3 generation |
+| 6 | Beta and App Store Release | Compliant zero-backend public release | Planned | Phases 1, 3, and approved local scope |
 | 7 | Scale and Product Evolution | Measured expansion without weakening trust | Future | Production evidence |
 
 ## 4. Cross-phase quality gates
@@ -48,15 +48,11 @@ Every phase must provide:
 ```mermaid
 flowchart LR
     P0["0 Local prototype"] --> P1["1 Capture quality"]
-    P1 --> P2["2 Identity + private cloud"]
-    P2 --> P3["3 Recommendation quality"]
-    P2 --> P4["4 Social + safety"]
-    P3 --> P4
-    P2 --> P5["5 Trips + offline"]
+    P1 --> P3["3 Local recommendation quality"]
     P3 --> P5
-    P4 --> P6["6 Beta + App Store"]
     P5 --> P6
     P6 --> P7["7 Scale + evolution"]
+    P2["2 Cloud identity (deferred)"] -.-> P4["4 Social + safety (deferred)"]
 ```
 
 ## 6. Phase summaries
@@ -75,33 +71,33 @@ Exit gate: supported garment categories meet agreed segmentation/color accuracy 
 
 ### Phase 2 — Cloud Identity and Private Data
 
-Deliver Sign in with Apple/Google, identity linking, server-side authorization, private object storage, sync, export/deletion, session controls, auditability, and a secure local-to-cloud migration.
+This phase is deferred and unfunded. It is not required for App Store release. It may be reconsidered only if the product owner explicitly accepts recurring infrastructure, security, privacy, support, and migration costs.
 
-Exit gate: multi-account isolation and deletion pass adversarial tests; no social capability is enabled yet.
+Exit gate if reactivated: multi-account isolation and deletion pass adversarial tests; no social capability is enabled yet.
 
 ### Phase 3 — Recommendation Quality
 
-Deliver versioned deterministic rules, richer weather/occasion inputs, explicit feedback, preference controls, reproducible results, confidence/explanations, provider fallbacks, and measured recommendation quality.
+Deliver versioned on-device deterministic rules, richer weather/occasion inputs, explicit local feedback, preference controls, reproducible results, confidence/explanations, and provider-independent fallbacks.
 
 Exit gate: locks/ownership/availability/structure remain invariant and beta users meet an approved acceptance-rate target.
 
 ### Phase 4 — Social and Safety
 
-Deliver searchable profiles, following, detached outfit posts, reverse-chronological feed, reporting, blocking, moderation, enforcement audit, community guidelines, deletion propagation, and abuse controls. Likes/comments remain excluded.
+This phase is deferred and unfunded. Social publishing remains excluded because it requires accounts, hosted media, reporting, blocking, moderation, deletion operations, and ongoing support. Likes/comments remain excluded in any future design.
 
 Exit gate: trust-and-safety response operations exist and public content cannot reveal live closet/trip data.
 
 ### Phase 5 — Trips and Offline
 
-Deliver private trips, destination/date context, multiple generated outfits, item reuse, unique packing lists, availability conflicts, offline cached access, queued mutations, and synchronization conflict handling.
+Deliver private local trips, destination/date context, multiple generated outfits, item reuse, unique packing lists, availability conflicts, and offline persistence without accounts or synchronization.
 
-Exit gate: trip plans survive network loss and cross-device conflict tests without duplicate or lost state.
+Exit gate: trip plans survive network loss and app relaunch without duplicate or lost state.
 
 ### Phase 6 — Beta and App Store Release
 
-Deliver internal/external TestFlight, release security/privacy/accessibility audits, performance/reliability evidence, operational dashboards/runbooks, support/moderation readiness, store assets, legal documents, signing, reviewer flow, and staged production rollout.
+Deliver internal/external TestFlight, local-data security/privacy/accessibility audits, performance/reliability evidence, support readiness, store assets, legal documents, signing, reviewer flow, and staged rollout with no production backend.
 
-Exit gate: every SRS P0 release gate is evidenced or formally waived by an accountable owner.
+Exit gate: every applicable local-only SRS P0 release gate is evidenced or formally waived, and the cost review confirms no mandatory recurring service beyond Apple Developer Program membership.
 
 ### Phase 7 — Scale and Product Evolution
 

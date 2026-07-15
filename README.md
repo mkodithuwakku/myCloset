@@ -8,7 +8,7 @@
 
 myCloset is a native SwiftUI iPhone application that turns a private wardrobe into practical outfit recommendations. Users can add clothing, confirm detected colors and metadata, generate outfits for an occasion and formality level, lock pieces they want to wear, reroll the remaining pieces, and retain saved or worn outfit history.
 
-> **Project status:** Phase 0 local functional prototype is complete. The app is usable without a backend, but it is not an App Store release candidate. Authentication, cloud sync, real social posting, moderation, trip packing, and production operations are intentionally deferred to documented phases.
+> **Project status:** Phase 0 local functional prototype is complete. The approved App Store path remains account-free and local-only: no production backend, hosted media, cloud AI, or social feed. Capture quality, local trips, accessibility, release assets, and App Store qualification remain to be completed.
 
 ![myCloset Home prototype](docs/assets/prototype-home.png)
 
@@ -18,9 +18,9 @@ Choosing an outfit is a constraint problem: the pieces must belong to the user, 
 
 The long-term product is designed around three principles:
 
-1. **Private by default.** A closet is never exposed merely because a user posts an outfit.
+1. **Private by default.** Closet, profile, history, trip, and image data stay in the app container.
 2. **Explainable recommendations.** Hard rules remain deterministic; ranking and future AI assistance cannot bypass ownership, privacy, or outfit validity.
-3. **Honest product boundaries.** Prototype-only and unavailable capabilities are labelled rather than simulated with fake network behavior.
+3. **Zero-backend operation.** Core functionality runs on-device and introduces no mandatory recurring service cost beyond Apple Developer Program membership.
 
 ## Current capabilities
 
@@ -33,9 +33,8 @@ The long-term product is designed around three principles:
 | Weather | Optional approximate current location, manual city lookup, Open-Meteo conditions, or date-derived season fallback |
 | History | Separate saved and worn outfit collections using immutable snapshots |
 | Profile | Local display name, handle, biography, and profile image editing |
-| Following | A deliberate preview explaining the safety/backend requirements; no fake social service |
 | Persistence | Local JSON application-support storage that survives relaunches |
-| Tests | 37 unit tests and 3 end-to-end UI smoke tests |
+| Tests | 37 unit tests and 2 end-to-end UI smoke tests |
 
 The authoritative implementation boundary is maintained in [Prototype Status](PROTOTYPE_STATUS.md).
 
@@ -58,11 +57,11 @@ The authoritative implementation boundary is maintained in [Prototype Status](PR
 
 ### Seed a test closet from laptop images
 
-1. Put up to 50 garment images in a folder and boot the iPhone Simulator.
-2. Add the folder to the simulator's Photos library:
+1. Put up to 50 garment images in the repository's `TestClosetImages/` directory and boot the iPhone Simulator. These local images are ignored by Git.
+2. From the repository root, load the folder into the simulator's Photos library:
 
 ```sh
-xcrun simctl addmedia booted ~/Desktop/test-closet/*
+./scripts/load_test_closet_images.sh
 ```
 
 3. In the app, open **Closet**, tap **Import**, and multi-select the images. The app suggests names, clothing types, dominant/accent colors, seasons, and formalities, then saves the batch locally. Photos imports do not expose original filenames consistently, so the app uses on-device image classification and may ask you to review uncertain types. Tap any imported piece to correct its details.
@@ -107,12 +106,12 @@ flowchart LR
     Store --> Disk["Local Codable persistence"]
     UI --> Images["ImageUtilities + ClothingTypeDetector"]
     Weather --> Location["Core Location / Geocoder"]
-    Weather --> Forecast["Open-Meteo"]
+    Weather --> Forecast["No-charge live weather or season fallback"]
     Engine --> Rules["Structure + availability + locks"]
     Engine --> Score["Season + formality + colors + favorites"]
 ```
 
-The current build is deliberately local-first. Production service boundaries, data ownership rules, social snapshot isolation, and the migration path are documented in [Architecture](docs/ARCHITECTURE.md).
+The current build and approved release are deliberately local-only. Persistence evolution, data boundaries, and the zero-backend guardrails are documented in [Architecture](docs/ARCHITECTURE.md) and [ADR-0003](docs/decisions/0003-zero-backend-app-store-release.md).
 
 ## Repository structure
 
@@ -142,11 +141,11 @@ The current build is deliberately local-first. Production service boundaries, da
 |---:|---|---|
 | 0 | Local functional prototype and engineering foundation | **Complete** |
 | 1 | Production-quality garment capture and wardrobe data | Next |
-| 2 | Identity, secure backend, sync, and private media | Planned |
-| 3 | Recommendation quality, feedback, weather resilience, and explainability | Planned |
-| 4 | Social profiles, following, posting, reporting, blocking, and moderation | Planned |
-| 5 | Trip outfits, packing, availability conflicts, and offline synchronization | Planned |
-| 6 | TestFlight, privacy/security hardening, operations, and App Store release | Planned |
+| 2 | Identity, backend, sync, and hosted media | **Deferred / unfunded** |
+| 3 | Local recommendation quality, feedback, weather resilience, and explainability | Planned |
+| 4 | Social profiles, following, posting, and moderation | **Deferred / unfunded** |
+| 5 | Local trip outfits, packing, and availability conflicts | Planned |
+| 6 | TestFlight, privacy/security hardening, and zero-backend App Store release | Planned |
 | 7 | Scale, localization, advanced personalization, and measured evolution | Future |
 
 Read the [Master Roadmap](docs/ROADMAP.md) and the linked phase documents for entry criteria, workstreams, test obligations, exit gates, risks, and deliverables.
@@ -184,13 +183,13 @@ CI verifies that required documents and phase files remain present. Reviewers en
 
 ## Contributing
 
-Start with [CONTRIBUTING.md](CONTRIBUTING.md). Small, reviewable branches with tests and documentation are preferred. Do not add real social publishing, cloud media, or authentication without the privacy, authorization, deletion, reporting, and moderation work defined in the applicable phase.
+Start with [CONTRIBUTING.md](CONTRIBUTING.md). Small, reviewable branches with tests and documentation are preferred. Do not add authentication, cloud storage/AI, paid APIs, or social publishing without an explicit product-owner cost decision, SRS revision, and ADR.
 
 ## Privacy and safety
 
 The current prototype stores wardrobe and profile content locally in the app container. Location is optional and used only for an explicit weather request. The app removes the need for weather access by supporting a date-derived season fallback.
 
-The production requirements are stricter: private closets, detached public outfit snapshots, server-side authorization, token revocation, account deletion, reporting, blocking, moderation, audited operator access, and no generalized model training on private content without separate consent. See the [SRS](SRS.md) and [Security Policy](SECURITY.md).
+The approved release keeps private content in the iOS app container and performs clothing/outfit intelligence on-device. It has no account, cloud recovery, public posting, or developer-operated media service. See the [SRS](SRS.md) and [Security Policy](SECURITY.md).
 
 ## License
 

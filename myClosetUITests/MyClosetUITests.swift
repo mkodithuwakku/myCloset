@@ -40,13 +40,4 @@ final class MyClosetUITests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Lock'")).firstMatch.exists)
     }
 
-    func testFollowingExplainsSafetyBoundary() {
-        app.launchArguments = ["-resetPrototypeData", "-loadPrototypeSamples"]
-        app.launch()
-
-        app.tabBars.buttons["Following"].tap()
-
-        XCTAssertTrue(app.staticTexts["Outfit inspiration is next"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Likes and comments are intentionally not part of the product scope."].exists)
-    }
 }

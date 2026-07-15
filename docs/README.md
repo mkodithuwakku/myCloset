@@ -23,9 +23,9 @@ This directory is the maintained engineering and delivery knowledge base for myC
 |---:|---|---|
 | 0 | [Local Prototype and Foundation](phases/PHASE_0_LOCAL_PROTOTYPE.md) | Complete |
 | 1 | [Capture and Wardrobe Quality](phases/PHASE_1_CAPTURE_WARDROBE.md) | Next |
-| 2 | [Cloud Identity and Private Data](phases/PHASE_2_CLOUD_IDENTITY.md) | Planned |
+| 2 | [Cloud Identity and Private Data](phases/PHASE_2_CLOUD_IDENTITY.md) | Deferred / unfunded |
 | 3 | [Recommendation Quality](phases/PHASE_3_RECOMMENDATIONS.md) | Planned |
-| 4 | [Social and Safety](phases/PHASE_4_SOCIAL_SAFETY.md) | Planned |
+| 4 | [Social and Safety](phases/PHASE_4_SOCIAL_SAFETY.md) | Deferred / unfunded |
 | 5 | [Trips and Offline](phases/PHASE_5_TRIPS_OFFLINE.md) | Planned |
 | 6 | [Beta and App Store Release](phases/PHASE_6_BETA_RELEASE.md) | Planned |
 | 7 | [Scale and Product Evolution](phases/PHASE_7_SCALE_EVOLUTION.md) | Future |
@@ -36,6 +36,7 @@ This directory is the maintained engineering and delivery knowledge base for myC
 |---|---|
 | [ADR-0001](decisions/0001-local-first-prototype.md) | Start with a local-first functional prototype |
 | [ADR-0002](decisions/0002-hybrid-recommendation-engine.md) | Keep deterministic constraints around any intelligent ranking |
+| [ADR-0003](decisions/0003-zero-backend-app-store-release.md) | Ship the first App Store release without a backend or recurring runtime service |
 
 ## Documentation quality rules
 

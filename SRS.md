@@ -2,7 +2,7 @@
 
 > **Working title:** myCloset (provisional; trademark and App Store name availability have not been confirmed)
 > **Document type:** Software Requirements Specification (SRS)
-> **Document version:** 1.0
+> **Document version:** 1.1
 > **Status:** Product baseline
 > **Target release:** Public iPhone App Store release
 > **Prepared:** July 14, 2026
@@ -18,6 +18,7 @@
 | Version | Date | Status | Description |
 |---|---:|---|---|
 | 1.0 | 2026-07-14 | Product baseline | Initial enterprise-level requirements based on confirmed product decisions |
+| 1.1 | 2026-07-14 | Approved release amendment | First App Store release changed to local-only operation with no recurring service cost beyond the Apple Developer Program |
 
 ### 1.2 Approval Roles
 
@@ -43,9 +44,9 @@ The words **shall**, **should**, and **may** have specific meanings in this docu
 
 | Priority | Meaning |
 |---|---|
-| P0 | Required for the first public App Store release |
-| P1 | Planned after launch; architecture must not prevent it |
-| P2 | Future opportunity outside the committed release scope |
+| P0 | Required for the first public App Store release, subject to the authoritative release-applicability matrix in Section 3.5 |
+| P1 | Planned local enhancement after launch; it must not require a paid backend |
+| P2 | Optional future opportunity requiring a new product, privacy, safety, and recurring-cost decision |
 
 ---
 
@@ -55,7 +56,7 @@ The words **shall**, **should**, and **may** have specific meanings in this docu
 
 This SRS defines the functional, data, interface, security, privacy, operational, and quality requirements for myCloset, a native Swift iPhone application that digitizes a user's wardrobe and produces practical outfit recommendations.
 
-The specification is intended to serve as a shared implementation contract for product management, design, iOS engineering, backend engineering, machine-learning engineering, quality assurance, privacy, security, operations, and App Store release teams.
+The specification is intended to serve as a shared implementation contract for product management, design, iOS engineering, quality assurance, privacy, security, and App Store release work. Backend, cloud, and social requirements are retained only as optional future scope and are not release dependencies.
 
 ### 2.2 Product Vision
 
@@ -71,19 +72,19 @@ The product shall:
 2. Recommend only combinations made from clothing the user has uploaded.
 3. Adapt recommendations to weather, season, occasion, and formality.
 4. Allow users to anchor an outfit around one or more locked pieces.
-5. Learn from explicit user feedback without making opaque or unsafe decisions.
-6. Preserve the privacy of each user's full closet.
-7. Allow users to document and share outfits they actually wore.
-8. Help users save outfit ideas and plan clothing for trips.
-9. Meet the quality, privacy, safety, and operational expectations of a public App Store application.
+5. Learn from explicit local feedback without making opaque or unsafe decisions.
+6. Keep each user's closet and photos on that device in the first release.
+7. Allow users to document outfits they wore in private local history.
+8. Help users save outfit ideas and plan clothing for trips locally.
+9. Meet the quality, privacy, accessibility, and operational expectations of a public App Store application without a production backend.
 
 ### 2.4 Success Measures
 
-The product team shall define numeric release targets before beta. The system shall collect privacy-conscious analytics sufficient to measure:
+The product team shall define numeric release targets before beta. The first release shall not add a paid analytics service or a third-party analytics SDK. Evaluation shall use automated tests, structured beta feedback, App Store Connect metrics available through the Apple Developer Program, and locally observable behavior sufficient to assess:
 
 - onboarding completion rate;
 - percentage of users who add at least five closet items;
-- time from account creation to first generated outfit;
+- time from first launch to first generated outfit;
 - recommendation acceptance, save, wear, reroll, and rejection rates;
 - daily outfit engagement;
 - seven-day and thirty-day retention;
@@ -91,11 +92,9 @@ The product team shall define numeric release targets before beta. The system sh
 - weather retrieval success and fallback frequency;
 - crash-free sessions;
 - outfit generation latency;
-- post creation and follow conversion rates;
 - trip-plan completion rate;
-- report, block, and moderation response volumes.
 
-Analytics shall not expose private closet contents to other users or use private photos for advertising.
+No measurement shall upload private closet contents or photos, and no measurement shall introduce advertising or a recurring paid service.
 
 ---
 
@@ -106,9 +105,8 @@ Analytics shall not expose private closet contents to other users or use private
 The first public App Store release shall include:
 
 - native iPhone application built with Swift and SwiftUI;
-- Sign in with Apple and Google authentication;
-- onboarding and profile editing, including profile pictures;
-- private digital closet management;
+- account-free onboarding and local profile editing, including a profile picture;
+- private on-device digital closet management;
 - guided clothing photography with category-specific framing overlays;
 - automatic garment cropping or background removal;
 - automatic dominant and accent color detection;
@@ -116,17 +114,17 @@ The first public App Store release shall include:
 - weather-aware Outfit of the Day on the Home tab;
 - occasion- and formality-aware outfit generation;
 - piece locking, manual replacement, rerolling, and session exclusions;
-- recommendation feedback and preference learning;
-- saved outfits and a history of outfits the user confirmed as worn;
-- social profiles, follow/unfollow, follower feed, and outfit posting;
-- trip outfit planning and packing checklist support;
-- user reporting, blocking, content moderation, and administrator tooling;
-- account privacy controls, data export, and in-app account deletion;
-- production monitoring, analytics, backup, support, and incident readiness.
+- local recommendation feedback and preference learning;
+- local saved outfits and a history of outfits the user confirmed as worn;
+- local trip outfit planning and packing checklist support;
+- local reset/deletion controls, help, privacy information, and support links;
+- on-device outfit generation, image analysis, and persistence;
+- a four-tab navigation model: Home, Closet, Generate, and Profile;
+- release testing, accessibility review, App Store metadata, and support readiness that do not require a paid runtime service.
 
 ### 3.2 Post-Launch Scope (P1)
 
-The following capabilities are recommended but are not required for the first public release:
+The following local capabilities are recommended but are not required for the first public release:
 
 - iPad-optimized interface;
 - Apple Watch companion experience;
@@ -136,15 +134,22 @@ The following capabilities are recommended but are not required for the first pu
 - shared or collaborative trip packing;
 - advanced travel weather alerts;
 - multilingual localization beyond the launch language;
-- optional private-account follow approval workflow;
 - on-device recommendation personalization models;
 - import from supported retailer receipts or product catalogs.
+
+Authentication, cloud synchronization, social profiles, following, public posting, moderation, and remote administration are not committed post-launch work. They may be reconsidered only after the product owner explicitly approves recurring infrastructure and operational costs.
 
 ### 3.3 Explicitly Out of Scope
 
 The following are not included in this SRS:
 
 - Android, web, macOS, or visionOS clients;
+- a production backend, hosted database, hosted media storage, or cross-device synchronization;
+- Sign in with Apple, Google authentication, or any required user account;
+- following, public profiles, feeds, outfit posting, or other user-generated-content distribution;
+- reporting, blocking, moderation consoles, or remote administration while social features remain absent;
+- cloud-hosted AI or per-image/per-generation model APIs;
+- any runtime service that creates a mandatory recurring charge beyond the Apple Developer Program;
 - likes, reactions, comments, direct messages, or public popularity scores;
 - public visibility of a user's closet or individual closet inventory;
 - advertising, subscriptions, paid tiers, or in-app purchases;
@@ -159,14 +164,27 @@ The following are not included in this SRS:
 
 This SRS uses the following confirmed or necessary assumptions:
 
-1. Profiles and outfit posts are visible to authenticated users, subject to blocking and moderation. Closets remain private.
-2. Following is one-way and does not require approval in the first release.
-3. Users may delete their own posts at any time.
-4. A post contains a user-selected photo and a historical snapshot of the associated outfit.
-5. The system uses a hybrid recommendation approach: deterministic constraints and scoring form the reliable core; cloud intelligence may assist ranking, image understanding, and explanations.
-6. When exact weather is unavailable, the system degrades to city weather, then date-derived season, then neutral recommendations.
+1. The first release has no account, public profile, social graph, feed, or public post.
+2. Closet, profile, history, trip, preference, and image data are stored only in the app's local container.
+3. Uninstalling the app may remove local data; the product shall communicate that no cloud backup or cross-device recovery is provided.
+4. Deterministic constraints and scoring form the recommendation core; optional intelligence shall run on-device and remain subordinate to validation.
+5. When exact weather is unavailable, the system degrades to city weather, then date-derived season, then neutral recommendations.
+6. Weather shall use an allowance included with the Apple Developer Program, a provider whose terms permit the free no-advertising app, or season-only behavior; it shall never require a paid runtime subscription.
 7. The launch language is English, while the implementation remains localization-ready.
 8. The product name remains provisional until legal and store-name checks are completed.
+
+### 3.5 Authoritative Release Applicability
+
+This matrix overrides conflicting row-level priorities in the original full-product requirement catalogue. Requirements outside the first-release profile remain useful design material but are not App Store release gates.
+
+| Requirement group | First-release applicability |
+|---|---|
+| ITEM, CLO, WEA, HOME, GEN, COMP, REC, FB, HIST, A11Y, COMPAT, STORE | Included where behavior is local/on-device |
+| ONB, PROF, TRIP, SET, PRIV, SEC, PERF, REL, OFF, ENG | Included only for the local, account-free architecture |
+| AUTH, SOC, POST, NOTIF, SAFE, ADM, backend/cloud portions of ARCH/OBS/SCALE | Excluded; P2 and unfunded |
+| Cloud AI, hosted media, remote configuration, cross-device sync | Excluded; P2 and unfunded |
+
+Any change that adds a recurring provider charge, backend, authentication, public content, or cloud processing requires an SRS revision and explicit product-owner approval before implementation.
 
 ---
 
@@ -180,31 +198,27 @@ This SRS uses the following confirmed or necessary assumptions:
 | Product Owner | Product-market fit, scope, adoption, and retention |
 | Design team | Consistent, accessible, photography-forward experience |
 | Engineering team | Feasible, secure, maintainable architecture |
-| Operations team | Reliability, monitoring, support, and incident response |
-| Trust and Safety | Reporting, blocking, content review, and policy enforcement |
-| App Store review | Guideline compliance, privacy disclosures, account deletion, and safe UGC |
+| Quality and privacy reviewers | Release evidence, accessibility, local-data handling, and truthful disclosures |
+| Support owner | User-facing help, issue response, and release communication without access to private app data |
+| App Store review | Guideline compliance, privacy disclosures, local-data deletion, and accurate store metadata |
 
 ### 4.2 User Classes
 
-#### Registered User
+#### Local User
 
-A person authenticated with Apple or Google who can maintain a closet, generate outfits, follow users, create outfit posts, plan trips, and control their data.
+A person using the app without an account who can maintain a private closet, generate outfits, save or record worn outfits, plan trips, edit a local profile, and clear their local data.
 
 #### New or Low-Inventory User
 
-A registered user who has not uploaded enough compatible pieces to form a complete outfit. The app must provide helpful next steps rather than a broken or misleading recommendation.
+A local user who has not uploaded enough compatible pieces to form a complete outfit. The app must provide helpful next steps rather than a broken or misleading recommendation.
 
 #### User Without Location Permission
 
-A registered user who has denied or disabled location access. The app must support city entry and season-only fallback behavior.
+A local user who has denied or disabled location access. The app must support city entry and season-only fallback behavior.
 
-#### Moderator or Support Operator
+#### Support Contact
 
-An authorized operator who reviews reports, removes policy-violating posts or profile content, suspends accounts, and accesses restricted audit information.
-
-#### System Administrator
-
-An authorized operator responsible for service configuration, feature flags, reliability, security, and integration health. Administrative access must not imply routine access to private closet data.
+A person responsible for answering product questions and receiving issue reports. Because no backend exists, support cannot inspect, retrieve, or repair a user's private closet or local history.
 
 ---
 
@@ -217,8 +231,7 @@ The application shall use a persistent, accessible tab-based navigation model wi
 1. **Home** — Outfit of the Day, weather context, and quick actions.
 2. **Closet** — private inventory, filters, item creation, and item editing.
 3. **Generate** — occasion-based outfit generation, locking, rerolling, and saving.
-4. **Following** — chronological or relevance-assisted feed of followed users' outfit posts.
-5. **Profile** — user's public-facing posts, profile editing, worn outfits, saved outfits, trips, settings, privacy, and account management.
+4. **Profile** — local profile editing, worn outfits, saved outfits, trips, settings, privacy information, and local data controls.
 
 Trips and outfit history may be presented as secondary destinations within Profile, provided they remain reachable within two deliberate navigation actions.
 
@@ -241,22 +254,21 @@ The interface shall:
 
 The application shall support these end-to-end journeys:
 
-1. Sign in, create a profile, configure location, and add the first clothing item.
+1. Create an optional local profile, configure weather preference, and add the first clothing item without signing in.
 2. Photograph a garment, confirm extracted colors and metadata, and save it.
 3. Open Home and receive a weather-aware Outfit of the Day.
 4. Generate an outfit for a selected occasion and formality level.
 5. Lock a desired shirt and generate a compatible remaining outfit.
 6. Replace or reroll one unavailable piece without discarding the remaining outfit.
 7. Save a generated outfit for later or confirm it as worn.
-8. Post a worn outfit with a personal photo and outfit snapshot.
-9. Follow another user and see that user's new outfit posts.
-10. Create a trip, generate multiple trip outfits, and manage a packing checklist.
-11. Report or block another user.
-12. Export data or permanently delete the account.
+8. Create a trip, generate multiple trip outfits, and manage a packing checklist locally.
+9. Clear local app data after explicit confirmation.
 
 ---
 
 ## 6. Functional Requirements
+
+The Section 3.5 release-applicability matrix is normative. In particular, AUTH, SOC, POST, NOTIF, SAFE, ADM, backend, cloud-sync, and cloud-AI rows below are retained as P2 reference requirements even where their original row priority still reads P0; they are not requirements or gates for the approved local-only App Store release.
 
 ### 6.1 Authentication and Account Lifecycle
 
@@ -635,11 +647,24 @@ The interface and recommendation explanation shall identify which level was used
 
 All functionality defined as P0 shall be available without payment. No dark patterns, artificial feature locks, advertising profiles, subscription prompts, or paid ranking shall be introduced without a new approved product and privacy specification.
 
+### 7.8 Zero-Backend Cost Rule
+
+| ID | Priority | Requirement |
+|---|---|---|
+| COST-001 | P0 | The first public release shall operate without a production backend or paid runtime service. |
+| COST-002 | P0 | Mandatory recurring cash cost shall be limited to the Apple Developer Program membership. |
+| COST-003 | P0 | Outfit generation, clothing-type detection, color analysis, feedback processing, and persistence shall execute on-device. |
+| COST-004 | P0 | The app shall remain useful using date-derived season when weather quota, permission, or connectivity is unavailable. |
+| COST-005 | P0 | Private user photos and wardrobe data shall not be uploaded to a developer-operated service. |
+| COST-006 | P0 | A feature that introduces authentication, hosted storage, cloud AI, public content, or another recurring charge shall require a new approved SRS revision before implementation. |
+
 ---
 
 ## 8. Data Requirements
 
 ### 8.1 Core Entities
+
+For the first release, only local `UserProfile`, `UserPreference`, `ClosetItem`, garment image, outfit, snapshot, feedback, worn history, trip, trip outfit, and packing entities apply. Account, social, post, report, moderation, consent-service, and centralized audit entities are P2 reference designs.
 
 | Entity | Purpose | Representative fields |
 |---|---|---|
@@ -665,6 +690,8 @@ All functionality defined as P0 shall be available without payment. No dark patt
 | AuditEvent | Security/administration trace | actor, action, target type, result, timestamp |
 
 ### 8.2 Data Ownership and Isolation
+
+For the first release, all applicable data classes are owner-local in the iOS app container and are not served to another user or developer-operated backend. The service visibility rows below apply only to a future approved cloud/social architecture.
 
 | Data class | Default visibility |
 |---|---|
@@ -716,75 +743,47 @@ Exports shall use commonly readable formats such as JSON and original or standar
 The application may integrate with:
 
 - SwiftUI for interface construction;
-- AuthenticationServices for Sign in with Apple;
 - Core Location for approximate foreground location;
 - AVFoundation or system camera interfaces for guided capture;
 - PhotosUI for privacy-preserving photo selection;
 - Vision/Core ML and related Apple frameworks for on-device segmentation or analysis;
-- UserNotifications for optional notifications;
-- Keychain Services for secret storage;
-- BackgroundTasks only for justified, bounded maintenance that complies with iOS policies.
+- WeatherKit when live weather is enabled within the Apple Developer Program allowance.
 
 ### 9.2 Google Authentication
 
-Google sign-in shall use current supported OAuth/OpenID Connect practices, including state and nonce validation, secure redirect handling, and backend token verification. Google credentials shall not be treated as authorization to access unrelated Google data.
+Google authentication is P2 and is not included in the approved release. If reconsidered, it shall require a backend/security design and a new recurring-cost decision before implementation.
 
 ### 9.3 Weather Provider
 
-The selected provider shall support current conditions and forecasts for the launch regions, documented rate limits, attribution requirements, reasonable reliability, and privacy-compatible location queries. Provider replacement shall be isolated behind an internal weather service interface.
+The release should use WeatherKit within the allowance included with Apple Developer Program membership. A no-charge provider may be used only while its licence explicitly permits this free, no-advertising application. Date-derived season and neutral generation shall remain available so a quota or provider failure never creates a mandatory paid subscription.
 
 ### 9.4 Image Processing and Cloud Intelligence
 
-On-device processing should be preferred when quality is sufficient. Cloud processing may be used for segmentation, color analysis, structured free-text interpretation, ranking, or explanations subject to these requirements:
-
-- transmit only data needed for the specific request;
-- do not use user content to train third-party models unless the user gives separate informed consent;
-- contractually prevent provider reuse where possible;
-- use region, retention, and subprocessor settings consistent with the Privacy Policy;
-- validate all model outputs through application rules;
-- provide a deterministic fallback for core outfit generation;
-- document model limitations and operational costs even though the app is free.
+Garment analysis, color extraction, segmentation, ranking, and explanations shall run on-device for the first release. Cloud AI is P2, shall not be a hidden dependency or fallback, and requires a new approved SRS revision before any user content is transmitted.
 
 ### 9.5 Media Storage and Delivery
 
-Private closet media shall use authorization-checked, short-lived access rather than permanent public URLs. Public post images may use a CDN but shall be unguessable, revocable, moderated, and detached from private originals.
+Closet and profile media shall remain inside the iOS app container in the first release. No developer-operated object storage, CDN, or public media URL is required. Future hosted-media requirements are P2.
 
 ### 9.6 Backend API
 
-The iOS app shall communicate with a versioned backend API over HTTPS. The API shall provide resources or equivalent operations for:
-
-- sessions and identity links;
-- profiles, search, follows, and blocks;
-- closet items and secure media upload;
-- weather context;
-- outfit generation, feedback, saved/worn history;
-- posts and feeds;
-- trips and packing state;
-- reports and account controls;
-- data export and deletion.
-
-The API contract shall be machine-readable, version-controlled, and used for client/server compatibility tests.
+The first release shall not communicate with a myCloset backend API. All core product operations shall be implemented in the native client. Any future API is P2 and requires explicit recurring-cost, privacy, security, migration, and operations approval.
 
 ---
 
 ## 10. Reference System Architecture
 
-This section defines an acceptable enterprise baseline without requiring a specific cloud vendor.
+The first-release architecture is a self-contained native iPhone application. The earlier distributed architecture remains optional P2 reference material and is not a release dependency.
 
 ### 10.1 Logical Components
 
-1. **Native iOS client** — SwiftUI presentation, local cache, capture guidance, secure session storage, and limited on-device analysis.
-2. **API gateway/backend-for-frontend** — authentication enforcement, rate limiting, request validation, and mobile-oriented aggregation.
-3. **Identity service** — Apple/Google identity verification, account linking, sessions, and account lifecycle.
-4. **Profile/social service** — profiles, search, follows, blocks, feed assembly, and posts.
-5. **Closet service** — private item metadata, availability, media authorization, and taxonomy.
-6. **Recommendation service** — constraint evaluation, candidate construction, scoring, explanations, feedback, and versioning.
-7. **Weather adapter** — provider isolation, caching, freshness, and fallback context.
-8. **Media pipeline** — secure upload, validation, malware checks, segmentation, color extraction, derivatives, and moderation scanning.
-9. **Trip service** — trip context, outfit assignments, reuse, conflict checking, and packing state.
-10. **Trust-and-safety console** — reports, moderation queues, enforcement, appeals, and audit logs.
-11. **Data platform** — transactional database, object storage, cache, queue, analytics events, and backups.
-12. **Observability platform** — logs, metrics, traces, alerts, dashboards, and release health.
+1. **Native iOS client** — SwiftUI presentation, local profile/closet/history/trip state, capture guidance, and on-device analysis.
+2. **Local persistence** — versioned Codable or equivalent local storage in the app container, with migration and corruption handling.
+3. **Outfit engine** — deterministic constraint evaluation, candidate construction, scoring, explanations, feedback, and versioning.
+4. **Image pipeline** — local decoding, validation, resizing, segmentation, color extraction, and editable results.
+5. **Weather adapter** — optional Apple-included/no-charge current conditions with date-derived season and neutral fallback.
+
+Identity, API, hosted storage, social, moderation, centralized analytics, and remote-administration components are P2 and deliberately absent.
 
 ### 10.2 Architectural Requirements
 
@@ -979,17 +978,17 @@ Targets apply under documented representative network and device conditions.
 |---|---|---|
 | STORE-001 | P0 | The final product name, subtitle, icon, screenshots, description, and keywords shall be reviewed for trademark, ownership, and App Store availability before submission. |
 | STORE-002 | P0 | The app shall comply with current Apple App Review Guidelines applicable at submission time. |
-| STORE-003 | P0 | Because third-party sign-in is offered, Sign in with Apple shall remain available and compliant with Apple's current requirements. |
-| STORE-004 | P0 | The application shall provide in-app account deletion and accurate deletion instructions. |
+| STORE-003 | P2 | If third-party sign-in is ever offered, Sign in with Apple shall remain available where required by Apple's current rules. |
+| STORE-004 | P0 | The application shall provide an in-app control to clear local user data and shall explain that no server account exists. |
 | STORE-005 | P0 | Camera, photo-library, notification, and location usage descriptions shall be specific, truthful, and aligned with actual behavior. |
 | STORE-006 | P0 | App Store privacy nutrition labels shall match production data collection and third-party SDK behavior. |
-| STORE-007 | P0 | The product shall provide a public Privacy Policy URL, support URL, Terms of Use, and Community Guidelines. |
-| STORE-008 | P0 | User-generated content controls shall include reporting, blocking, moderation response, and published contact information. |
+| STORE-007 | P0 | The product shall provide a public Privacy Policy URL, support URL, and Terms of Use using no-charge hosting where practical. |
+| STORE-008 | P2 | User-generated-content controls are required before any future social publishing is enabled. |
 | STORE-009 | P0 | The team shall possess rights or licenses for all fonts, icons, photography, datasets, SDKs, and other shipped content. |
 | STORE-010 | P0 | The app shall not imply affiliation with Airbnb or reproduce Airbnb's proprietary branding or trade dress. |
 | STORE-011 | P0 | Export-compliance, age-rating, content-rights, and regional availability declarations shall be completed accurately. |
-| STORE-012 | P0 | A reviewer account or approved review mode shall be provided if App Review cannot exercise important functionality using ordinary sign-in. |
-| STORE-013 | P0 | The app shall include a support and moderation process capable of responding after launch, not merely static policy pages. |
+| STORE-012 | P0 | App Review shall be able to exercise important functionality without a reviewer account because the release has no authentication. |
+| STORE-013 | P0 | The app shall provide a support contact capable of responding after launch; moderation operations are not required while the app distributes no user-generated content. |
 | STORE-014 | P0 | The release owner shall recheck the live App Review Guidelines and App Store Connect privacy requirements immediately before every submission because platform requirements may change after this SRS is approved. |
 
 ---
@@ -1002,15 +1001,12 @@ The delivery process shall include:
 
 - unit testing for rules, scoring, validation, transformations, and state management;
 - property or combinatorial testing for outfit completeness and lock constraints;
-- integration testing for authentication, database, media, weather, and notification providers;
-- API contract and backward-compatibility testing;
+- integration testing for local persistence, media processing, and optional weather behavior;
 - UI testing for critical iPhone journeys;
 - image-processing evaluation across garment types, backgrounds, lighting, patterns, and skin tones when people appear incidentally;
 - accessibility testing with VoiceOver, Dynamic Type, contrast tools, Reduce Motion, and non-color cues;
-- authorization and privacy isolation testing using multiple accounts;
 - security testing, dependency review, and penetration testing proportional to risk;
-- load, soak, queue-backlog, and provider-failure testing;
-- backup restoration and disaster-recovery exercises;
+- local data migration/corruption recovery and provider-failure testing;
 - TestFlight internal and external beta testing;
 - App Store submission rehearsal and legal/privacy review.
 
@@ -1018,7 +1014,7 @@ The delivery process shall include:
 
 #### AC-001: First Useful Outfit
 
-Given a new authenticated user with location permission, when the user adds enough seasonally appropriate items to form a complete outfit, then Home shall display a weather-aware Outfit of the Day made exclusively from those items.
+Given a first-time local user with location permission, when the user adds enough seasonally appropriate items to form a complete outfit, then Home shall display a weather-aware Outfit of the Day made exclusively from those items without requiring sign-in.
 
 #### AC-002: Location Fallback
 
@@ -1040,35 +1036,23 @@ Given an available shirt locked by the user, when the user chooses “bar/night 
 
 Given a generated outfit, when the user marks the footwear unavailable and rerolls that slot, then the remaining outfit shall stay unchanged, the unavailable footwear shall not be immediately repeated, and the replacement shall be validated against the complete outfit.
 
-#### AC-007: Private Closet, Visible Post
+#### AC-007: Historical Snapshot
 
-Given User A publishes a worn outfit and User B views User A's profile, then User B may see the post photo and outfit snapshot but may not browse User A's closet, trip details, availability, feedback, or private history.
+Given a user has a saved or worn outfit containing an item, when the live closet item is renamed or archived, then the historical record shall retain the item snapshot.
 
-#### AC-008: Follow Feed Without Engagement
-
-Given User B follows User A, when User A publishes a permitted outfit post, then it shall appear in User B's Following feed. No like, comment, reaction, or direct-message controls shall appear.
-
-#### AC-009: Block Enforcement
-
-Given User A blocks User B, then the follow relationship shall be removed in both directions and neither user shall see the other's profile or posts through ordinary search, feed, or follower surfaces.
-
-#### AC-010: Historical Snapshot
-
-Given a user has a worn outfit and public post containing an item, when the live closet item is renamed or archived, then the worn record and post shall retain the historical item snapshot.
-
-#### AC-011: Trip Packing
+#### AC-008: Trip Packing
 
 Given a trip with multiple saved outfits that reuse one pair of shoes, then the packing list shall show the shoes once, preserve both outfit assignments, and support one packed/unpacked state for that physical item.
 
-#### AC-012: Cloud Degradation
+#### AC-009: Offline and Weather Degradation
 
-Given cloud ranking or free-text intelligence is unavailable, when the closet and structured inputs permit a rules-based outfit, then the app shall return a deterministic recommendation and identify any reduced functionality.
+Given the device is offline or live weather is unavailable, when the closet and structured inputs permit a rules-based outfit, then the app shall return an on-device deterministic recommendation and identify the season or neutral context used.
 
-#### AC-013: Account Deletion
+#### AC-010: Local Data Deletion
 
-Given an authenticated user confirms account deletion, then the profile and posts shall promptly disappear from user-facing surfaces, sessions shall be revoked, and active-system personal data shall be deleted or irreversibly anonymized within the stated period.
+Given a user confirms clearing local data, then closet, profile, saved/worn history, preferences, and trips shall be removed from the app container without contacting a backend.
 
-#### AC-014: Accessibility
+#### AC-011: Accessibility
 
 Given a VoiceOver user at an accessibility Dynamic Type size, the user shall be able to add an item, inspect detected colors as text, lock a piece, generate an outfit, and save it without inaccessible unlabeled controls or blocked content.
 
@@ -1079,13 +1063,13 @@ The public release shall not proceed until:
 1. all P0 requirements are implemented or a formal approved deviation exists;
 2. all P0 acceptance scenarios pass in the release candidate environment;
 3. no open critical or high-severity security/privacy defect lacks approved mitigation;
-4. authorization tests confirm private closet and trip isolation;
-5. account deletion, report, block, and moderation flows pass end-to-end;
-6. crash-free, latency, and service reliability targets are met during beta or accepted with a corrective plan;
+4. tests confirm closet, profile, history, trip, and image data remain local to the app container;
+5. the clear-local-data flow passes end-to-end;
+6. crash-free, launch, generation, image-processing, and weather-fallback targets are met during beta or accepted with a corrective plan;
 7. accessibility review has no unresolved issue that blocks a core journey;
-8. backup restore and provider-failure behavior have been exercised;
+8. persistence migration/corruption handling and provider-failure behavior have been exercised;
 9. legal documents, privacy disclosures, usage strings, support operations, and store metadata are approved;
-10. production monitoring, alerts, runbooks, on-call ownership, and rollback controls are active.
+10. support ownership, release rollback instructions, and the zero-recurring-service-cost review are complete.
 
 ---
 

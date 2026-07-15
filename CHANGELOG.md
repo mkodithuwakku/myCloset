@@ -12,12 +12,16 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 
 - Added a root `AGENTS.md` durable Codex handoff covering current product boundaries, architecture, commands, testing expectations, documentation synchronization, and phase priorities.
 - Added bulk Photos and Files closet import for up to 50 images, with filename-first and on-device Vision clothing-type suggestions, automatic color/default metadata, duplicate-name suffixing, progress, and review feedback.
-- Added deterministic clothing-type and batch-persistence coverage, bringing the suite to 37 unit tests and 3 UI tests.
+- Added deterministic clothing-type and batch-persistence coverage; the current suite contains 37 unit tests and 2 UI tests.
+- Added a repository-local `TestClosetImages/` workflow and simulator loader script; test photos remain ignored by Git.
+- Added ADR-0003 and SRS 1.1 to establish a zero-backend, on-device App Store release with no mandatory recurring service cost beyond Apple Developer Program membership.
 
 ### Changed
 
 - Reworked Home into a minimal, whitespace-led experience with compact weather context, a composed garment-image outfit canvas, one primary worn action, and a secondary bookmark action.
 - Replaced the placeholder-name greeting with a natural “there” fallback until the user edits their profile.
+- Removed the backend-dependent Following placeholder from primary navigation; the app now has Home, Closet, Generate, and Profile tabs.
+- Deferred authentication, cloud sync, hosted media, cloud AI, and social operations unless a later explicitly funded product decision reactivates them.
 
 ### Planned
 

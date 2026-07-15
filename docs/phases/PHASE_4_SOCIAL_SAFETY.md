@@ -1,8 +1,10 @@
 # Phase 4 — Social Profiles, Following, Posting, and Safety
 
-**Status:** Planned
+**Status:** Deferred / unfunded — not an App Store release dependency
 **Primary SRS groups:** PROF, SOC, POST, SAFE, ADM, PRIV, STORE
 **Goal:** Enable outfit inspiration without exposing closets or shipping unsafe user-generated content operations.
+
+ADR-0003 excludes accounts, public profiles, following, posting, hosted media, and moderation from the approved release. This phase may start only after explicit recurring-cost and operational-ownership approval.
 
 ## Non-negotiable dependency
 

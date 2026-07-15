@@ -1,8 +1,10 @@
 # Phase 2 — Cloud Identity and Private Data
 
-**Status:** Planned
+**Status:** Deferred / unfunded — not an App Store release dependency
 **Primary SRS groups:** AUTH, CLO, DATA, ARCH, SEC, PRIV, OFF
 **Goal:** Add secure accounts and cross-device private data without weakening local usability.
+
+This phase may start only after an explicit product-owner decision to accept recurring backend and operational costs. ADR-0003 supersedes it for the approved first release.
 
 ## Entry criteria
 

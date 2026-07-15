@@ -6,10 +6,10 @@
 
 ## Entry criteria
 
-- Phase 2 identity, storage, event, and authorization foundations are stable.
+- Phase 1 wardrobe metadata quality and the local persistence model are stable.
 - Phase 1 wardrobe metadata quality is measurable.
 - Product approves recommendation quality metrics and feedback taxonomy.
-- Weather and optional model providers pass privacy/cost review.
+- Weather behavior passes the zero-recurring-cost review; optional ranking remains on-device.
 
 ## User outcomes
 
@@ -28,7 +28,7 @@
 3. Construct valid outfit candidates.
 4. Apply weather-safety and trip constraints.
 5. Score formality, occasion, season, weather comfort, colors, favorites, recency, variety, and feedback.
-6. Optionally use reviewed model ranking/explanation assistance.
+6. Optionally use reviewed on-device model ranking/explanation assistance.
 7. Revalidate the selected outfit deterministically.
 8. Store reason codes, rule/model version, and privacy-safe trace ID.
 
@@ -45,7 +45,7 @@
 - Accept/reject/save/worn/reroll/unavailable events.
 - Quick reason taxonomy from SRS.
 - User-editable preference signals.
-- Offline event queue with idempotency.
+- Local feedback persistence with migration coverage.
 - Offline evaluation corpus with expected invariants/relevance judgments.
 - Controlled beta experiment design without manipulative ranking.
 

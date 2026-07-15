@@ -2,14 +2,14 @@
 
 **Status:** Planned
 **Primary SRS groups:** SEC, PRIV, A11Y, PERF, REL, OBS, COMPAT, STORE
-**Goal:** Turn the complete P0 product into an operable, compliant public iPhone release.
+**Goal:** Turn the applicable local-only P0 product into a compliant public iPhone release with no backend operating bill.
 
 ## Entry criteria
 
 - Product owner confirms which SRS P0 features enter the release candidate.
-- Prior phase exit gates are evidenced.
+- Required local phase exit gates are evidenced; deferred cloud/social phases are not dependencies.
 - Final product name/brand ownership process is underway.
-- Production infrastructure, support, moderation, and incident owners are assigned.
+- App support, signing, privacy, and release owners are assigned.
 
 ## Release workstreams
 
@@ -21,56 +21,56 @@
 
 ### Security and privacy
 
-- Threat model, OWASP MASVS/ASVS assessment, penetration test.
+- Local-data threat model and mobile security assessment.
 - Privacy impact and AI risk assessment.
-- SDK/subprocessor inventory, retention, deletion, consent, export verification.
-- Secret/key rotation, production access review, audit evidence.
+- SDK/provider inventory, local retention/deletion, permission, and diagnostic-data verification.
+- Signing/entitlement review and proof that no private closet media is transmitted to a developer-operated service.
 
 ### Reliability and operations
 
-- SLO dashboards and alerts.
-- Backup restore and disaster recovery exercise.
-- Provider outage, queue backlog, cost/quota, and rollback runbooks.
-- On-call/support/moderation escalation and incident communications.
+- Crash and performance evidence available through Apple-provided tooling where practical.
+- Local persistence migration/corruption recovery exercise.
+- Weather outage/quota, release rollback, and support instructions.
+- Explicit audit confirming no mandatory recurring service cost beyond Apple Developer Program membership.
 
 ### App Store
 
 - Name/trademark/domain/store availability.
-- Privacy Policy, Terms, Community Guidelines, support/privacy-choice URLs.
+- Privacy Policy, Terms, and support/privacy-choice URLs on no-charge hosting where practical.
 - App Privacy disclosures and permission descriptions.
-- Sign in with Apple, account deletion/token revocation.
-- UGC reporting/blocking/moderation evidence.
+- Local clear-data behavior and disclosure that no account/cloud recovery exists.
 - Signing, bundle IDs, entitlements, export compliance, age rating, reviewer access.
 
 ### Beta
 
 - Internal TestFlight for engineering/product.
 - External TestFlight cohorts with beta review where required.
-- Structured feedback, crash/performance monitoring, staged feature flags.
+- Structured feedback and Apple-provided crash/performance review.
 - Go/no-go review and rollback plan.
 
 ## Test and audit plan
 
 - Full regression on supported devices/OS versions.
 - VoiceOver, Dynamic Type, Reduce Motion, contrast, keyboard/switch audit.
-- Load/soak and media-pipeline capacity.
-- Crash-free, launch, generation, upload latency targets.
-- Authorization/deletion/privacy adversarial tests.
-- Restore and regional provider failure.
+- Local stress, memory, and garment-processing capacity.
+- Crash-free, launch, generation, and image-processing latency targets.
+- Local deletion/privacy and app-container data-flow tests.
+- Persistence recovery and weather-provider failure.
 - Store reviewer journey from clean install.
-- Production-like moderation and support drill.
+- Support and release-rollback drill.
 
 ## Release gates
 
 - [ ] All included P0 requirements pass or have accountable formal deviations.
 - [ ] No unresolved critical/high security or privacy issue without time-bound acceptance.
 - [ ] Crash-free, latency, availability, and capacity targets pass beta.
-- [ ] Account deletion, export, report, block, moderation, and data isolation pass.
+- [ ] Local clear-data and app-container isolation pass.
 - [ ] Accessibility audit has no core-journey blocker.
 - [ ] Legal/store disclosures match actual production behavior.
-- [ ] Monitoring, runbooks, backup restore, support, and rollback are operational.
+- [ ] Apple-provided release diagnostics, persistence recovery, support, and rollback are operational.
+- [ ] No required backend, hosted media, cloud AI, or paid runtime provider is present.
 - [ ] Final App Review Guidelines are rechecked at submission time.
 
 ## Rollout
 
-Use a staged App Store release and feature flags with privacy-safe cohorts. Monitor authentication, uploads, generation failures, crash-free sessions, report backlog, provider health, deletion jobs, and costs. Define rollback triggers before rollout begins.
+Use a staged App Store release where available. Review crashes, launch/generation/image failures, weather fallback behavior, support reports, and Apple allowance usage. Define rollback triggers before rollout begins.

@@ -52,17 +52,19 @@ xcodebuild \
 ./scripts/verify_docs.sh
 ```
 
-### Import a local image test closet
+### Import the repository-local test closet
 
-The most direct Mac-to-Simulator workflow is to copy a test folder into the currently booted simulator's Photos library:
+Place JPEG, PNG, HEIC, HEIF, or WebP files in `TestClosetImages/`. The directory ignores image content in Git to prevent accidental publication of personal or third-party test photos. With a Simulator booted, run:
 
 ```sh
-xcrun simctl addmedia booted ~/Desktop/test-closet/*
+./scripts/load_test_closet_images.sh
 ```
 
 Open **Closet → Import** and multi-select up to 50 images. This route may not preserve filenames, so the importer falls back to Apple's on-device Vision classifier. Any low-confidence or unmatched image defaults safely and is called out for manual review. Imported names are automatically suffixed when a batch would create duplicates.
 
 For deterministic results, include the type in each filename, such as `blue-shirt.jpg`, `dark-jeans.png`, `white-sneakers.jpeg`, `rain-jacket.jpg`, or `black-watch.png`. Make those files available to the simulator's Files app through iCloud Drive or another configured document provider, then open **Closet → + → Import image files**. Filename rules take priority over Vision classification.
+
+The iOS Simulator cannot let the app read an arbitrary Mac project directory directly because the app runs in an iOS sandbox. The loader script is the supported bridge from `TestClosetImages/` to Simulator Photos.
 
 ## 4. Prototype launch arguments
 
