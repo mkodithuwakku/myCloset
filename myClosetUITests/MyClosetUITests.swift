@@ -18,6 +18,7 @@ final class MyClosetUITests: XCTestCase {
         loadButton.tap()
 
         XCTAssertTrue(app.staticTexts["Outfit of the day"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.otherElements["daily-outfit-composition"].exists)
         XCTAssertTrue(app.buttons["I wore this"].exists)
     }
 

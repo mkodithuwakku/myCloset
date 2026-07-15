@@ -14,7 +14,7 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 
 ### Changed
 
-- Reworked Home into a minimal, whitespace-led experience with compact weather context, a horizontal visual outfit strip, one primary worn action, and a secondary bookmark action.
+- Reworked Home into a minimal, whitespace-led experience with compact weather context, a composed garment-image outfit canvas, one primary worn action, and a secondary bookmark action.
 - Replaced the placeholder-name greeting with a natural “there” fallback until the user edits their profile.
 
 ### Planned

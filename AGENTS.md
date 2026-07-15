@@ -45,7 +45,7 @@ The prototype is usable locally. It is not an App Store release candidate and ha
 
 The five tabs are Home, Closet, Generate, Following, and Profile.
 
-- Home: minimalist visual Outfit of the Day, compact season/weather context, explanation, refresh, save, and mark-worn actions.
+- Home: minimalist Outfit of the Day canvas that composes garment images into one look, plus compact season/weather context and secondary actions.
 - Closet: local create/edit/search/filter/favorite/archive/delete and availability management.
 - Item intelligence: Photos import, fixed 1,200-pixel resizing, palette-based dominant/accent suggestions, and editable metadata.
 - Generator: occasion presets, six formality levels, locks, full/unlocked/single-piece rerolls, and explanations.

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
     @EnvironmentObject private var store: ClosetStore
@@ -107,15 +108,7 @@ struct HomeView: View {
 
             if let outfit = store.dailyOutfit {
                 let items = store.resolve(outfit)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: 12) {
-                        ForEach(items) { item in
-                            DailyOutfitPiece(item: item)
-                        }
-                    }
-                    .padding(.horizontal, 1)
-                }
-                .contentMargins(.horizontal, 0, for: .scrollContent)
+                OutfitComposition(items: items)
 
                 Text(outfit.explanation)
                     .font(.subheadline)
@@ -212,27 +205,144 @@ struct HomeView: View {
     }
 }
 
-private struct DailyOutfitPiece: View {
+private struct OutfitComposition: View {
+    let items: [ClosetItem]
+
+    private var onePiece: ClosetItem? { item(in: .onePiece) }
+    private var top: ClosetItem? { item(in: .top) }
+    private var bottom: ClosetItem? { item(in: .bottom) }
+    private var footwear: ClosetItem? { item(in: .footwear) }
+    private var outerwear: ClosetItem? { item(in: .outerwear) }
+    private var accessory: ClosetItem? { item(in: .accessory) }
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack {
+                VStack(spacing: -4) {
+                    if let onePiece {
+                        GarmentVisual(item: onePiece)
+                            .frame(width: 154, height: 210)
+                    } else {
+                        if let top {
+                            GarmentVisual(item: top)
+                                .frame(width: 156, height: 108)
+                        }
+                        if let bottom {
+                            GarmentVisual(item: bottom)
+                                .frame(width: 132, height: 142)
+                        }
+                    }
+
+                    if let footwear {
+                        GarmentVisual(item: footwear)
+                            .frame(width: 152, height: 70)
+                            .padding(.top, 4)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 8)
+
+                if let outerwear {
+                    GarmentVisual(item: outerwear)
+                        .frame(width: 92, height: 132)
+                        .rotationEffect(.degrees(-4))
+                        .position(x: 48, y: 94)
+                }
+
+                if let accessory {
+                    GarmentVisual(item: accessory)
+                        .frame(width: 72, height: 54)
+                        .rotationEffect(.degrees(5))
+                        .position(x: proxy.size.width - 40, y: 72)
+                }
+            }
+        }
+        .frame(height: 350)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Recommended outfit")
+        .accessibilityIdentifier("daily-outfit-composition")
+    }
+
+    private func item(in category: ClothingCategory) -> ClosetItem? {
+        items.first { $0.category == category }
+    }
+}
+
+private struct GarmentVisual: View {
     let item: ClosetItem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ItemArtwork(
-                photoData: item.photoData,
-                color: item.dominantColor,
-                category: item.category,
-                height: 142
-            )
-            .frame(width: 124)
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-
-            Text(item.name)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(ClosetTheme.ink)
-                .lineLimit(1)
-                .frame(width: 124, alignment: .leading)
+        Group {
+            if let photoData = item.photoData,
+               let image = UIImage(data: photoData) {
+                Image(uiImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+            } else {
+                GarmentPlaceholder(category: item.category)
+                    .foregroundStyle(Color(hex: item.dominantColor.hex))
+                    .shadow(color: .black.opacity(0.14), radius: 1.5, y: 1)
+                    .padding(5)
+            }
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(item.name), \(item.category.title), \(item.dominantColor.name)")
+    }
+}
+
+private struct GarmentPlaceholder: View {
+    let category: ClothingCategory
+
+    @ViewBuilder
+    var body: some View {
+        switch category {
+        case .bottom:
+            PantsSilhouette()
+        case .onePiece:
+            DressSilhouette()
+        default:
+            Image(systemName: category.icon)
+                .resizable()
+                .symbolRenderingMode(.monochrome)
+                .scaledToFit()
+        }
+    }
+}
+
+private struct PantsSilhouette: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.width * 0.23, y: rect.height * 0.04))
+        path.addLine(to: CGPoint(x: rect.width * 0.77, y: rect.height * 0.04))
+        path.addLine(to: CGPoint(x: rect.width * 0.72, y: rect.height * 0.43))
+        path.addLine(to: CGPoint(x: rect.width * 0.88, y: rect.height * 0.96))
+        path.addLine(to: CGPoint(x: rect.width * 0.57, y: rect.height * 0.96))
+        path.addLine(to: CGPoint(x: rect.width * 0.50, y: rect.height * 0.52))
+        path.addLine(to: CGPoint(x: rect.width * 0.43, y: rect.height * 0.96))
+        path.addLine(to: CGPoint(x: rect.width * 0.12, y: rect.height * 0.96))
+        path.addLine(to: CGPoint(x: rect.width * 0.28, y: rect.height * 0.43))
+        path.closeSubpath()
+        return path
+    }
+}
+
+private struct DressSilhouette: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.width * 0.40, y: rect.height * 0.05))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.width * 0.60, y: rect.height * 0.05),
+            control: CGPoint(x: rect.width * 0.50, y: rect.height * 0.15)
+        )
+        path.addLine(to: CGPoint(x: rect.width * 0.78, y: rect.height * 0.18))
+        path.addLine(to: CGPoint(x: rect.width * 0.68, y: rect.height * 0.35))
+        path.addLine(to: CGPoint(x: rect.width * 0.88, y: rect.height * 0.95))
+        path.addLine(to: CGPoint(x: rect.width * 0.12, y: rect.height * 0.95))
+        path.addLine(to: CGPoint(x: rect.width * 0.32, y: rect.height * 0.35))
+        path.addLine(to: CGPoint(x: rect.width * 0.22, y: rect.height * 0.18))
+        path.closeSubpath()
+        return path
     }
 }
 

@@ -20,7 +20,7 @@ This slice provides a genuinely usable local wardrobe and outfit-generation loop
 | Photo import | ITEM-006, ITEM-009–ITEM-011 | PhotosPicker import, image resizing, and editable dominant/accent color suggestions |
 | Capture guidance preview | ITEM-004–ITEM-005 | Category-aware framing outline and guidance text in the editor |
 | Weather fallback | WEA-001–WEA-011 | Current foreground location, manually entered city, or date-derived season |
-| Outfit of the Day | HOME-001–HOME-009 | Minimal visual daily recommendation, compact weather context, explanation, refresh, save, and mark worn |
+| Outfit of the Day | HOME-001–HOME-009 | Garment images composed as one visual look, compact weather context, explanation, refresh, save, and mark worn |
 | Occasion/formality input | GEN-001–GEN-007 | All specified presets and a six-level formality control |
 | Local recommendation engine | COMP, REC | Available items only, valid base structure, season/formality filtering, color scoring, favorites, variety, and explanations |
 | Locking and rerolling | COMP-005–COMP-016 | Pre-lock pieces, lock generated items, reroll one piece, or reroll all unlocked pieces |
