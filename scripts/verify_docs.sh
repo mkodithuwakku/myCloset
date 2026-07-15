@@ -3,6 +3,7 @@
 set -euo pipefail
 
 required_files=(
+  "AGENTS.md"
   "README.md"
   "SRS.md"
   "PROTOTYPE_STATUS.md"

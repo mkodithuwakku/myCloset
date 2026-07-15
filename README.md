@@ -144,6 +144,7 @@ Read the [Master Roadmap](docs/ROADMAP.md) and the linked phase documents for en
 |---|---|
 | [Software Requirements Specification](SRS.md) | Full product, data, security, privacy, reliability, and release requirements |
 | [Documentation Index](docs/README.md) | Ownership and navigation for all project documents |
+| [Codex Repository Context](AGENTS.md) | Durable product, architecture, testing, and handoff context for coding agents |
 | [Architecture](docs/ARCHITECTURE.md) | Current design, production target, boundaries, and data flow |
 | [Roadmap](docs/ROADMAP.md) | Sequenced delivery phases and release gates |
 | [Testing](docs/TESTING.md) | Automated/manual strategy, commands, matrices, and quality gates |

@@ -6,6 +6,7 @@ This directory is the maintained engineering and delivery knowledge base for myC
 
 | Document | Owner | Update trigger |
 |---|---|---|
+| [Codex Repository Context](../AGENTS.md) | Engineering lead | Durable project context, commands, boundaries, or agent handoff expectations change |
 | [Architecture](ARCHITECTURE.md) | Engineering lead | Component, dependency, storage, data-flow, or security-boundary change |
 | [Development](DEVELOPMENT.md) | Engineering lead | Toolchain, setup, build, debugging, or coding-convention change |
 | [Roadmap](ROADMAP.md) | Product owner | Phase scope, order, status, entry/exit gate, or release-target change |
