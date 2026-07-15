@@ -26,7 +26,7 @@ The long-term product is designed around three principles:
 
 | Area | Working in Phase 0 |
 |---|---|
-| Home | Season- or weather-aware Outfit of the Day, explanation, refresh, save, and worn confirmation |
+| Home | Minimal, visual Outfit of the Day with compact weather context, explanation, refresh, save, and worn confirmation |
 | Closet | Local creation, editing, search, category filtering, favorites, availability, archive, and deletion |
 | Item intelligence | Photo import, resizing, sampled dominant/accent color suggestions, manual color confirmation, season and multi-formality metadata |
 | Generator | Occasion presets, six formality levels, locked pieces, complete outfit generation, one-piece reroll, unlocked reroll, and explanations |

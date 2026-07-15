@@ -17,8 +17,8 @@ final class MyClosetUITests: XCTestCase {
         XCTAssertTrue(loadButton.waitForExistence(timeout: 5))
         loadButton.tap()
 
-        XCTAssertTrue(app.staticTexts["Navy Oxford Shirt"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Outfit of the day"].exists)
+        XCTAssertTrue(app.staticTexts["Outfit of the day"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["I wore this"].exists)
     }
 
     func testCoreClosetAndGeneratorJourney() {

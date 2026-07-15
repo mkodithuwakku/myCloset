@@ -12,6 +12,11 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 
 - Added a root `AGENTS.md` durable Codex handoff covering current product boundaries, architecture, commands, testing expectations, documentation synchronization, and phase priorities.
 
+### Changed
+
+- Reworked Home into a minimal, whitespace-led experience with compact weather context, a horizontal visual outfit strip, one primary worn action, and a secondary bookmark action.
+- Replaced the placeholder-name greeting with a natural “there” fallback until the user edits their profile.
+
 ### Planned
 
 - Phase 1 guided camera capture, foreground isolation, crop correction, and improved color confidence.

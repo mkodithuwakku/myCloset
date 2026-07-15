@@ -8,28 +8,17 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView(.vertical, showsIndicators: true) {
-                VStack(alignment: .leading, spacing: 22) {
-                    greeting
-                    weatherCard
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 34) {
+                    header
                     dailySection
                 }
-                .padding(.horizontal, 18)
-                .padding(.bottom, 28)
+                .padding(.horizontal, 20)
+                .padding(.top, 14)
+                .padding(.bottom, 32)
             }
             .background(ClosetTheme.canvas.ignoresSafeArea())
-            .navigationTitle("myCloset")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingWeather = true
-                    } label: {
-                        Image(systemName: "cloud.sun.fill")
-                    }
-                    .accessibilityLabel("Weather settings")
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingWeather) {
                 WeatherSettingsView()
                     .presentationDetents([.medium, .large])
@@ -58,118 +47,144 @@ struct HomeView: View {
         }
     }
 
-    private var greeting: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(Date.now.formatted(.dateTime.weekday(.wide).month(.wide).day()))
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(ClosetTheme.accent)
-                .textCase(.uppercase)
-            Text("Good \(dayPart), \(firstName)")
-                .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                .foregroundStyle(ClosetTheme.ink)
-            Text("Let's make getting dressed feel easy.")
-                .font(.subheadline)
-                .foregroundStyle(ClosetTheme.secondaryInk)
-        }
-        .padding(.top, 8)
-    }
-
-    private var weatherCard: some View {
-        Button {
-            showingWeather = true
-        } label: {
-            HStack(spacing: 14) {
-                Image(systemName: weather.context.source == .seasonOnly ? "leaf.fill" : "cloud.sun.fill")
-                    .font(.title2)
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 26) {
+            HStack {
+                Text("myCloset")
+                    .font(.headline.weight(.semibold))
                     .foregroundStyle(ClosetTheme.ink)
-                    .frame(width: 48, height: 48)
-                    .background(.white.opacity(0.58), in: Circle())
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(weather.context.displayTemperature ?? weather.context.season.title)
-                        .font(.headline)
-                    Text(weatherSubtitle)
-                        .font(.caption)
-                        .foregroundStyle(ClosetTheme.secondaryInk)
-                }
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
+                Button {
+                    showingWeather = true
+                } label: {
+                    HStack(spacing: 7) {
+                        Image(systemName: weather.context.source == .seasonOnly ? "leaf" : "cloud.sun")
+                        Text(weather.context.displayTemperature ?? weather.context.season.title)
+                    }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(ClosetTheme.ink)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.primary.opacity(0.055), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Weather settings, \(weatherSubtitle)")
             }
-            .padding(16)
-            .background(ClosetTheme.sage, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(Date.now.formatted(.dateTime.weekday(.wide).month(.wide).day()))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(ClosetTheme.accent)
+                    .textCase(.uppercase)
+                Text("Good \(dayPart), \(firstName).")
+                    .font(.system(.largeTitle, design: .rounded, weight: .semibold))
+                    .foregroundStyle(ClosetTheme.ink)
+            }
         }
-        .buttonStyle(.plain)
     }
 
     @ViewBuilder
     private var dailySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 18) {
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Outfit of the day")
-                        .font(.title2.weight(.bold))
-                    Text("A comfortable starting point for today")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Text("Outfit of the day")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(ClosetTheme.ink)
                 Spacer()
                 if store.dailyOutfit != nil {
                     Button {
                         store.refreshDaily(weather: weather.context, force: true)
                     } label: {
                         Image(systemName: "arrow.clockwise")
+                            .font(.subheadline.weight(.medium))
+                            .frame(width: 34, height: 34)
+                            .background(Color.primary.opacity(0.055), in: Circle())
                     }
-                    .buttonStyle(.bordered)
-                    .buttonBorderShape(.circle)
+                    .buttonStyle(.plain)
                     .accessibilityLabel("Refresh daily outfit")
                 }
             }
 
             if let outfit = store.dailyOutfit {
-                CardSurface {
-                    VStack(alignment: .leading, spacing: 14) {
-                        ForEach(store.resolve(outfit)) { item in
-                            OutfitItemRow(item: item)
-                            if item.id != store.resolve(outfit).last?.id { Divider() }
-                        }
-                        Text(outfit.explanation)
-                            .font(.footnote)
-                            .foregroundStyle(ClosetTheme.secondaryInk)
-                            .padding(.top, 2)
-                        HStack {
-                            Button {
-                                store.save(outfit)
-                                showConfirmation("Saved for later")
-                            } label: {
-                                Label("Save", systemImage: "bookmark")
-                            }
-                            .buttonStyle(.bordered)
-                            Spacer()
-                            Button {
-                                store.markWorn(outfit)
-                                showConfirmation("Added to worn outfits")
-                            } label: {
-                                Label("I wore this", systemImage: "checkmark")
-                            }
-                            .buttonStyle(.borderedProminent)
+                let items = store.resolve(outfit)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(alignment: .top, spacing: 12) {
+                        ForEach(items) { item in
+                            DailyOutfitPiece(item: item)
                         }
                     }
+                    .padding(.horizontal, 1)
                 }
+                .contentMargins(.horizontal, 0, for: .scrollContent)
+
+                Text(outfit.explanation)
+                    .font(.subheadline)
+                    .foregroundStyle(ClosetTheme.secondaryInk)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 12) {
+                    Button {
+                        store.markWorn(outfit)
+                        showConfirmation("Added to worn outfits")
+                    } label: {
+                        Text("I wore this")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .buttonBorderShape(.capsule)
+
+                    Button {
+                        store.save(outfit)
+                        showConfirmation("Saved for later")
+                    } label: {
+                        Image(systemName: "bookmark")
+                            .frame(width: 22, height: 22)
+                    }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.circle)
+                    .accessibilityLabel("Save outfit for later")
+                }
+                .tint(ClosetTheme.ink)
             } else {
-                EmptyState(
-                    icon: "tshirt",
-                    title: "Your outfit is waiting",
-                    message: store.dailyError?.localizedDescription ?? "Add enough pieces for a top, bottom, and shoes.",
-                    actionTitle: store.items.isEmpty ? "Load sample closet" : nil,
-                    action: store.items.isEmpty ? { store.loadSamples(); store.refreshDaily(weather: weather.context, force: true) } : nil
-                )
+                minimalEmptyState
             }
         }
     }
 
+    private var minimalEmptyState: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Image(systemName: "tshirt")
+                .font(.title2)
+                .foregroundStyle(ClosetTheme.accent)
+            Text("Your outfit is waiting")
+                .font(.headline)
+                .foregroundStyle(ClosetTheme.ink)
+            Text(store.dailyError?.localizedDescription ?? "Add enough pieces for a top, bottom, and shoes.")
+                .font(.subheadline)
+                .foregroundStyle(ClosetTheme.secondaryInk)
+                .fixedSize(horizontal: false, vertical: true)
+            if store.items.isEmpty {
+                Button("Load sample closet") {
+                    store.loadSamples()
+                    store.refreshDaily(weather: weather.context, force: true)
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .tint(ClosetTheme.ink)
+                .padding(.top, 4)
+            }
+        }
+        .padding(.top, 4)
+    }
+
     private var firstName: String {
-        store.profile.displayName.split(separator: " ").first.map(String.init) ?? "there"
+        let displayName = store.profile.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !displayName.isEmpty,
+              displayName.localizedCaseInsensitiveCompare("Your name") != .orderedSame else {
+            return "there"
+        }
+        return displayName.split(separator: " ").first.map(String.init) ?? "there"
     }
 
     private var dayPart: String {
@@ -194,6 +209,30 @@ struct HomeView: View {
             try? await Task.sleep(for: .seconds(2))
             withAnimation { confirmation = nil }
         }
+    }
+}
+
+private struct DailyOutfitPiece: View {
+    let item: ClosetItem
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ItemArtwork(
+                photoData: item.photoData,
+                color: item.dominantColor,
+                category: item.category,
+                height: 142
+            )
+            .frame(width: 124)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+            Text(item.name)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(ClosetTheme.ink)
+                .lineLimit(1)
+                .frame(width: 124, alignment: .leading)
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 
