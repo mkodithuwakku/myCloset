@@ -1,7 +1,7 @@
 # Architecture
 
 **Status:** Phase 0 implemented; local first release and gated post-release CloudKit social target approved
-**Last reviewed:** 2026-07-14
+**Last reviewed:** 2026-08-31
 
 ## 1. Purpose
 
@@ -34,7 +34,7 @@ flowchart TB
     Profile --> Store
     Generate --> Engine["OutfitEngine"]
     Home --> Engine
-    Closet --> Importer["TestClosetImageImporter"]
+    Closet --> Importer["ClosetImageImporter"]
     Importer --> Types["ClothingTypeDetector"]
     Importer --> Images["ImageUtilities"]
 
@@ -74,10 +74,13 @@ The store encodes `PersistedCloset` using `Codable` and writes atomically to App
 4. Add footwear when available.
 5. Add weather/season-relevant outerwear.
 6. Optionally add an accessory.
-7. Rank category candidates using formality, color compatibility, favorite state, and bounded variety.
-8. Emit selected item IDs and an explanation.
+7. Rank category candidates using season, formality, color compatibility, favorite state, and bounded variety. If no seasonal or formality match exists for a required slot, fall back to the best available owned piece rather than failing a structurally valid closet.
+8. For a full reroll, exclude replaceable pieces as a group and then individually until the engine finds a different valid look; locks and all hard constraints remain authoritative.
+9. Emit selected item IDs and an explanation.
 
 Hard constraints and soft scoring are intentionally separate. Tests assert that random selection never breaks locks, availability, exclusions, or structure.
+
+The Generate view starts with no required piece and treats occasion and formality as an optional compact visual brief. Once a look exists, users may lock generated pieces before rerolling. If the imported closet cannot form a valid top-and-bottom or one-piece base, the view reports the available category counts and routes the user to correct editable metadata instead of presenting a silent failure.
 
 ### 3.4 Image pipeline
 
@@ -86,11 +89,11 @@ Hard constraints and soft scoring are intentionally separate. Tests assert that 
 - decodes imported images;
 - resizes them to a 1,200-pixel maximum dimension;
 - compresses them to JPEG;
-- samples a 40 × 40 pixel grid;
+- samples a 40 × 40 pixel grid and suppresses a visually consistent border background when enough foreground pixels remain;
 - maps pixels to a curated clothing palette;
 - returns editable dominant and accent suggestions.
 
-`ClothingTypeDetector` first maps descriptive filenames to the wardrobe taxonomy, then uses Apple's on-device general image classifier when filenames are unavailable. `TestClosetImageImporter` combines those suggestions with image preparation and conservative season/formality defaults. Classification remains advisory: the UI reports uncertain batches and every imported record stays editable.
+`ClothingTypeDetector` first maps descriptive filenames to specific garment kinds. When filenames are unavailable or machine-generated, it combines Apple's on-device foreground-instance mask with conservative semantic signals: silhouette structure drives top-versus-bottom separation and semantic labels are retained only where they proved dependable. `ImageUtilities` reuses an aligned foreground mask so palette sampling excludes the photographed background. `ClosetImageImporter` combines these signals into editable name, category, season, formality, and color defaults; the Closet UI can explicitly re-analyze older photographed records without changing curated non-analysis fields.
 
 Phase 1 must isolate the garment before color sampling, add quality/confidence states, and support user mask/crop correction.
 

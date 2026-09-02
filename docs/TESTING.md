@@ -1,10 +1,10 @@
 # Testing Strategy and Guide
 
-**Current automated inventory:** 37 unit tests + 3 UI tests
-**Current verified environment:** Xcode 26.3, iPhone 17 Pro simulator, iOS 26.3
+**Current automated inventory:** 51 unit tests + 5 UI tests
+**Current verified environment:** Xcode 26.3, iPhone 17 simulator, iOS 26.3.1
 **Minimum deployment target:** iOS 17.0
 
-Latest recorded evidence: [Test Execution Report — 2026-07-14](testing/TEST_EXECUTION_2026-07-14.md) (40 passed, 0 failed).
+Latest recorded evidence: [Test Execution Report — 2026-09-01](testing/TEST_EXECUTION_2026-09-01.md) (56 passed, 0 failed).
 
 ## 1. Objectives
 
@@ -33,7 +33,7 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 
 ## 3. Automated suite inventory
 
-### 3.1 `OutfitEngineTests` — 11 tests
+### 3.1 `OutfitEngineTests` — 14 tests
 
 | Coverage | SRS relationship |
 |---|---|
@@ -46,10 +46,13 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 | One-piece/separates conflict | COMP-001, COMP-007 |
 | Unavailable locked conflict | COMP-007 |
 | Missing category explanation | HOME-008, COMP-014 |
+| Season preference fallback to the best owned piece | REC-003–REC-007, REC-016 |
+| One-piece fallback when separates are incomplete | COMP-001–COMP-003, REC-016 |
 | Cold-weather outerwear | REC-003–REC-004 |
 | Explanation includes lock and weather | COMP-017, REC-008 |
+| Alternative generation changes an eligible slot without breaking locks | COMP-009–COMP-013 |
 
-### 3.2 `ClosetStoreTests` — 11 tests
+### 3.2 `ClosetStoreTests` — 12 tests
 
 | Coverage | SRS relationship |
 |---|---|
@@ -59,13 +62,14 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 | Edit exclusion from duplicate warning | ITEM-013 |
 | Complete twelve-piece sample fixture | Prototype verification |
 | Idempotent sample loading | Data integrity |
+| Complete legacy demo cleanup while preserving imported items | CLO-001, OFF-001 |
 | Archive visibility | CLO-006, CLO-009 |
 | Laundry/unavailable filtering | CLO-006–CLO-008 |
 | Saved-outfit deduplication | HIST-001, HIST-009 |
 | Immutable worn snapshots | CLO-010, HIST-003 |
 | Full local reset | Account/deletion precursor |
 
-### 3.3 `ModelsAndImageTests` — 9 tests
+### 3.3 `ModelsAndImageTests` — 11 tests
 
 | Coverage | SRS relationship |
 |---|---|
@@ -76,24 +80,34 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 | Historical snapshot copy | HIST-003 |
 | Maximum image dimension | PERF-007 |
 | Dominant red extraction | ITEM-009–ITEM-010 |
+| Plain-background suppression during color extraction | ITEM-009–ITEM-010 |
+| Vision 32-bit foreground-mask decoding | ITEM-007–ITEM-010 |
 | Invalid-image graceful failure | ITEM-019 |
 
-### 3.4 `ClothingTypeDetectorTests` — 6 tests
+### 3.4 `ClothingTypeDetectorTests` — 13 tests
 
 | Coverage | SRS relationship |
 |---|---|
 | Filename mapping across all garment categories | ITEM-007–ITEM-008 |
 | Human-readable imported names | ITEM-001, ITEM-013 |
 | Generic camera-name fallback | ITEM-001 |
+| Machine-generated filename replacement with color-aware name | ITEM-001, ITEM-007–ITEM-010 |
+| Garment-kind season/formality defaults | ITEM-015–ITEM-018 |
+| End-to-end editable importer defaults | ITEM-001, ITEM-007–ITEM-018 |
+| Reliable footwear labels outrank generic clothing results; uncertain unmasked results require review | ITEM-007–ITEM-008 |
+| Leg-split and compact-open silhouettes identify trousers and shorts | ITEM-007–ITEM-008 |
+| Strong denim labels and compact center openings cannot turn a jacket-shaped garment into a bottom | ITEM-007–ITEM-008 |
 
-The suite tests deterministic filename behavior rather than asserting Apple's OS-owned Vision labels, which may evolve between system releases.
+The suite keeps OS-owned Vision at the boundary and tests the deterministic structural interpretation separately, because Apple's exact semantic labels may evolve between system releases.
 
-### 3.5 `MyClosetUITests` — 3 tests
+### 3.5 `MyClosetUITests` — 5 tests
 
 | Journey | Primary assertion |
 |---|---|
-| Empty closet → load samples → daily outfit | Empty state is recoverable and produces a real outfit |
-| Closet → generator → outfit | Stored pieces reach a generated result with lock controls |
+| Empty closet → own-image import | Real users start without demo garments and can reach personal photo import |
+| Closet → generator → visual brief → outfit | Stored pieces produce an unlocked outfit without a starting-piece prompt, accept a visual Work brief, and retain generated-piece lock controls |
+| Closet piece → metadata editor | Imported/stored item exposes editable name and metadata controls |
+| Import suggestions → required review → closet | A suggested top can be renamed, changed to a bottom, recolored, explicitly confirmed, and only then added to the closet |
 | Following tab → Coming Soon | Social roadmap is visible without fake profiles, posts, or service behavior |
 
 ## 4. Running tests

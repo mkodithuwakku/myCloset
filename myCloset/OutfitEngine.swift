@@ -1,6 +1,64 @@
 import Foundation
 
 struct OutfitEngine {
+    func generateAlternative(
+        to current: GeneratedOutfit,
+        from allItems: [ClosetItem],
+        occasion: Occasion,
+        formality: FormalityLevel,
+        weather: WeatherContext,
+        lockedIDs: Set<UUID> = []
+    ) -> Result<GeneratedOutfit, OutfitGenerationError> {
+        let currentItems = current.itemIDs.compactMap { id in
+            allItems.first { $0.id == id }
+        }
+        let available = allItems.filter(\.isAvailable)
+        let replaceable = currentItems.filter { item in
+            !lockedIDs.contains(item.id) && available.contains {
+                $0.id != item.id && $0.category == item.category
+            }
+        }
+
+        if !replaceable.isEmpty {
+            let allReplaceableIDs = Set(replaceable.map(\.id))
+            let broadResult = generate(
+                from: allItems,
+                occasion: occasion,
+                formality: formality,
+                weather: weather,
+                lockedIDs: lockedIDs,
+                excluding: allReplaceableIDs
+            )
+            if case .success(let alternative) = broadResult,
+               alternative.itemIDs != current.itemIDs {
+                return broadResult
+            }
+
+            for item in replaceable.shuffled() {
+                let result = generate(
+                    from: allItems,
+                    occasion: occasion,
+                    formality: formality,
+                    weather: weather,
+                    lockedIDs: lockedIDs,
+                    excluding: [item.id]
+                )
+                if case .success(let alternative) = result,
+                   alternative.itemIDs != current.itemIDs {
+                    return result
+                }
+            }
+        }
+
+        return generate(
+            from: allItems,
+            occasion: occasion,
+            formality: formality,
+            weather: weather,
+            lockedIDs: lockedIDs
+        )
+    }
+
     func generate(
         from allItems: [ClosetItem],
         occasion: Occasion,
@@ -32,20 +90,25 @@ struct OutfitEngine {
         }
 
         var selected = locked
-        let anchor = locked.first
+        let lockedReference = locked.first
 
         func candidates(for category: ClothingCategory) -> [ClosetItem] {
             let categoryItems = available.filter { item in
                 item.category == category &&
-                !selected.contains(where: { $0.id == item.id }) &&
-                (item.seasons.contains(weather.season) || item.seasons.count == WardrobeSeason.allCases.count)
+                !selected.contains(where: { $0.id == item.id })
             }
 
-            let formalMatches = categoryItems.filter { item in
+            let seasonalMatches = categoryItems.filter { item in
+                item.seasons.contains(weather.season) ||
+                item.seasons.count == WardrobeSeason.allCases.count
+            }
+            let seasonPool = seasonalMatches.isEmpty ? categoryItems : seasonalMatches
+
+            let formalMatches = seasonPool.filter { item in
                 item.formalities.contains(formality) ||
                 item.formalities.contains(where: { abs($0.rawValue - formality.rawValue) == 1 })
             }
-            return formalMatches.isEmpty ? categoryItems : formalMatches
+            return formalMatches.isEmpty ? seasonPool : formalMatches
         }
 
         func choose(_ category: ClothingCategory) -> ClosetItem? {
@@ -53,7 +116,7 @@ struct OutfitEngine {
                 return existing
             }
 
-            let reference = anchor ?? selected.first
+            let reference = lockedReference ?? selected.first
             return candidates(for: category)
                 .sorted { score($0, reference: reference, target: formality) > score($1, reference: reference, target: formality) }
                 .prefix(3)
@@ -63,9 +126,12 @@ struct OutfitEngine {
         if hasLockedOnePiece {
             selected.removeAll { $0.category == .top || $0.category == .bottom }
         } else if !hasLockedSeparates,
-                  let onePiece = choose(.onePiece),
-                  Bool.random() {
-            selected.append(onePiece)
+                  let onePiece = choose(.onePiece) {
+            let hasCompleteSeparates = !candidates(for: .top).isEmpty &&
+                !candidates(for: .bottom).isEmpty
+            if !hasCompleteSeparates || Bool.random() {
+                selected.append(onePiece)
+            }
         }
 
         if !selected.contains(where: { $0.category == .onePiece }) {

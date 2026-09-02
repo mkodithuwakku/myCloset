@@ -55,6 +55,25 @@ final class OutfitEngineTests: XCTestCase {
         XCTAssertFalse(outfit.itemIDs.contains(excluded.id))
     }
 
+    func testAlternativeGenerationChangesAvailableSlotsAndKeepsLocks() throws {
+        let closet = TestFixtures.completeCloset
+        let locked = closet.first { $0.name == "Navy Shirt" }!
+        let current = try generated(from: closet, lockedIDs: [locked.id])
+
+        for _ in 0..<20 {
+            let alternative = try engine.generateAlternative(
+                to: current,
+                from: closet,
+                occasion: .errands,
+                formality: .casual,
+                weather: TestFixtures.summerWeather,
+                lockedIDs: [locked.id]
+            ).get()
+            XCTAssertTrue(alternative.itemIDs.contains(locked.id))
+            XCTAssertNotEqual(alternative.itemIDs, current.itemIDs)
+        }
+    }
+
     func testTwoLockedTopsReturnConflict() {
         let closet = TestFixtures.completeCloset
         let tops = closet.filter { $0.category == .top }
@@ -119,6 +138,31 @@ final class OutfitEngineTests: XCTestCase {
         )
 
         XCTAssertEqual(result.failure, .missingCategory("bottom"))
+    }
+
+    func testSeasonPreferenceFallsBackToOwnedPieces() throws {
+        let winterOnly = Set([WardrobeSeason.winter])
+        let closet = [
+            TestFixtures.item("Winter Shirt", category: .top, color: "Navy", seasons: winterOnly),
+            TestFixtures.item("Winter Trousers", category: .bottom, color: "Black", seasons: winterOnly)
+        ]
+
+        let outfit = try generated(from: closet, weather: TestFixtures.summerWeather)
+        let items = resolve(outfit, in: closet)
+
+        XCTAssertTrue(items.contains { $0.category == .top })
+        XCTAssertTrue(items.contains { $0.category == .bottom })
+    }
+
+    func testOnePieceCompletesOutfitWhenSeparatesAreIncomplete() throws {
+        let dress = TestFixtures.item("Green Dress", category: .onePiece, color: "Green")
+        let top = TestFixtures.item("White Shirt", category: .top, color: "White")
+        let closet = [dress, top]
+
+        for _ in 0..<20 {
+            let outfit = try generated(from: closet)
+            XCTAssertEqual(outfit.itemIDs, [dress.id])
+        }
     }
 
     func testColdWeatherIncludesAvailableWinterOuterwear() throws {

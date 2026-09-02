@@ -45,7 +45,7 @@ if ! grep -q 'Phase 0 local functional prototype is complete' README.md; then
   exit 1
 fi
 
-if ! grep -q '37 unit tests and 3' README.md docs/TESTING.md; then
+if ! grep -q '51 unit tests and 5' README.md || ! grep -q '51 unit tests + 5 UI tests' docs/TESTING.md; then
   echo "Documented automated test inventory is missing or stale."
   exit 1
 fi

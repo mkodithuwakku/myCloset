@@ -67,7 +67,7 @@ Exit evidence: [Phase 0 document](phases/PHASE_0_LOCAL_PROTOTYPE.md) and [Protot
 
 ### Phase 1 — Capture and Wardrobe Quality
 
-Deliver direct guided camera capture, Vision foreground segmentation, adjustable masks/crops, quality checks, isolated color extraction, schema versioning, richer taxonomy, and capture accessibility. The result is a trustworthy private garment record.
+Build on the prototype's automatic Vision foreground mask and shape/color analysis with direct guided camera capture, adjustable masks/crops, quality and confidence states, schema versioning, richer taxonomy, and capture accessibility. The result is a trustworthy private garment record.
 
 Exit gate: supported garment categories meet agreed segmentation/color accuracy thresholds and users can recover every automated failure manually.
 

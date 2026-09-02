@@ -57,11 +57,47 @@ final class ModelsAndImageTests: XCTestCase {
         XCTAssertEqual(result.dominant.name, "Red")
     }
 
+    func testSuggestedColorIgnoresConsistentPlainBackground() throws {
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 200, height: 200))
+        let source = renderer.image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 200, height: 200))
+            UIColor(red: 0.15, green: 0.35, blue: 0.72, alpha: 1).setFill()
+            context.fill(CGRect(x: 55, y: 35, width: 90, height: 130))
+        }.pngData()!
+
+        let result = try XCTUnwrap(ImageUtilities.suggestedColors(from: source))
+
+        XCTAssertEqual(result.dominant.name, "Blue")
+    }
+
     func testInvalidImageDataFailsGracefully() {
         let invalid = Data("not an image".utf8)
 
         XCTAssertNil(ImageUtilities.preparedImageData(from: invalid))
         XCTAssertNil(ImageUtilities.suggestedColors(from: invalid))
+    }
+
+    func testForegroundMaskReaderSupportsVisionFloatMasks() throws {
+        var optionalBuffer: CVPixelBuffer?
+        let status = CVPixelBufferCreate(
+            nil,
+            2,
+            2,
+            kCVPixelFormatType_OneComponent32Float,
+            nil,
+            &optionalBuffer
+        )
+        XCTAssertEqual(status, kCVReturnSuccess)
+        let buffer = try XCTUnwrap(optionalBuffer)
+        CVPixelBufferLockBaseAddress(buffer, [])
+        defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
+        let baseAddress = try XCTUnwrap(CVPixelBufferGetBaseAddress(buffer))
+        baseAddress.assumingMemoryBound(to: Float.self)[0] = 1
+
+        let reader = try XCTUnwrap(ForegroundMaskReader(buffer: buffer))
+        XCTAssertTrue(reader.containsForeground(x: 0, y: 0))
+        XCTAssertFalse(reader.containsForeground(x: 1, y: 0))
     }
 
     private func date(month: Int) -> Date {

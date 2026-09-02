@@ -13,6 +13,20 @@ final class ClosetStore: ObservableObject {
     let engine = OutfitEngine()
     private let storageURL: URL
     private var dailyDate: Date?
+    private static let legacySampleNames: Set<String> = [
+        "Navy Oxford Shirt",
+        "Cream T-Shirt",
+        "Black Active Tee",
+        "Beige Trousers",
+        "Dark Jeans",
+        "Black Joggers",
+        "Olive Overshirt",
+        "Camel Wool Coat",
+        "White Sneakers",
+        "Brown Loafers",
+        "Black Trainers",
+        "Silver Watch"
+    ]
 
     init(fileManager: FileManager = .default, storageURL: URL? = nil) {
         if let storageURL {
@@ -202,6 +216,29 @@ final class ClosetStore: ObservableObject {
         savedOutfits = value.savedOutfits
         wornOutfits = value.wornOutfits
         profile = value.profile
+        if removeLegacySampleCloset() {
+            persist()
+        }
+    }
+
+    /// Removes only the complete, photo-free demo wardrobe shipped by earlier
+    /// prototypes. Imported and manually created user items remain untouched.
+    private func removeLegacySampleCloset() -> Bool {
+        let legacyItems = items.filter {
+            $0.photoData == nil && Self.legacySampleNames.contains($0.name)
+        }
+        guard Set(legacyItems.map(\.name)) == Self.legacySampleNames else {
+            return false
+        }
+        let legacyIDs = Set(legacyItems.map(\.id))
+        items.removeAll { legacyIDs.contains($0.id) }
+        savedOutfits.removeAll { record in
+            !record.items.isEmpty && record.items.allSatisfy { legacyIDs.contains($0.id) }
+        }
+        wornOutfits.removeAll { record in
+            !record.items.isEmpty && record.items.allSatisfy { legacyIDs.contains($0.id) }
+        }
+        return true
     }
 
     private static func normalize(_ name: String) -> String {

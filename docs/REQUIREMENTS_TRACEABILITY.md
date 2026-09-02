@@ -17,12 +17,12 @@ This document maps SRS requirement groups to implementation phases and current v
 | ONB — onboarding/permissions | 1, 6 | Partial | Empty/sample flow exists; account-free onboarding remains |
 | PROF — local/public profile | 0, 6, 7 | Partial | Local profile editing implemented; controlled CloudKit public profile planned after release |
 | SOC — following/feed | 7 | Planned | Coming Soon navigation implemented; CloudKit service gated on interest and safety |
-| ITEM — capture/creation | 0, 1 | Partial | Import/metadata/colors implemented; guided camera/segmentation Phase 1 |
-| CLO — closet management/privacy | 0, 1 | Partial | Local CRUD/filter/availability implemented; capture quality remains |
+| ITEM — capture/creation | 0, 1 | Partial | Import and fully editable, image-derived name/type/color/season/formality defaults implemented; guided camera/segmentation Phase 1 |
+| CLO — closet management/privacy | 0, 1 | Partial | Local CRUD, metadata-aware search/filter, and availability implemented; capture quality remains |
 | WEA — weather/season | 0, 3 | Partial | Location/city/season works; resilience/caching/safety Phase 3 |
 | HOME — Outfit of the Day | 0, 3 | Partial | Local daily outfit; production stability/personalization Phase 3 |
-| GEN — generation inputs | 0, 3 | Partial | Presets/formality/weather; structured free text deferred |
-| COMP — composition/locks/rerolls | 0, 3 | Partial | Core invariants and rerolls implemented/tested; richer rules/undo Phase 3 |
+| GEN — generation inputs | 0, 3 | Partial | Optional visual preset/formality brief and weather implemented; generation requires no starting piece and structured free text is deferred |
+| COMP — composition/locks/rerolls | 0, 3 | Partial | Core invariants, single-piece reroll, and different-look search implemented/tested; richer rules/undo Phase 3 |
 | REC — recommendation engine | 0, 3 | Partial | Deterministic local rules/scoring; versioning/replay/feedback Phase 3 |
 | FB — feedback | 3 | Planned | Save/worn signals only; explicit feedback/preferences deferred |
 | HIST — saved/worn history | 0, 3 | Partial | Local immutable snapshots; local filters/preferences remain |
@@ -51,10 +51,12 @@ This document maps SRS requirement groups to implementation phases and current v
 | Closet models and metadata | `myCloset/Models.swift` | `ModelsAndImageTests` |
 | Local persistence and history | `myCloset/ClosetStore.swift` | `ClosetStoreTests` |
 | Outfit constraints/scoring | `myCloset/OutfitEngine.swift` | `OutfitEngineTests` |
-| Photo preparation/colors | `myCloset/ImageUtilities.swift` | `ModelsAndImageTests` |
-| Batch image type suggestions | `myCloset/ClothingTypeDetector.swift`, `myCloset/ClosetView.swift` | `ClothingTypeDetectorTests`, `ClosetStoreTests` |
-| Empty → daily outfit | `HomeView`, `ClosetStore` | `MyClosetUITests.testEmptyClosetCanLoadSamplesAndCreateDailyOutfit` |
-| Closet → Generate | `ClosetView`, `GeneratorView` | `MyClosetUITests.testCoreClosetAndGeneratorJourney` |
+| Photo preparation/foreground-only colors | `myCloset/ImageUtilities.swift` | `ModelsAndImageTests` |
+| Batch image metadata suggestions and re-analysis | `myCloset/ClothingTypeDetector.swift`, `myCloset/ClosetView.swift` | `ClothingTypeDetectorTests`, `ClosetStoreTests` |
+| Required per-piece import confirmation | `myCloset/ClosetImportReviewView.swift`, `myCloset/ClosetView.swift` | `MyClosetUITests.testImportedPieceMustBeConfirmedAndCanBeCorrectedBeforeSaving` |
+| Empty → personal image import | `HomeView`, `ClosetView`, `ClosetStore` | `MyClosetUITests.testEmptyClosetStartsWithOwnImageImport`, `ClosetStoreTests.testLegacySampleClosetIsRemovedOnNextLaunchWithoutTouchingImportedItems` |
+| Closet → Generate | `ClosetView`, `GeneratorView`, `OutfitCanvas` | `MyClosetUITests.testCoreClosetAndGeneratorJourney`, `OutfitEngineTests.testAlternativeGenerationChangesAvailableSlotsAndKeepsLocks`, `OutfitEngineTests.testSeasonPreferenceFallsBackToOwnedPieces`, `OutfitEngineTests.testOnePieceCompletesOutfitWhenSeparatesAreIncomplete` |
+| Closet piece → editable metadata | `ClosetView` | `MyClosetUITests.testClosetPieceOpensEditableMetadata` |
 | Following roadmap state | `FollowingView` | `MyClosetUITests.testFollowingIsClearlyMarkedComingSoon` |
 
 ## Traceability workflow

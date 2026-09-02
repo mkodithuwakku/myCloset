@@ -286,9 +286,6 @@ private struct PrototypeSettingsView: View {
                 }
 
                 Section {
-                    if store.items.isEmpty {
-                        Button("Load sample closet") { store.loadSamples() }
-                    }
                     Button("Clear all prototype data", role: .destructive) {
                         showingClearConfirmation = true
                     }

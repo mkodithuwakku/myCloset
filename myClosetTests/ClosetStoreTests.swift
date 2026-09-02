@@ -74,6 +74,19 @@ final class ClosetStoreTests: XCTestCase {
         XCTAssertEqual(store.items.count, 12)
     }
 
+    func testLegacySampleClosetIsRemovedOnNextLaunchWithoutTouchingImportedItems() {
+        let url = temporaryStorageURL()
+        let store = ClosetStore(storageURL: url)
+        store.loadSamples()
+        var imported = TestFixtures.item("My Blue Shirt", category: .top, color: "Blue")
+        imported.photoData = Data([0x01, 0x02, 0x03])
+        store.upsert(imported)
+
+        let reloaded = ClosetStore(storageURL: url)
+
+        XCTAssertEqual(reloaded.items.map(\.id), [imported.id])
+    }
+
     func testArchivedItemIsNotVisible() {
         let store = makeStore()
         let item = TestFixtures.item("Archived Tee", category: .top)

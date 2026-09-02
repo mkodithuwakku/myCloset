@@ -21,7 +21,7 @@ A user can launch a native iPhone app, load sample pieces or create private loca
 - Soft scoring for formality, color relationship, favorites, and variety.
 - Daily recommendation, generator, individual reroll, unlocked reroll.
 - Saved and worn immutable snapshots.
-- Shared Xcode scheme, CI workflow, 37 unit and 3 UI tests.
+- Shared Xcode scheme, CI workflow, 51 unit and 5 UI tests.
 - SRS, roadmap, architecture, testing, traceability, and contributor documentation.
 
 ## Explicit exclusions

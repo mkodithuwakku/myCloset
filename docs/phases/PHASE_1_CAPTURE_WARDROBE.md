@@ -16,7 +16,7 @@
 - Choose clothing type before capture.
 - See a category-specific accessible camera guide.
 - Capture or import a garment.
-- Receive foreground isolation and a proposed crop.
+- Receive the prototype foreground isolation plus a proposed crop and confidence state.
 - Correct the mask/crop when automation is wrong.
 - Confirm dominant/accent colors sampled only from the garment.
 - Confirm name, category, seasons, multiple formality levels, and availability.
@@ -33,7 +33,7 @@
 
 ### Foreground isolation
 
-- Evaluate Vision foreground-instance masks for supported iOS versions.
+- Qualify the prototype Vision foreground-instance mask across supported iOS versions and representative physical devices.
 - Preserve original privately; create normalized display rendition.
 - Add mask selection, erase/restore brush, crop, rotate, and reset.
 - Define confidence and manual-fallback states.

@@ -60,7 +60,9 @@ Place JPEG, PNG, HEIC, HEIF, or WebP files in `TestClosetImages/`. The directory
 ./scripts/load_test_closet_images.sh
 ```
 
-Open **Closet → Import** and multi-select up to 50 images. This route may not preserve filenames, so the importer falls back to Apple's on-device Vision classifier. Any low-confidence or unmatched image defaults safely and is called out for manual review. Imported names are automatically suffixed when a batch would create duplicates.
+The loader records a content digest inside each booted Simulator and skips images already loaded by an earlier run, as well as same-content duplicates within the source folder. Erasing the Simulator clears this tracking with the rest of its data.
+
+Open **Closet → Import** and multi-select up to 50 images. This route may not preserve filenames, so the importer falls back to Apple's on-device Vision classifier. Specific garment labels are preferred over broad clothing/jacket results; any generic, low-confidence, or unmatched image defaults safely and is called out for manual review. Imported names are automatically suffixed when a batch would create duplicates.
 
 For deterministic results, include the type in each filename, such as `blue-shirt.jpg`, `dark-jeans.png`, `white-sneakers.jpeg`, `rain-jacket.jpg`, or `black-watch.png`. Make those files available to the simulator's Files app through iCloud Drive or another configured document provider, then open **Closet → + → Import image files**. Filename rules take priority over Vision classification.
 
@@ -116,11 +118,11 @@ Do not silently discard user data after a decoding failure.
 
 ### App starts empty
 
-Tap **Load sample closet**, or add a top, bottom, and footwear. Generation intentionally refuses to invent missing pieces.
+Import your own top and bottom (or one-piece) from **Closet → Import**. Footwear is included when available. The debug-only `-loadPrototypeSamples` launch argument remains available for automated smoke tests; the real-user app intentionally has no demo wardrobe.
 
 ### Outfit generation fails
 
-Check availability, selected season/formality, locked category conflicts, and whether an alternative exists. The error should remain actionable.
+Check availability, selected season/formality, locked category conflicts, whether the closet contains a valid top-and-bottom or one-piece base, and whether an alternative exists. The error should remain actionable; the Generate closet check should route category problems back to editable piece metadata.
 
 ### Weather unavailable
 

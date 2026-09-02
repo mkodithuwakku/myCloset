@@ -1,4 +1,4 @@
-import Foundation
+import UIKit
 import XCTest
 @testable import myCloset
 
@@ -9,6 +9,7 @@ final class ClothingTypeDetectorTests: XCTestCase {
 
     func testFilenameDetectsBottom() {
         XCTAssertEqual(ClothingTypeDetector.category(forFilename: "black_wide-leg-pants.png"), .bottom)
+        XCTAssertEqual(ClothingTypeDetector.kind(forFilename: "yellow-shorts.webp"), .shorts)
     }
 
     func testFilenameDetectsOnePieceAndOuterwear() {
@@ -39,5 +40,141 @@ final class ClothingTypeDetectorTests: XCTestCase {
         )
 
         XCTAssertEqual(name, "Imported Footwear 7")
+
+        let red = ClothingColor.palette.first { $0.name == "Red" }!
+        XCTAssertEqual(
+            ClothingTypeDetector.suggestedName(
+                filename: "images (1).jpeg",
+                category: .onePiece,
+                kind: .dress,
+                dominantColor: red,
+                index: 8
+            ),
+            "Red Dress"
+        )
     }
+
+    func testMachineGeneratedFilenameUsesColorAndDetectedKind() {
+        let blue = ClothingColor.palette.first { $0.name == "Blue" }!
+        let name = ClothingTypeDetector.suggestedName(
+            filename: "219a4bbbc9d6405fbeac0a3f6bf59e01.webp",
+            category: .bottom,
+            kind: .shorts,
+            dominantColor: blue,
+            index: 2
+        )
+
+        XCTAssertEqual(name, "Blue Shorts")
+    }
+
+    func testShortsReceiveWarmWeatherCasualDefaults() {
+        XCTAssertEqual(GarmentKind.shorts.suggestedSeasons, [.spring, .summer])
+        XCTAssertEqual(GarmentKind.shorts.suggestedFormalities, [.active, .veryCasual, .casual])
+    }
+
+    func testVisionPrefersSpecificGarmentAndFlagsGenericClothing() {
+        let shoes = ClothingTypeDetector.detection(forVisionObservations: [
+            ("clothing", 0.95),
+            ("jacket", 0.94),
+            ("sneaker", 0.54)
+        ])
+        XCTAssertEqual(shoes.category, .footwear)
+        XCTAssertEqual(shoes.kind, .sneakers)
+        XCTAssertFalse(shoes.needsReview)
+
+        let generic = ClothingTypeDetector.detection(forVisionObservations: [
+            ("clothing", 0.81),
+            ("jacket", 0.80)
+        ])
+        XCTAssertEqual(generic.category, .top)
+        XCTAssertNil(generic.kind)
+        XCTAssertTrue(generic.needsReview)
+    }
+
+    func testLegSplitSilhouetteDetectsTrousersWithoutAUsefulVisionLabel() {
+        let silhouette = GarmentSilhouetteFeatures(
+            heightToWidthRatio: 0.79,
+            centerOccupancyByBand: [0.9, 0.9, 0.9, 0.85, 0.7, 0.5, 0.2, 0.1, 0, 0]
+        )
+        let detection = ClothingTypeDetector.detection(
+            forVisionObservations: [("clothing", 0.64), ("jacket", 0.63)],
+            silhouette: silhouette
+        )
+
+        XCTAssertEqual(detection.category, .bottom)
+        XCTAssertEqual(detection.kind, .trousers)
+        XCTAssertEqual(detection.source, .silhouette)
+        XCTAssertFalse(detection.needsReview)
+
+        let reversed = GarmentSilhouetteFeatures(
+            heightToWidthRatio: 0.79,
+            centerOccupancyByBand: Array(silhouette.centerOccupancyByBand.reversed())
+        )
+        XCTAssertEqual(reversed.suggestedBottomKind(jeansConfidence: 0), .trousers)
+    }
+
+    func testCompactOpenSilhouetteDetectsShorts() {
+        let silhouette = GarmentSilhouetteFeatures(
+            heightToWidthRatio: 0.6,
+            centerOccupancyByBand: [0.45, 0.9, 0.95, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65]
+        )
+        let detection = ClothingTypeDetector.detection(
+            forVisionObservations: [("clothing", 0.25), ("jacket", 0.24)],
+            silhouette: silhouette
+        )
+
+        XCTAssertEqual(detection.category, .bottom)
+        XCTAssertEqual(detection.kind, .shorts)
+    }
+
+    func testCompactOpenJacketSilhouetteStaysOutOfBottoms() {
+        let silhouette = GarmentSilhouetteFeatures(
+            heightToWidthRatio: 0.62,
+            centerOccupancyByBand: [0.67, 1, 1, 1, 1, 1, 1, 1, 0.98, 0.14]
+        )
+        let detection = ClothingTypeDetector.detection(
+            forVisionObservations: [("clothing", 0.81), ("jacket", 0.81)],
+            silhouette: silhouette
+        )
+
+        XCTAssertEqual(detection.category, .top)
+        XCTAssertNil(detection.kind)
+    }
+
+    func testDenimLabelDoesNotTurnJacketShapedGarmentIntoBottom() {
+        let silhouette = GarmentSilhouetteFeatures(
+            heightToWidthRatio: 1.3,
+            centerOccupancyByBand: Array(repeating: 0.94, count: 10)
+        )
+        let detection = ClothingTypeDetector.detection(
+            forVisionObservations: [("clothing", 0.95), ("jacket", 0.9), ("jeans", 0.87)],
+            silhouette: silhouette
+        )
+
+        XCTAssertEqual(detection.category, .top)
+        XCTAssertNil(detection.kind)
+        XCTAssertEqual(detection.source, .silhouette)
+        XCTAssertTrue(detection.needsReview)
+    }
+
+    func testImporterBuildsEditableDefaultsFromDescriptiveFile() async throws {
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 80, height: 80))
+        let data = renderer.image { context in
+            UIColor.yellow.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 80, height: 80))
+        }.pngData()!
+
+        let imported = await ClosetImageImporter.makePiece(
+            from: data,
+            filename: "shorts.webp",
+            index: 1
+        )
+        let result = try XCTUnwrap(imported)
+
+        XCTAssertEqual(result.item.name, "Yellow Shorts")
+        XCTAssertEqual(result.item.category, .bottom)
+        XCTAssertEqual(result.item.seasons, [.spring, .summer])
+        XCTAssertEqual(result.item.formalities, [.active, .veryCasual, .casual])
+    }
+
 }

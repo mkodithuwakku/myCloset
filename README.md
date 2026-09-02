@@ -14,7 +14,7 @@ myCloset is a native SwiftUI iPhone application that turns a private wardrobe in
 
 ## Why this project exists
 
-Choosing an outfit is a constraint problem: the pieces must belong to the user, be available, fit the weather and season, meet the occasion's formality, work together structurally, and feel visually coherent. myCloset makes those constraints explicit while keeping the experience warm, quick, and understandable.
+Choosing an outfit is a constraint problem: the pieces must belong to the user, be available, work together structurally, and feel coherent for the weather, season, and occasion. myCloset makes those constraints explicit while keeping the experience quick and understandable.
 
 The long-term product is designed around three principles:
 
@@ -27,15 +27,15 @@ The long-term product is designed around three principles:
 | Area | Working in Phase 0 |
 |---|---|
 | Home | Minimal Outfit of the Day canvas that composes garment images into one look, with compact weather context and secondary actions |
-| Closet | Local creation, bulk image import, editing, search, category filtering, favorites, availability, archive, and deletion |
-| Item intelligence | Filename-first and on-device Vision clothing-type suggestions, resizing, sampled dominant/accent color suggestions, manual confirmation, season and multi-formality metadata |
-| Generator | Occasion presets, six formality levels, locked pieces, complete outfit generation, one-piece reroll, unlocked reroll, and explanations |
+| Closet | Local creation, bulk image import, full metadata editing, metadata-aware search, category filtering, favorites, availability, archive, and deletion |
+| Item intelligence | Filename-first suggestions plus on-device foreground-shape analysis, foreground-only dominant/accent color sampling, color-aware names, and mandatory per-piece confirmation of editable metadata before a batch is saved |
+| Generator | Photo-first editorial outfit board, automatic first look, visual occasion/formality brief, locked pieces, single-piece reroll, reliably different alternatives when the closet permits, and visible actionable feedback after every generation attempt |
 | Weather | Optional approximate current location, manual city lookup, Open-Meteo conditions, or date-derived season fallback |
 | History | Separate saved and worn outfit collections using immutable snapshots |
 | Profile | Local display name, handle, biography, and profile image editing |
 | Following | Minimal Coming Soon state for the gated post-release CloudKit social phase; no fake profiles or posts |
 | Persistence | Local JSON application-support storage that survives relaunches |
-| Tests | 37 unit tests and 3 end-to-end UI smoke tests |
+| Tests | 51 unit tests and 5 end-to-end UI smoke tests |
 
 The authoritative implementation boundary is maintained in [Prototype Status](PROTOTYPE_STATUS.md).
 
@@ -53,19 +53,19 @@ The authoritative implementation boundary is maintained in [Prototype Status](PR
 2. Open `myCloset.xcodeproj`.
 3. Select the shared `myCloset` scheme and an iPhone simulator.
 4. Press **Run**.
-5. Choose **Load sample closet** for an immediate usable wardrobe, or add your own pieces from the Closet tab.
-6. Open Generate, select an occasion and formality, optionally lock a piece, and create an outfit.
+5. Open **Closet → Import** and choose your own clothing images. The app intentionally starts empty—there is no demo wardrobe mixed into your items.
+6. Open Generate to see an automatic unlocked look. Open **Brief** only when you want to change the scene or dressed-up level, then choose **Another look** for a different valid combination when your closet has alternatives. You can lock a piece after it appears if you want it to stay during rerolls.
 
 ### Seed a test closet from laptop images
 
-1. Put up to 50 garment images in the repository's `TestClosetImages/` directory and boot the iPhone Simulator. These local images are ignored by Git.
-2. From the repository root, load the folder into the simulator's Photos library:
+1. Put up to 50 garment images in the repository's `TestClosetImages/` directory and boot the iPhone Simulator. These local images are ignored by Git. The loader transparently converts WebP files to temporary JPEG copies because Simulator Photos does not accept WebP directly.
+2. From the repository root, load the folder into the simulator's Photos library. The loader tracks image content per Simulator and safely skips files it has already loaded, including same-content duplicates in the folder:
 
 ```sh
 ./scripts/load_test_closet_images.sh
 ```
 
-3. In the app, open **Closet**, tap **Import**, and multi-select the images. The app suggests names, clothing types, dominant/accent colors, seasons, and formalities, then saves the batch locally. Photos imports do not expose original filenames consistently, so the app uses on-device image classification and may ask you to review uncertain types. Tap any imported piece to correct its details.
+3. In the app, open **Closet**, tap **Import**, and multi-select the images. The app proposes on-device name, type, dominant/accent color, season, and formality values, then shows every photo in a required review queue. Correct any field and confirm each piece; nothing is added to the closet until the batch is confirmed. To repair pieces imported by an older build, choose **Closet → + → Re-analyze photo details** and confirm the reviewed batch.
 
 For deterministic type detection, use descriptive names such as `navy-shirt.jpg`, `black-jeans.png`, `white-sneakers.jpeg`, `camel-coat.jpg`, and `silver-watch.png`, make those files available in the simulator's Files app (for example through iCloud Drive), then choose **Closet → + → Import image files**. Filename rules take priority over image classification.
 
@@ -162,7 +162,7 @@ Read the [Master Roadmap](docs/ROADMAP.md) and the linked phase documents for en
 | [Architecture](docs/ARCHITECTURE.md) | Current design, production target, boundaries, and data flow |
 | [Roadmap](docs/ROADMAP.md) | Sequenced delivery phases and release gates |
 | [Testing](docs/TESTING.md) | Automated/manual strategy, commands, matrices, and quality gates |
-| [Latest Test Execution](docs/testing/TEST_EXECUTION_2026-07-14.md) | Environment, commands, results, fixes, and remaining qualification work |
+| [Latest Test Execution](docs/testing/TEST_EXECUTION_2026-09-01.md) | Environment, commands, results, fixes, and remaining qualification work |
 | [Development Guide](docs/DEVELOPMENT.md) | Setup, workflow, conventions, and debugging |
 | [Requirements Traceability](docs/REQUIREMENTS_TRACEABILITY.md) | SRS-to-phase-to-test mapping |
 | [Contributing](CONTRIBUTING.md) | Branch, change, review, and documentation rules |

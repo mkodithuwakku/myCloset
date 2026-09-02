@@ -15,6 +15,8 @@ struct ClosetView: View {
     @State private var importTotal = 0
     @State private var importMessage = ""
     @State private var showingImportResult = false
+    @State private var showingReanalysisConfirmation = false
+    @State private var pendingImportReview: ClosetImportReviewBatch?
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
@@ -56,6 +58,12 @@ struct ClosetView: View {
                                 } label: {
                                     Label("Import image files", systemImage: "folder")
                                 }
+                                Button {
+                                    showingReanalysisConfirmation = true
+                                } label: {
+                                    Label("Re-analyze photo details", systemImage: "viewfinder")
+                                }
+                                .disabled(store.items.allSatisfy { $0.photoData == nil })
                             } label: {
                                 Image(systemName: "plus")
                                     .frame(width: 22, height: 22)
@@ -72,9 +80,7 @@ struct ClosetView: View {
                             EmptyState(
                                 icon: "hanger",
                                 title: "Start your closet",
-                                message: "Add your own clothing or load a sample closet to try the generator immediately.",
-                                actionTitle: "Load sample closet",
-                                action: { store.loadSamples() }
+                                message: "Tap Import above to choose your own clothing photos. We’ll suggest the details and you can edit everything."
                             )
                             .padding(.horizontal, 20)
                         } else {
@@ -105,6 +111,14 @@ struct ClosetView: View {
             .sheet(isPresented: $showingEditor) {
                 ClosetItemEditor(existingItem: editingItem)
             }
+            .sheet(item: $pendingImportReview) { batch in
+                ClosetImportReviewView(batch: batch) { confirmedItems in
+                    completeImportReview(confirmedItems, batch: batch)
+                } onCancel: {
+                    pendingImportReview = nil
+                }
+                .interactiveDismissDisabled()
+            }
             .fileImporter(
                 isPresented: $showingFileImporter,
                 allowedContentTypes: [.image],
@@ -117,17 +131,47 @@ struct ClosetView: View {
                 guard !photos.isEmpty else { return }
                 Task { await importPhotos(photos) }
             }
-            .alert("Test closet import", isPresented: $showingImportResult) {
+            .alert("Closet import", isPresented: $showingImportResult) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(importMessage)
+            }
+            .confirmationDialog(
+                "Re-analyze photo details?",
+                isPresented: $showingReanalysisConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Re-analyze photos") {
+                    Task { await reanalyzePhotos() }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This reruns on-device type and color detection for photographed pieces. Your names, seasons, formality, favorites, and availability stay unchanged.")
+            }
+            .task {
+#if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("-openPrototypeImportReview"),
+                   pendingImportReview == nil {
+                    pendingImportReview = .debugPreview
+                }
+#endif
             }
         }
     }
 
     private var filteredItems: [ClosetItem] {
         store.visibleItems.filter { item in
-            let matchesSearch = searchText.isEmpty || item.name.localizedCaseInsensitiveContains(searchText)
+            let searchableMetadata = [
+                item.name,
+                item.category.title,
+                item.dominantColor.name,
+                item.accentColor?.name,
+                item.seasons.map(\.title).joined(separator: " "),
+                item.formalities.map(\.title).joined(separator: " ")
+            ]
+                .compactMap { $0 }
+                .joined(separator: " ")
+            let matchesSearch = searchText.isEmpty || searchableMetadata.localizedCaseInsensitiveContains(searchText)
             let matchesCategory = selectedCategory == nil || item.category == selectedCategory
             return matchesSearch && matchesCategory
         }
@@ -164,7 +208,7 @@ struct ClosetView: View {
         for (offset, photo) in photos.enumerated() {
             defer { importProgress = offset + 1 }
             guard let data = try? await photo.loadTransferable(type: Data.self),
-                  let piece = await TestClosetImageImporter.makePiece(
+                  let piece = await ClosetImageImporter.makePiece(
                     from: data,
                     index: store.items.count + offset + 1
                   ) else {
@@ -191,7 +235,7 @@ struct ClosetView: View {
                 if hasAccess { url.stopAccessingSecurityScopedResource() }
             }
             guard let data = try? Data(contentsOf: url),
-                  let piece = await TestClosetImageImporter.makePiece(
+                  let piece = await ClosetImageImporter.makePiece(
                     from: data,
                     filename: url.lastPathComponent,
                     index: store.items.count + offset + 1
@@ -215,16 +259,35 @@ struct ClosetView: View {
     @MainActor
     private func finishImport(_ pieces: [ImportedClosetPiece], failures: Int) {
         let uniqueItems = uniqueNames(for: pieces.map(\.item))
-        store.upsert(uniqueItems)
-        let reviewCount = pieces.filter(\.detection.needsReview).count
         isImporting = false
 
-        var details = ["Imported \(uniqueItems.count) piece\(uniqueItems.count == 1 ? "" : "s")."]
-        if reviewCount > 0 {
-            details.append("Tap \(reviewCount) uncertain piece\(reviewCount == 1 ? "" : "s") to check the suggested type.")
+        guard !uniqueItems.isEmpty else {
+            importMessage = failures > 0
+                ? "None of the selected images could be read. Nothing was added to your closet."
+                : "No clothing images were selected. Nothing was added to your closet."
+            showingImportResult = true
+            return
         }
-        if failures > 0 {
-            details.append("\(failures) image\(failures == 1 ? "" : "s") could not be read.")
+
+        pendingImportReview = ClosetImportReviewBatch(
+            items: uniqueItems,
+            uncertainItemIDs: Set(zip(uniqueItems, pieces).compactMap { item, piece in
+                piece.detection.needsReview ? item.id : nil
+            }),
+            failures: failures,
+            mode: .newImport
+        )
+    }
+
+    @MainActor
+    private func completeImportReview(_ confirmedItems: [ClosetItem], batch: ClosetImportReviewBatch) {
+        store.upsert(confirmedItems)
+        pendingImportReview = nil
+
+        let action = batch.mode == .newImport ? "Added" : "Updated"
+        var details = ["\(action) \(confirmedItems.count) confirmed piece\(confirmedItems.count == 1 ? "" : "s") in your closet."]
+        if batch.failures > 0 {
+            details.append("\(batch.failures) image\(batch.failures == 1 ? "" : "s") could not be read.")
         }
         importMessage = details.joined(separator: " ")
         showingImportResult = true
@@ -244,6 +307,49 @@ struct ClosetView: View {
             used.insert(candidate.lowercased())
             return item
         }
+    }
+
+    @MainActor
+    private func reanalyzePhotos() async {
+        let photographedItems = store.items.filter { $0.photoData != nil }
+        beginImport(total: photographedItems.count)
+        var updatedItems: [ClosetItem] = []
+        var uncertainItemIDs = Set<UUID>()
+        var failures = 0
+
+        for (offset, existing) in photographedItems.enumerated() {
+            defer { importProgress = offset + 1 }
+            guard let data = existing.photoData,
+                  let suggestion = await ClosetImageImporter.makePiece(from: data, index: offset + 1) else {
+                failures += 1
+                continue
+            }
+
+            var updated = existing
+            if suggestion.detection.source != .fallback {
+                updated.category = suggestion.item.category
+            }
+            if suggestion.detection.needsReview {
+                uncertainItemIDs.insert(existing.id)
+            }
+            updated.dominantColor = suggestion.item.dominantColor
+            updated.accentColor = suggestion.item.accentColor
+            updatedItems.append(updated)
+        }
+
+        isImporting = false
+        guard !updatedItems.isEmpty else {
+            importMessage = "No photographed pieces could be re-analyzed. Your closet was not changed."
+            showingImportResult = true
+            return
+        }
+
+        pendingImportReview = ClosetImportReviewBatch(
+            items: updatedItems,
+            uncertainItemIDs: uncertainItemIDs,
+            failures: failures,
+            mode: .reanalysis
+        )
     }
 }
 
@@ -275,7 +381,7 @@ private struct ClosetItemCard: View {
                         Circle()
                             .fill(Color(hex: item.dominantColor.hex))
                             .frame(width: 10, height: 10)
-                        Text(item.category.title)
+                        Text("\(item.category.title) · \(item.dominantColor.name)")
                             .font(.caption)
                             .foregroundStyle(ClosetTheme.secondaryInk)
                         if item.availability != .available {
@@ -288,10 +394,10 @@ private struct ClosetItemCard: View {
                 .padding(12)
             }
             .background(ClosetTheme.card)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(Color.primary.opacity(0.05))
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .stroke(ClosetTheme.ink.opacity(0.14))
             }
         }
         .buttonStyle(.plain)
@@ -318,8 +424,11 @@ private struct ClosetItemEditor: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var isProcessingPhoto = false
     @State private var showingDeleteConfirmation = false
+    @State private var photoSuggestionMessage: String?
+    private let isNewItem: Bool
 
     init(existingItem: ClosetItem?) {
+        isNewItem = existingItem == nil
         let fallback = ClothingColor.palette.first { $0.name == "Navy" } ?? ClothingColor.palette[0]
         _item = State(initialValue: existingItem ?? ClosetItem(
             name: "",
@@ -422,6 +531,13 @@ private struct ClosetItemEditor: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+
+                if let photoSuggestionMessage {
+                    Label(photoSuggestionMessage, systemImage: "sparkles")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
             }
             .padding(.vertical, 6)
         }
@@ -436,6 +552,7 @@ private struct ClosetItemEditor: View {
                     Label(category.title, systemImage: category.icon).tag(category)
                 }
             }
+            .accessibilityIdentifier("piece-editor-category")
         }
     }
 
@@ -446,6 +563,7 @@ private struct ClosetItemEditor: View {
                     Text(color.name).tag(color)
                 }
             }
+            .accessibilityIdentifier("piece-editor-dominant-color")
             Picker("Accent color", selection: $item.accentColor) {
                 Text("None").tag(nil as ClothingColor?)
                 ForEach(ClothingColor.palette) { color in
@@ -533,11 +651,25 @@ private struct ClosetItemEditor: View {
         isProcessingPhoto = true
         defer { isProcessingPhoto = false }
         guard let rawData = try? await selected.loadTransferable(type: Data.self),
-              let prepared = ImageUtilities.preparedImageData(from: rawData) else { return }
-        item.photoData = prepared
-        if let colors = ImageUtilities.suggestedColors(from: prepared) {
-            item.dominantColor = colors.dominant
-            item.accentColor = colors.accent
+              let suggestion = await ClosetImageImporter.makePiece(
+                from: rawData,
+                index: store.items.count + 1
+              ) else { return }
+
+        item.photoData = suggestion.item.photoData
+        item.dominantColor = suggestion.item.dominantColor
+        item.accentColor = suggestion.item.accentColor
+
+        if isNewItem {
+            item.name = suggestion.item.name
+            item.category = suggestion.item.category
+            item.seasons = suggestion.item.seasons
+            item.formalities = suggestion.item.formalities
+            photoSuggestionMessage = suggestion.detection.needsReview
+                ? "We filled in a best guess. Please review the type and other details."
+                : "Name, type, colors, seasons, and formality were suggested from this photo."
+        } else {
+            photoSuggestionMessage = "Colors were refreshed from the new photo; your existing details were preserved."
         }
     }
 

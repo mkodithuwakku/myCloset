@@ -15,7 +15,7 @@ struct ContentView: View {
                 .tabItem { Label("Closet", systemImage: "hanger") }
                 .tag(1)
 
-            GeneratorView()
+            GeneratorView(selectedTab: $selectedTab)
                 .tabItem { Label("Generate", systemImage: "sparkles") }
                 .tag(2)
 
@@ -27,6 +27,8 @@ struct ContentView: View {
                 .tabItem { Label("Profile", systemImage: "person.crop.circle.fill") }
                 .tag(4)
         }
+        .toolbarBackground(ClosetTheme.canvas, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
         .task {
 #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-resetPrototypeData") {
@@ -38,6 +40,9 @@ struct ContentView: View {
             }
             if ProcessInfo.processInfo.arguments.contains("-openPrototypeGenerator") {
                 selectedTab = 2
+            }
+            if ProcessInfo.processInfo.arguments.contains("-openPrototypeImportReview") {
+                selectedTab = 1
             }
 #endif
         }

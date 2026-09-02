@@ -11,7 +11,7 @@ This directory is the maintained engineering and delivery knowledge base for myC
 | [Development](DEVELOPMENT.md) | Engineering lead | Toolchain, setup, build, debugging, or coding-convention change |
 | [Roadmap](ROADMAP.md) | Product owner | Phase scope, order, status, entry/exit gate, or release-target change |
 | [Testing](TESTING.md) | QA/engineering | Suite, command, CI, coverage target, test fixture, or quality-gate change |
-| [Latest Test Execution](testing/TEST_EXECUTION_2026-07-14.md) | QA/engineering | A release or phase gate is executed |
+| [Latest Test Execution](testing/TEST_EXECUTION_2026-09-01.md) | QA/engineering | A release or phase gate is executed |
 | [Requirements Traceability](REQUIREMENTS_TRACEABILITY.md) | Product + QA | Requirement, phase assignment, implementation, or verification change |
 | [Prototype Status](../PROTOTYPE_STATUS.md) | Engineering lead | Any change to what the current binary actually supports |
 | [SRS](../SRS.md) | Product owner | Approved product requirement or business-rule change |

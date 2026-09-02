@@ -78,7 +78,8 @@ struct HomeView: View {
                     .foregroundStyle(ClosetTheme.accent)
                     .textCase(.uppercase)
                 Text("Good \(dayPart), \(firstName).")
-                    .font(.system(.largeTitle, design: .rounded, weight: .semibold))
+                    .font(.system(size: 40, weight: .medium, design: .serif))
+                    .tracking(-1.2)
                     .foregroundStyle(ClosetTheme.ink)
             }
         }
@@ -89,7 +90,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 18) {
             HStack {
                 Text("Outfit of the day")
-                    .font(.title2.weight(.semibold))
+                    .font(.system(.title2, design: .serif, weight: .semibold))
                     .foregroundStyle(ClosetTheme.ink)
                 Spacer()
                 if store.dailyOutfit != nil {
@@ -108,7 +109,11 @@ struct HomeView: View {
 
             if let outfit = store.dailyOutfit {
                 let items = store.resolve(outfit)
-                OutfitComposition(items: items)
+                OutfitCanvas(
+                    items: items,
+                    height: 390,
+                    accessibilityIdentifier: "daily-outfit-composition"
+                )
 
                 Text(outfit.explanation)
                     .font(.subheadline)
@@ -158,14 +163,10 @@ struct HomeView: View {
                 .foregroundStyle(ClosetTheme.secondaryInk)
                 .fixedSize(horizontal: false, vertical: true)
             if store.items.isEmpty {
-                Button("Load sample closet") {
-                    store.loadSamples()
-                    store.refreshDaily(weather: weather.context, force: true)
-                }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.capsule)
-                .tint(ClosetTheme.ink)
-                .padding(.top, 4)
+                Text("Import your own images from Closet to begin.")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(ClosetTheme.accent)
+                    .padding(.top, 2)
             }
         }
         .padding(.top, 4)
@@ -202,147 +203,6 @@ struct HomeView: View {
             try? await Task.sleep(for: .seconds(2))
             withAnimation { confirmation = nil }
         }
-    }
-}
-
-private struct OutfitComposition: View {
-    let items: [ClosetItem]
-
-    private var onePiece: ClosetItem? { item(in: .onePiece) }
-    private var top: ClosetItem? { item(in: .top) }
-    private var bottom: ClosetItem? { item(in: .bottom) }
-    private var footwear: ClosetItem? { item(in: .footwear) }
-    private var outerwear: ClosetItem? { item(in: .outerwear) }
-    private var accessory: ClosetItem? { item(in: .accessory) }
-
-    var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                VStack(spacing: -4) {
-                    if let onePiece {
-                        GarmentVisual(item: onePiece)
-                            .frame(width: 154, height: 210)
-                    } else {
-                        if let top {
-                            GarmentVisual(item: top)
-                                .frame(width: 156, height: 108)
-                        }
-                        if let bottom {
-                            GarmentVisual(item: bottom)
-                                .frame(width: 132, height: 142)
-                        }
-                    }
-
-                    if let footwear {
-                        GarmentVisual(item: footwear)
-                            .frame(width: 152, height: 70)
-                            .padding(.top, 4)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.top, 8)
-
-                if let outerwear {
-                    GarmentVisual(item: outerwear)
-                        .frame(width: 92, height: 132)
-                        .rotationEffect(.degrees(-4))
-                        .position(x: 48, y: 94)
-                }
-
-                if let accessory {
-                    GarmentVisual(item: accessory)
-                        .frame(width: 72, height: 54)
-                        .rotationEffect(.degrees(5))
-                        .position(x: proxy.size.width - 40, y: 72)
-                }
-            }
-        }
-        .frame(height: 350)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Recommended outfit")
-        .accessibilityIdentifier("daily-outfit-composition")
-    }
-
-    private func item(in category: ClothingCategory) -> ClosetItem? {
-        items.first { $0.category == category }
-    }
-}
-
-private struct GarmentVisual: View {
-    let item: ClosetItem
-
-    var body: some View {
-        Group {
-            if let photoData = item.photoData,
-               let image = UIImage(data: photoData) {
-                Image(uiImage: image)
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFit()
-            } else {
-                GarmentPlaceholder(category: item.category)
-                    .foregroundStyle(Color(hex: item.dominantColor.hex))
-                    .shadow(color: .black.opacity(0.14), radius: 1.5, y: 1)
-                    .padding(5)
-            }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(item.name), \(item.category.title), \(item.dominantColor.name)")
-    }
-}
-
-private struct GarmentPlaceholder: View {
-    let category: ClothingCategory
-
-    @ViewBuilder
-    var body: some View {
-        switch category {
-        case .bottom:
-            PantsSilhouette()
-        case .onePiece:
-            DressSilhouette()
-        default:
-            Image(systemName: category.icon)
-                .resizable()
-                .symbolRenderingMode(.monochrome)
-                .scaledToFit()
-        }
-    }
-}
-
-private struct PantsSilhouette: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.width * 0.23, y: rect.height * 0.04))
-        path.addLine(to: CGPoint(x: rect.width * 0.77, y: rect.height * 0.04))
-        path.addLine(to: CGPoint(x: rect.width * 0.72, y: rect.height * 0.43))
-        path.addLine(to: CGPoint(x: rect.width * 0.88, y: rect.height * 0.96))
-        path.addLine(to: CGPoint(x: rect.width * 0.57, y: rect.height * 0.96))
-        path.addLine(to: CGPoint(x: rect.width * 0.50, y: rect.height * 0.52))
-        path.addLine(to: CGPoint(x: rect.width * 0.43, y: rect.height * 0.96))
-        path.addLine(to: CGPoint(x: rect.width * 0.12, y: rect.height * 0.96))
-        path.addLine(to: CGPoint(x: rect.width * 0.28, y: rect.height * 0.43))
-        path.closeSubpath()
-        return path
-    }
-}
-
-private struct DressSilhouette: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.width * 0.40, y: rect.height * 0.05))
-        path.addQuadCurve(
-            to: CGPoint(x: rect.width * 0.60, y: rect.height * 0.05),
-            control: CGPoint(x: rect.width * 0.50, y: rect.height * 0.15)
-        )
-        path.addLine(to: CGPoint(x: rect.width * 0.78, y: rect.height * 0.18))
-        path.addLine(to: CGPoint(x: rect.width * 0.68, y: rect.height * 0.35))
-        path.addLine(to: CGPoint(x: rect.width * 0.88, y: rect.height * 0.95))
-        path.addLine(to: CGPoint(x: rect.width * 0.12, y: rect.height * 0.95))
-        path.addLine(to: CGPoint(x: rect.width * 0.32, y: rect.height * 0.35))
-        path.addLine(to: CGPoint(x: rect.width * 0.22, y: rect.height * 0.18))
-        path.closeSubpath()
-        return path
     }
 }
 
