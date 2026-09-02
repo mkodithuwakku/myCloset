@@ -17,7 +17,7 @@ This document maps SRS requirement groups to implementation phases and current v
 | ONB — onboarding/permissions | 1, 6 | Partial | Empty/sample flow exists; account-free onboarding remains |
 | PROF — local/public profile | 0, 6, 7 | Partial | Local profile editing implemented; controlled CloudKit public profile planned after release |
 | SOC — following/feed | 7 | Planned | Coming Soon navigation implemented; CloudKit service gated on interest and safety |
-| ITEM — capture/creation | 0, 1 | Partial | Import and fully editable, image-derived name/type/color/season/formality defaults implemented; guided camera/segmentation Phase 1 |
+| ITEM — capture/creation | 0, 1 | Partial | Import and fully editable, image-derived name/type/color/season/formality defaults implemented; jacket/hoodie outerwear and metadata-synchronized default names covered; guided camera/adjustable segmentation remains Phase 1 |
 | CLO — closet management/privacy | 0, 1 | Partial | Local CRUD, metadata-aware search/filter, and availability implemented; capture quality remains |
 | WEA — weather/season | 0, 3 | Partial | Location/city/season works; resilience/caching/safety Phase 3 |
 | HOME — Outfit of the Day | 0, 3 | Partial | Local daily outfit; production stability/personalization Phase 3 |
@@ -51,7 +51,8 @@ This document maps SRS requirement groups to implementation phases and current v
 | Closet models and metadata | `myCloset/Models.swift` | `ModelsAndImageTests` |
 | Local persistence and history | `myCloset/ClosetStore.swift` | `ClosetStoreTests` |
 | Outfit constraints/scoring | `myCloset/OutfitEngine.swift` | `OutfitEngineTests` |
-| Photo preparation/foreground-only colors | `myCloset/ImageUtilities.swift` | `ModelsAndImageTests` |
+| Photo preparation, garment-focused perceptual colors, and accent suppression | `myCloset/ImageUtilities.swift` | `ModelsAndImageTests` |
+| Outerwear suggestions and synchronized import names | `myCloset/ClothingTypeDetector.swift`, `myCloset/ClosetImportReviewView.swift` | `ClothingTypeDetectorTests`, `MyClosetUITests` |
 | Batch image metadata suggestions and re-analysis | `myCloset/ClothingTypeDetector.swift`, `myCloset/ClosetView.swift` | `ClothingTypeDetectorTests`, `ClosetStoreTests` |
 | Required per-piece import confirmation | `myCloset/ClosetImportReviewView.swift`, `myCloset/ClosetView.swift` | `MyClosetUITests.testImportedPieceMustBeConfirmedAndCanBeCorrectedBeforeSaving` |
 | Empty → personal image import | `HomeView`, `ClosetView`, `ClosetStore` | `MyClosetUITests.testEmptyClosetStartsWithOwnImageImport`, `ClosetStoreTests.testLegacySampleClosetIsRemovedOnNextLaunchWithoutTouchingImportedItems` |

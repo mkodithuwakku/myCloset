@@ -1,10 +1,10 @@
 # Testing Strategy and Guide
 
-**Current automated inventory:** 51 unit tests + 5 UI tests
+**Current automated inventory:** 56 unit tests + 5 UI tests
 **Current verified environment:** Xcode 26.3, iPhone 17 simulator, iOS 26.3.1
 **Minimum deployment target:** iOS 17.0
 
-Latest recorded evidence: [Test Execution Report — 2026-09-01](testing/TEST_EXECUTION_2026-09-01.md) (56 passed, 0 failed).
+Latest recorded evidence: [Test Execution Report — 2026-09-01](testing/TEST_EXECUTION_2026-09-01.md) (61 passed, 0 failed).
 
 ## 1. Objectives
 
@@ -69,7 +69,7 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 | Immutable worn snapshots | CLO-010, HIST-003 |
 | Full local reset | Account/deletion precursor |
 
-### 3.3 `ModelsAndImageTests` — 11 tests
+### 3.3 `ModelsAndImageTests` — 14 tests
 
 | Coverage | SRS relationship |
 |---|---|
@@ -81,10 +81,12 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 | Maximum image dimension | PERF-007 |
 | Dominant red extraction | ITEM-009–ITEM-010 |
 | Plain-background suppression during color extraction | ITEM-009–ITEM-010 |
+| Perceptual dark-neutral classification | ITEM-009–ITEM-011 |
+| Insignificant accent suppression and meaningful accent retention | ITEM-009–ITEM-011 |
 | Vision 32-bit foreground-mask decoding | ITEM-007–ITEM-010 |
 | Invalid-image graceful failure | ITEM-019 |
 
-### 3.4 `ClothingTypeDetectorTests` — 13 tests
+### 3.4 `ClothingTypeDetectorTests` — 16 tests
 
 | Coverage | SRS relationship |
 |---|---|
@@ -97,6 +99,8 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 | Reliable footwear labels outrank generic clothing results; uncertain unmasked results require review | ITEM-007–ITEM-008 |
 | Leg-split and compact-open silhouettes identify trousers and shorts | ITEM-007–ITEM-008 |
 | Strong denim labels and compact center openings cannot turn a jacket-shaped garment into a bottom | ITEM-007–ITEM-008 |
+| Jacket and hoodie labels produce editable outerwear suggestions | ITEM-007–ITEM-008 |
+| Confirmed category/color metadata produces a synchronized default name | ITEM-001, ITEM-007–ITEM-011 |
 
 The suite keeps OS-owned Vision at the boundary and tests the deterministic structural interpretation separately, because Apple's exact semantic labels may evolve between system releases.
 
@@ -107,7 +111,7 @@ The suite keeps OS-owned Vision at the boundary and tests the deterministic stru
 | Empty closet → own-image import | Real users start without demo garments and can reach personal photo import |
 | Closet → generator → visual brief → outfit | Stored pieces produce an unlocked outfit without a starting-piece prompt, accept a visual Work brief, and retain generated-piece lock controls |
 | Closet piece → metadata editor | Imported/stored item exposes editable name and metadata controls |
-| Import suggestions → required review → closet | A suggested top can be renamed, changed to a bottom, recolored, explicitly confirmed, and only then added to the closet |
+| Import suggestions → required review → closet | Category changes update the generated name, a manual rename disables later auto-renaming, and the corrected piece is added only after confirmation |
 | Following tab → Coming Soon | Social roadmap is visible without fake profiles, posts, or service behavior |
 
 ## 4. Running tests

@@ -17,7 +17,7 @@ This slice provides a genuinely usable local wardrobe and outfit-generation loop
 | Local closet | CLO-001–CLO-011 | Starts empty for real users; create, bulk-import, edit, metadata-aware search, filter, favorite, archive, set availability, and delete |
 | Clothing metadata | ITEM-001–ITEM-018 | Name, category, dominant/accent colors, multiple seasons, multiple formalities, and confirmation form |
 | Duplicate-name warning | ITEM-013–ITEM-014 | Case- and whitespace-normalized warning without blocking save |
-| Photo import | ITEM-006–ITEM-018 | Up to 50 Photos/Files images per batch, filename-first and on-device type/color suggestions, a required per-piece metadata review before any batch is saved, and review-first re-analysis for older imports |
+| Photo import | ITEM-006–ITEM-018 | Up to 50 Photos/Files images per batch, filename-first and on-device type/color suggestions including jacket/hoodie outerwear, metadata-synchronized default names, a required per-piece review before any batch is saved, and review-first re-analysis for older imports |
 | Capture guidance preview | ITEM-004–ITEM-005 | Category-aware framing outline and guidance text in the editor |
 | Weather fallback | WEA-001–WEA-011 | Current foreground location, manually entered city, or date-derived season |
 | Outfit of the Day | HOME-001–HOME-009 | Garment images composed as one visual look, compact weather context, explanation, refresh, save, and mark worn |
@@ -30,7 +30,7 @@ This slice provides a genuinely usable local wardrobe and outfit-generation loop
 | Following roadmap state | SOC | Minimal Coming Soon screen; no fake profiles, posts, or service behavior |
 | Accessibility foundations | A11Y | Dynamic native controls, text color names, accessibility labels on key icon controls, and no color-only status |
 | Local persistence | OFF-001 | Codable application-support storage survives relaunches |
-| Automated verification | ENG-004–ENG-006 | Shared scheme, 51 unit tests, 5 UI tests, and GitHub Actions CI |
+| Automated verification | ENG-004–ENG-006 | Shared scheme, 56 unit tests, 5 UI tests, and GitHub Actions CI |
 
 ## Partial or prototype-only
 
@@ -38,8 +38,8 @@ This slice provides a genuinely usable local wardrobe and outfit-generation loop
 |---|---|
 | Garment isolation | Image background removal and adjustable segmentation masks are not implemented yet |
 | Camera guidance | The outline appears in the import editor, but direct camera capture is deferred |
-| Color extraction | Uses an on-device foreground-instance mask before local palette quantization; editable masks, production confidence, and richer color science remain |
-| Clothing-type detection | Filename rules remain deterministic; Apple's generic visual labels and silhouettes are best-effort. Generic results are explicitly uncertain, and every imported piece requires user confirmation before persistence |
+| Color extraction | Selects and insets one garment-like foreground instance, suppresses frame/background colors and insignificant accents, and classifies hue and neutrals perceptually; editable masks and production confidence remain |
+| Clothing-type detection | Filename rules remain deterministic; Apple's visual labels and silhouettes are best-effort, with explicit jacket/hoodie outerwear handling. Generic results are explicitly uncertain, and every imported piece requires user confirmation before persistence |
 | Recommendation learning | Save/worn actions persist, but explicit feedback preference training is deferred |
 | Weather | Uses keyless Open-Meteo and Apple geocoding without production caching, provider contracts, or severe-weather rules |
 | Offline behavior | Closet, history, profile, and generation work locally; cross-device synchronization is excluded by design |
@@ -69,7 +69,7 @@ CloudKit profiles and following are approved only as the gated post-release Phas
 6. Relaunched the installed app and verified local persistence.
 7. Opened Generate through a debug smoke-test launch argument and verified the automatic editorial outfit board rendered with piece-level lock and reroll controls.
 8. Exercised the visual outfit brief through the UI journey and verified a Work brief produced a rendered outfit.
-9. Ran all 51 unit tests and all five end-to-end UI tests successfully, including correcting an imported piece's suggested name, type, and color before it was saved.
+9. Ran all 56 unit tests and all five end-to-end UI tests successfully, including automatic default-name synchronization and preservation of a manually edited import name.
 
 Build command:
 

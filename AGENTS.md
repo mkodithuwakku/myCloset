@@ -47,7 +47,7 @@ The five tabs are Home, Closet, Generate, Following, and Profile.
 
 - Home: minimalist Outfit of the Day canvas that composes garment images into one look, plus compact season/weather context and secondary actions.
 - Closet: local create/bulk-import/edit/search/filter/favorite/archive/delete and availability management.
-- Item intelligence: Photos/Files batch import, filename-first and on-device foreground-silhouette type suggestions, color-aware names, kind-specific season/formality defaults, fixed 1,200-pixel resizing, foreground-only palette suggestions, explicit batch re-analysis, and editable metadata.
+- Item intelligence: Photos/Files batch import, filename-first and on-device foreground-silhouette type suggestions including jacket/hoodie outerwear, metadata-synchronized default names, kind-specific season/formality defaults, fixed 1,200-pixel resizing, garment-focused perceptual palette suggestions, explicit batch re-analysis, and editable metadata.
 - Generator: visual outfit brief, six formality levels, locks, different-look/full/single-piece rerolls, closet-readiness recovery, and explanations.
 - Weather: foreground approximate location, manual city through Apple geocoding, Open-Meteo current conditions, and season fallback.
 - History: separate saved and worn collections backed by immutable snapshots.
@@ -76,7 +76,7 @@ Important boundaries:
 
 - `ClosetStore` currently combines observable application state, persistence, and recommendation orchestration. This is accepted prototype debt, not the production service shape.
 - `OutfitEngine` is a stateless domain service. Keep hard filtering/validation separate from soft scoring.
-- `ClosetImageImporter` coordinates editable name/category/season/formality/color defaults. `ClothingTypeDetector` uses deterministic filename rules, Apple Vision foreground-instance masks for structural top/bottom analysis, and conservative semantic signals. `ImageUtilities` handles decoding, resizing, compression, and foreground-only color sampling. User-adjustable segmentation, crop correction, and confidence UX belong to Phase 1.
+- `ClosetImageImporter` coordinates editable name/category/season/formality/color defaults. `ClothingTypeDetector` uses deterministic filename rules, Apple Vision foreground-instance masks for structural top/bottom analysis, and explicit outerwear signals. `ImageUtilities` handles decoding, resizing, compression, single-instance garment sampling, perceptual palette mapping, and insignificant-accent suppression. User-adjustable segmentation, crop correction, and confidence UX belong to Phase 1.
 - `WeatherService` owns location/city/provider behavior. Do not spread transport code into views.
 - Views may own temporary UI state but should not own persistence, transport, or recommendation rules.
 
@@ -143,7 +143,7 @@ Load Git-ignored project-local garment images into a booted Simulator with:
 ./scripts/load_test_closet_images.sh
 ```
 
-Current automated inventory: 51 unit tests and 5 UI tests. The latest recorded execution evidence is [docs/testing/TEST_EXECUTION_2026-09-01.md](docs/testing/TEST_EXECUTION_2026-09-01.md).
+Current automated inventory: 56 unit tests and 5 UI tests. The latest recorded execution evidence is [docs/testing/TEST_EXECUTION_2026-09-01.md](docs/testing/TEST_EXECUTION_2026-09-01.md).
 
 Debug-only UI launch arguments are:
 

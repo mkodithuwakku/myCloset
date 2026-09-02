@@ -63,11 +63,18 @@ enum ImageUtilities {
         context.interpolationQuality = .medium
         context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
 
+        let background = estimatedBackground(in: pixels, width: width, height: height, bytesPerRow: bytesPerRow)
         let foregroundMask = foregroundMask(for: cgImage, width: width, height: height)
         let foregroundSamples = foregroundMask.map {
-            colorSamples(in: pixels, width: width, height: height, bytesPerRow: bytesPerRow, including: $0, excluding: nil)
+            colorSamples(
+                in: pixels,
+                width: width,
+                height: height,
+                bytesPerRow: bytesPerRow,
+                including: $0,
+                excluding: background
+            )
         } ?? []
-        let background = estimatedBackground(in: pixels, width: width, height: height, bytesPerRow: bytesPerRow)
         let backgroundFilteredSamples = colorSamples(
             in: pixels,
             width: width,
@@ -89,23 +96,37 @@ enum ImageUtilities {
                     excluding: nil
                 ))
 
-        var buckets: [ClothingColor: Int] = [:]
-        for sample in samples {
-            let mapped = ClothingColor.nearest(red: sample.red, green: sample.green, blue: sample.blue)
-            buckets[mapped, default: 0] += sample.weight
-        }
-
-        let ranked = buckets.sorted { $0.value > $1.value }.map(\.key)
-        guard let dominant = ranked.first else { return nil }
-        let accent = ranked.dropFirst().first { $0 != dominant }
-        return (dominant, accent)
+        return rankedColors(from: samples)
     }
 
-    private struct ColorSample {
+    struct ColorSample {
         let red: Double
         let green: Double
         let blue: Double
         let weight: Int
+    }
+
+    static func rankedColors(from samples: [ColorSample]) -> (dominant: ClothingColor, accent: ClothingColor?)? {
+        var buckets: [ClothingColor: Int] = [:]
+        for sample in samples {
+            let mapped = perceptuallyNearest(red: sample.red, green: sample.green, blue: sample.blue)
+            buckets[mapped, default: 0] += sample.weight
+        }
+
+        let ranked = buckets.sorted { lhs, rhs in
+            lhs.value == rhs.value ? lhs.key.name < rhs.key.name : lhs.value > rhs.value
+        }
+        guard let dominant = ranked.first else { return nil }
+        let totalWeight = ranked.reduce(0) { $0 + $1.value }
+        let minimumAccentWeight = max(
+            Int(ceil(Double(totalWeight) * 0.20)),
+            Int(ceil(Double(dominant.value) * 0.30))
+        )
+        let accent = ranked.dropFirst().first { candidate in
+            candidate.value >= minimumAccentWeight &&
+                labDistance(candidate.key.rgb, dominant.key.rgb) >= 12
+        }?.key
+        return (dominant.key, accent)
     }
 
     private static func estimatedBackground(
@@ -169,9 +190,9 @@ enum ImageUtilities {
                 if let background, squaredDistance(color, background) < 0.035 {
                     continue
                 }
-                let isCentral = abs(Double(x) - centerX) < Double(width) * 0.32 &&
-                    abs(Double(y) - centerY) < Double(height) * 0.32
-                samples.append(.init(red: color.red, green: color.green, blue: color.blue, weight: isCentral ? 2 : 1))
+                let isCentral = abs(Double(x) - centerX) < Double(width) * 0.25 &&
+                    abs(Double(y) - centerY) < Double(height) * 0.25
+                samples.append(.init(red: color.red, green: color.green, blue: color.blue, weight: isCentral ? 5 : 1))
             }
         }
         return samples
@@ -182,14 +203,33 @@ enum ImageUtilities {
         let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
         guard (try? handler.perform([request])) != nil,
               let observation = request.results?.first,
-              !observation.allInstances.isEmpty,
-              let buffer = try? observation.generateScaledMaskForImage(
-                forInstances: observation.allInstances,
-                from: handler
-              ) else {
+              !observation.allInstances.isEmpty else {
             return nil
         }
 
+        var bestMask: [Bool]?
+        var bestScore = -Double.infinity
+        for instance in observation.allInstances {
+            guard let buffer = try? observation.generateScaledMaskForImage(
+                forInstances: IndexSet(integer: instance),
+                from: handler
+            ), let candidate = sampledMask(from: buffer, width: width, height: height) else {
+                continue
+            }
+
+            let score = foregroundScore(candidate, width: width, height: height)
+            if score > bestScore {
+                bestScore = score
+                bestMask = candidate
+            }
+        }
+
+        guard let bestMask else { return nil }
+        let inset = eroded(bestMask, width: width, height: height)
+        return inset.filter { $0 }.count >= 120 ? inset : bestMask
+    }
+
+    private static func sampledMask(from buffer: CVPixelBuffer, width: Int, height: Int) -> [Bool]? {
         CVPixelBufferLockBaseAddress(buffer, .readOnly)
         defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
         let maskWidth = CVPixelBufferGetWidth(buffer)
@@ -205,6 +245,150 @@ enum ImageUtilities {
             }
         }
         return mask
+    }
+
+    private static func foregroundScore(_ mask: [Bool], width: Int, height: Int) -> Double {
+        let centerX = Double(width - 1) / 2
+        let centerY = Double(height - 1) / 2
+        let maximumDistance = hypot(centerX, centerY)
+        var count = 0
+        var centrality = 0.0
+
+        for y in 0..<height {
+            for x in 0..<width where mask[y * width + x] {
+                count += 1
+                let distance = hypot(Double(x) - centerX, Double(y) - centerY)
+                centrality += max(0, 1 - distance / maximumDistance)
+            }
+        }
+
+        guard count > 0 else { return -Double.infinity }
+        let areaRatio = Double(count) / Double(width * height)
+        let frameFillingPenalty = areaRatio > 0.65 ? 0.08 : 1
+        return Double(count) * (1 + 0.75 * centrality / Double(count)) * frameFillingPenalty
+    }
+
+    private static func eroded(_ mask: [Bool], width: Int, height: Int) -> [Bool] {
+        var result = [Bool](repeating: false, count: mask.count)
+        guard width > 2, height > 2 else { return result }
+
+        for y in 1..<(height - 1) {
+            for x in 1..<(width - 1) where mask[y * width + x] {
+                var neighbours = 0
+                for offsetY in -1...1 {
+                    for offsetX in -1...1 where mask[(y + offsetY) * width + x + offsetX] {
+                        neighbours += 1
+                    }
+                }
+                result[y * width + x] = neighbours >= 8
+            }
+        }
+        return result
+    }
+
+    private struct LabColor {
+        let lightness: Double
+        let a: Double
+        let b: Double
+    }
+
+    private static func perceptuallyNearest(red: Double, green: Double, blue: Double) -> ClothingColor {
+        let source = lab(red: red, green: green, blue: blue)
+        let maximum = max(red, green, blue)
+        let minimum = min(red, green, blue)
+        let saturation = maximum == 0 ? 0 : (maximum - minimum) / maximum
+        let hue = hueDegrees(red: red, green: green, blue: blue)
+        if maximum < 0.16 || (source.lightness < 24 && saturation < 0.22) {
+            return paletteColor(named: "Black")
+        }
+        if saturation < 0.22 {
+            if source.lightness < 40 { return paletteColor(named: "Black") }
+            if source.lightness > 78 { return paletteColor(named: "White") }
+            if saturation > 0.06 && source.lightness > 52 && (15..<75).contains(hue) {
+                return paletteColor(named: "Beige")
+            }
+            return paletteColor(named: "Grey")
+        }
+
+        switch hue {
+        case 0..<16, 344...360:
+            return paletteColor(named: source.lightness > 70 ? "Pink" : "Red")
+        case 16..<45:
+            if source.lightness > 66 && saturation < 0.38 { return paletteColor(named: "Beige") }
+            return paletteColor(named: source.lightness < 48 ? "Brown" : "Orange")
+        case 45..<70:
+            return paletteColor(named: saturation < 0.28 ? "Beige" : "Yellow")
+        case 70..<165:
+            return paletteColor(named: "Green")
+        case 165..<195:
+            return paletteColor(named: "Teal")
+        case 195..<255:
+            return paletteColor(named: source.lightness < 34 ? "Navy" : "Blue")
+        case 255..<295:
+            return paletteColor(named: "Purple")
+        default:
+            return paletteColor(named: source.lightness > 64 ? "Pink" : "Purple")
+        }
+    }
+
+    private static func paletteColor(named name: String) -> ClothingColor {
+        ClothingColor.palette.first { $0.name == name } ?? ClothingColor.palette[2]
+    }
+
+    private static func hueDegrees(red: Double, green: Double, blue: Double) -> Double {
+        let maximum = max(red, green, blue)
+        let minimum = min(red, green, blue)
+        let delta = maximum - minimum
+        guard delta > 0 else { return 0 }
+
+        let hue: Double
+        if maximum == red {
+            hue = 60 * ((green - blue) / delta).truncatingRemainder(dividingBy: 6)
+        } else if maximum == green {
+            hue = 60 * ((blue - red) / delta + 2)
+        } else {
+            hue = 60 * ((red - green) / delta + 4)
+        }
+        return hue < 0 ? hue + 360 : hue
+    }
+
+    private static func labDistance(
+        _ lhs: (red: Double, green: Double, blue: Double),
+        _ rhs: (red: Double, green: Double, blue: Double)
+    ) -> Double {
+        let first = lab(red: lhs.red, green: lhs.green, blue: lhs.blue)
+        let second = lab(red: rhs.red, green: rhs.green, blue: rhs.blue)
+        return sqrt(
+            pow(first.lightness - second.lightness, 2) +
+                pow(first.a - second.a, 2) +
+                pow(first.b - second.b, 2)
+        )
+    }
+
+    private static func lab(red: Double, green: Double, blue: Double) -> LabColor {
+        func linear(_ value: Double) -> Double {
+            value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+        }
+
+        let r = linear(red)
+        let g = linear(green)
+        let b = linear(blue)
+        let x = (r * 0.4124564 + g * 0.3575761 + b * 0.1804375) / 0.95047
+        let y = r * 0.2126729 + g * 0.7151522 + b * 0.072175
+        let z = (r * 0.0193339 + g * 0.119192 + b * 0.9503041) / 1.08883
+
+        func transform(_ value: Double) -> Double {
+            value > 0.008856 ? pow(value, 1.0 / 3.0) : 7.787 * value + 16.0 / 116.0
+        }
+
+        let transformedX = transform(x)
+        let transformedY = transform(y)
+        let transformedZ = transform(z)
+        return LabColor(
+            lightness: 116 * transformedY - 16,
+            a: 500 * (transformedX - transformedY),
+            b: 200 * (transformedY - transformedZ)
+        )
     }
 
     private static func squaredDistance(

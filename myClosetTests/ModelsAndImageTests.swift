@@ -71,6 +71,35 @@ final class ModelsAndImageTests: XCTestCase {
         XCTAssertEqual(result.dominant.name, "Blue")
     }
 
+    func testPerceptualColorKeepsCoolDarkNeutralBlack() throws {
+        let result = try XCTUnwrap(ImageUtilities.rankedColors(from: [
+            .init(red: 0.08, green: 0.09, blue: 0.105, weight: 100)
+        ]))
+
+        XCTAssertEqual(result.dominant.name, "Black")
+        XCTAssertNil(result.accent)
+    }
+
+    func testTinyContrastingRegionIsNotReportedAsAccent() throws {
+        let result = try XCTUnwrap(ImageUtilities.rankedColors(from: [
+            .init(red: 0.07, green: 0.07, blue: 0.08, weight: 90),
+            .init(red: 0.95, green: 0.94, blue: 0.91, weight: 10)
+        ]))
+
+        XCTAssertEqual(result.dominant.name, "Black")
+        XCTAssertNil(result.accent)
+    }
+
+    func testMeaningfulContrastingRegionIsReportedAsAccent() throws {
+        let result = try XCTUnwrap(ImageUtilities.rankedColors(from: [
+            .init(red: 0.07, green: 0.07, blue: 0.08, weight: 70),
+            .init(red: 0.95, green: 0.94, blue: 0.91, weight: 30)
+        ]))
+
+        XCTAssertEqual(result.dominant.name, "Black")
+        XCTAssertEqual(result.accent?.name, "White")
+    }
+
     func testInvalidImageDataFailsGracefully() {
         let invalid = Data("not an image".utf8)
 

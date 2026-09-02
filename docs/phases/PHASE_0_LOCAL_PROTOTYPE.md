@@ -13,7 +13,7 @@ A user can launch a native iPhone app, load sample pieces or create private loca
 - Five-tab SwiftUI application shell with a truthful Following Coming Soon state.
 - Local `Codable` wardrobe/profile/history persistence.
 - Closet add/bulk-import/edit/search/filter/favorite/availability/archive/delete.
-- Garment Photos/Files import, filename/Vision type suggestion, resizing, palette suggestion, and manual confirmation.
+- Garment Photos/Files import, filename/Vision type suggestion including outerwear, garment-focused perceptual palette suggestion, synchronized default naming, and manual confirmation.
 - Multi-season and multi-formality metadata.
 - Duplicate-name warning without forced merge.
 - Optional current-location/city weather and season fallback.
@@ -21,7 +21,7 @@ A user can launch a native iPhone app, load sample pieces or create private loca
 - Soft scoring for formality, color relationship, favorites, and variety.
 - Daily recommendation, generator, individual reroll, unlocked reroll.
 - Saved and worn immutable snapshots.
-- Shared Xcode scheme, CI workflow, 51 unit and 5 UI tests.
+- Shared Xcode scheme, CI workflow, 56 unit and 5 UI tests.
 - SRS, roadmap, architecture, testing, traceability, and contributor documentation.
 
 ## Explicit exclusions
@@ -43,8 +43,8 @@ A user can launch a native iPhone app, load sample pieces or create private loca
 ## Verification evidence
 
 - Generic iOS Simulator build passes.
-- `myClosetTests`: 37 passing tests.
-- `myClosetUITests`: 3 passing journeys.
+- `myClosetTests`: 56 passing tests.
+- `myClosetUITests`: 5 passing journeys.
 - Runtime verified on iPhone 17 Pro simulator / iOS 26.3.
 - Empty and seeded Home states visually reviewed.
 - Generated result with lock/reroll controls visually reviewed.
@@ -55,7 +55,7 @@ See [Prototype Status](../../PROTOTYPE_STATUS.md) and [Testing](../TESTING.md).
 
 - Store combines state/repository/orchestration.
 - Persistence lacks schema version and uses embedded image data.
-- Image colors include background pixels.
+- Foreground isolation is best-effort and does not yet offer user-adjustable masks or confidence states.
 - Weather adapter is not injectable/cached.
 - Random source is not injectable.
 - Accessibility has foundations but not a full manual audit.

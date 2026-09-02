@@ -6,6 +6,9 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 
 ### Fixed
 
+- Reworked on-device color suggestions to select and inset one garment-like foreground instance, emphasize the garment center, classify neutrals and hues perceptually, suppress background leakage, and omit insignificant accent colors.
+- Added explicit jacket and hoodie outerwear suggestions after structural bottom detection.
+- Made generated import names follow confirmed type and main-color changes until the user manually edits the name, after which the custom name remains fixed.
 - Made the documentation gate portable to a clean GitHub-hosted macOS runner without assuming `ripgrep` is installed.
 - Prevented valid closets from dead-ending when the only owned category match has different season/formality metadata; these fields now influence ranking but fall back to the best available owned piece.
 - Made a one-piece reliably complete an outfit when the closet does not contain both separates, and preserved the current look when a reroll has no replacement.
@@ -29,7 +32,7 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 - Updated the Simulator media loader to import WebP test assets through temporary JPEG copies without modifying the source images.
 - Added a root `AGENTS.md` durable Codex handoff covering current product boundaries, architecture, commands, testing expectations, documentation synchronization, and phase priorities.
 - Added bulk Photos and Files closet import for up to 50 images, with filename-first and on-device Vision clothing-type suggestions, automatic color/default metadata, duplicate-name suffixing, progress, and review feedback.
-- Added deterministic clothing-type, silhouette, Vision-mask-format, metadata-default, foreground-color, batch-persistence, legacy-demo cleanup, recommendation-fallback, alternative-generation, and editable import-review UI coverage; the current suite contains 51 unit tests and 5 UI tests.
+- Added deterministic clothing-type, outerwear, silhouette, Vision-mask-format, metadata-default, perceptual foreground-color, accent-threshold, batch-persistence, legacy-demo cleanup, recommendation-fallback, alternative-generation, and editable import-review UI coverage; the current suite contains 56 unit tests and 5 UI tests.
 - Added a repository-local `TestClosetImages/` workflow and simulator loader script; test photos remain ignored by Git.
 - Added ADR-0003 and SRS 1.1 to establish a zero-backend, on-device App Store release with no mandatory recurring service cost beyond Apple Developer Program membership.
 - Added ADR-0004, SRS 1.2, and a dedicated post-release phase for gated CloudKit profiles, following, controlled outfit posts, and required safety operations.

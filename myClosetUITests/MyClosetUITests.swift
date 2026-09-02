@@ -79,13 +79,15 @@ final class MyClosetUITests: XCTestCase {
         XCTAssertTrue(app.otherElements["import-review-screen"].waitForExistence(timeout: 5))
         let name = app.textFields["import-review-name"]
         XCTAssertTrue(name.exists)
-        name.tap()
-        name.clearAndEnterText("Black Trousers")
-        app.buttons["Done"].tap()
 
         let bottom = app.buttons["import-review-category-bottom"]
         bottom.tap()
         XCTAssertEqual(bottom.value as? String, "Selected")
+        XCTAssertEqual(name.value as? String, "Navy Bottom")
+
+        name.tap()
+        name.clearAndEnterText("Black Trousers")
+        app.buttons["Done"].tap()
         let black = app.buttons["import-review-dominant-black"]
         if !black.waitForExistence(timeout: 1) {
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
@@ -101,6 +103,7 @@ final class MyClosetUITests: XCTestCase {
         XCTAssertTrue(black.isHittable)
         black.tap()
         XCTAssertEqual(black.value as? String, "Selected")
+        XCTAssertEqual(name.value as? String, "Black Trousers")
 
         let save = app.buttons["import-review-save"]
         XCTAssertTrue(save.waitForExistence(timeout: 3))

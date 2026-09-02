@@ -15,6 +15,7 @@ final class ClothingTypeDetectorTests: XCTestCase {
     func testFilenameDetectsOnePieceAndOuterwear() {
         XCTAssertEqual(ClothingTypeDetector.category(forFilename: "summer-dress.jpeg"), .onePiece)
         XCTAssertEqual(ClothingTypeDetector.category(forFilename: "camel-wool-coat.heic"), .outerwear)
+        XCTAssertEqual(ClothingTypeDetector.category(forFilename: "black-zip-hoodie.jpg"), .outerwear)
     }
 
     func testFilenameDetectsFootwearAndAccessory() {
@@ -86,9 +87,9 @@ final class ClothingTypeDetectorTests: XCTestCase {
             ("clothing", 0.81),
             ("jacket", 0.80)
         ])
-        XCTAssertEqual(generic.category, .top)
-        XCTAssertNil(generic.kind)
-        XCTAssertTrue(generic.needsReview)
+        XCTAssertEqual(generic.category, .outerwear)
+        XCTAssertEqual(generic.kind, .jacket)
+        XCTAssertFalse(generic.needsReview)
     }
 
     func testLegSplitSilhouetteDetectsTrousersWithoutAUsefulVisionLabel() {
@@ -137,8 +138,8 @@ final class ClothingTypeDetectorTests: XCTestCase {
             silhouette: silhouette
         )
 
-        XCTAssertEqual(detection.category, .top)
-        XCTAssertNil(detection.kind)
+        XCTAssertEqual(detection.category, .outerwear)
+        XCTAssertEqual(detection.kind, .jacket)
     }
 
     func testDenimLabelDoesNotTurnJacketShapedGarmentIntoBottom() {
@@ -151,10 +152,30 @@ final class ClothingTypeDetectorTests: XCTestCase {
             silhouette: silhouette
         )
 
-        XCTAssertEqual(detection.category, .top)
-        XCTAssertNil(detection.kind)
-        XCTAssertEqual(detection.source, .silhouette)
-        XCTAssertTrue(detection.needsReview)
+        XCTAssertEqual(detection.category, .outerwear)
+        XCTAssertEqual(detection.kind, .jacket)
+        XCTAssertEqual(detection.source, .vision)
+        XCTAssertFalse(detection.needsReview)
+    }
+
+    func testVisionIdentifiesHoodieAsOuterwear() {
+        let detection = ClothingTypeDetector.detection(forVisionObservations: [
+            ("clothing", 0.82),
+            ("hoodie", 0.71)
+        ])
+
+        XCTAssertEqual(detection.category, .outerwear)
+        XCTAssertEqual(detection.kind, .hoodie)
+        XCTAssertEqual(detection.source, .vision)
+    }
+
+    func testMetadataNameUsesConfirmedColourAndCategory() {
+        let black = ClothingColor.palette.first { $0.name == "Black" }!
+
+        XCTAssertEqual(
+            ClothingTypeDetector.metadataName(category: .top, dominantColor: black),
+            "Black Top"
+        )
     }
 
     func testImporterBuildsEditableDefaultsFromDescriptiveFile() async throws {

@@ -40,6 +40,7 @@ struct ClosetImportReviewView: View {
     @State private var items: [ClosetItem]
     @State private var currentIndex = 0
     @State private var confirmedItemIDs = Set<UUID>()
+    @State private var automaticallyNamedItemIDs: Set<UUID>
     @State private var showingDiscardConfirmation = false
     @FocusState private var nameFieldIsFocused: Bool
 
@@ -62,6 +63,9 @@ struct ClosetImportReviewView: View {
         self.onCommit = onCommit
         self.onCancel = onCancel
         _items = State(initialValue: batch.items)
+        _automaticallyNamedItemIDs = State(
+            initialValue: batch.mode == .newImport ? Set(batch.items.map(\.id)) : []
+        )
     }
 
     var body: some View {
@@ -119,6 +123,16 @@ struct ClosetImportReviewView: View {
         $items[currentIndex]
     }
 
+    private var currentName: Binding<String> {
+        Binding(
+            get: { items[currentIndex].name },
+            set: { updatedName in
+                items[currentIndex].name = updatedName
+                automaticallyNamedItemIDs.remove(items[currentIndex].id)
+            }
+        )
+    }
+
     private var reviewHeader: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -167,7 +181,7 @@ struct ClosetImportReviewView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Name")
                 .font(.headline)
-            TextField("Piece name", text: currentItem.name)
+            TextField("Piece name", text: currentName)
                 .textInputAutocapitalization(.words)
                 .focused($nameFieldIsFocused)
                 .padding(12)
@@ -192,6 +206,7 @@ struct ClosetImportReviewView: View {
                         selected: items[currentIndex].category == category
                     ) {
                         items[currentIndex].category = category
+                        refreshAutomaticName()
                     }
                     .accessibilityIdentifier("import-review-category-\(category.rawValue)")
                 }
@@ -210,6 +225,7 @@ struct ClosetImportReviewView: View {
                         selected: items[currentIndex].dominantColor == color
                     ) {
                         items[currentIndex].dominantColor = color
+                        refreshAutomaticName()
                     }
                     .accessibilityIdentifier("import-review-dominant-\(color.name.lowercased())")
                 }
@@ -337,6 +353,15 @@ struct ClosetImportReviewView: View {
             onCommit(items)
             dismiss()
         }
+    }
+
+    private func refreshAutomaticName() {
+        let id = items[currentIndex].id
+        guard automaticallyNamedItemIDs.contains(id) else { return }
+        items[currentIndex].name = ClothingTypeDetector.metadataName(
+            category: items[currentIndex].category,
+            dominantColor: items[currentIndex].dominantColor
+        )
     }
 
     private func selectionButton(

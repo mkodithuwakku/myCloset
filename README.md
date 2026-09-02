@@ -28,14 +28,14 @@ The long-term product is designed around three principles:
 |---|---|
 | Home | Minimal Outfit of the Day canvas that composes garment images into one look, with compact weather context and secondary actions |
 | Closet | Local creation, bulk image import, full metadata editing, metadata-aware search, category filtering, favorites, availability, archive, and deletion |
-| Item intelligence | Filename-first suggestions plus on-device foreground-shape analysis, foreground-only dominant/accent color sampling, color-aware names, and mandatory per-piece confirmation of editable metadata before a batch is saved |
+| Item intelligence | Filename-first suggestions plus on-device foreground-shape analysis, jacket/hoodie outerwear recognition, garment-focused perceptual color sampling, metadata-synchronized default names, and mandatory per-piece confirmation before a batch is saved |
 | Generator | Photo-first editorial outfit board, automatic first look, visual occasion/formality brief, locked pieces, single-piece reroll, reliably different alternatives when the closet permits, and visible actionable feedback after every generation attempt |
 | Weather | Optional approximate current location, manual city lookup, Open-Meteo conditions, or date-derived season fallback |
 | History | Separate saved and worn outfit collections using immutable snapshots |
 | Profile | Local display name, handle, biography, and profile image editing |
 | Following | Minimal Coming Soon state for the gated post-release CloudKit social phase; no fake profiles or posts |
 | Persistence | Local JSON application-support storage that survives relaunches |
-| Tests | 51 unit tests and 5 end-to-end UI smoke tests |
+| Tests | 56 unit tests and 5 end-to-end UI smoke tests |
 
 The authoritative implementation boundary is maintained in [Prototype Status](PROTOTYPE_STATUS.md).
 
@@ -65,7 +65,7 @@ The authoritative implementation boundary is maintained in [Prototype Status](PR
 ./scripts/load_test_closet_images.sh
 ```
 
-3. In the app, open **Closet**, tap **Import**, and multi-select the images. The app proposes on-device name, type, dominant/accent color, season, and formality values, then shows every photo in a required review queue. Correct any field and confirm each piece; nothing is added to the closet until the batch is confirmed. To repair pieces imported by an older build, choose **Closet → + → Re-analyze photo details** and confirm the reviewed batch.
+3. In the app, open **Closet**, tap **Import**, and multi-select the images. The app proposes on-device name, type, dominant/accent color, season, and formality values, then shows every photo in a required review queue. Changing the suggested type or main color updates the default name automatically; typing a custom name keeps that name fixed. Correct any field and confirm each piece; nothing is added to the closet until the batch is confirmed. To repair pieces imported by an older build, choose **Closet → + → Re-analyze photo details** and confirm the reviewed batch.
 
 For deterministic type detection, use descriptive names such as `navy-shirt.jpg`, `black-jeans.png`, `white-sneakers.jpeg`, `camel-coat.jpg`, and `silver-watch.png`, make those files available in the simulator's Files app (for example through iCloud Drive), then choose **Closet → + → Import image files**. Filename rules take priority over image classification.
 

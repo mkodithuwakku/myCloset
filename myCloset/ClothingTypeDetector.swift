@@ -19,10 +19,10 @@ enum GarmentKind: String, CaseIterable, Equatable {
 
     var category: ClothingCategory {
         switch self {
-        case .tShirt, .shirt, .blouse, .tankTop, .sweater, .hoodie: .top
+        case .tShirt, .shirt, .blouse, .tankTop, .sweater: .top
         case .trousers, .jeans, .shorts, .skirt, .leggings: .bottom
         case .dress, .jumpsuit: .onePiece
-        case .coat, .jacket, .blazer, .cardigan: .outerwear
+        case .hoodie, .coat, .jacket, .blazer, .cardigan: .outerwear
         case .sneakers, .shoes, .loafers, .boots, .sandals: .footwear
         case .watch, .bag, .scarf, .belt, .tie, .hat: .accessory
         }
@@ -171,6 +171,10 @@ enum ClothingTypeDetector {
         return "Imported \(garmentName) \(index)"
     }
 
+    static func metadataName(category: ClothingCategory, dominantColor: ClothingColor) -> String {
+        "\(dominantColor.name) \(category.title)"
+    }
+
     private static func classify(_ data: Data) -> ClothingTypeDetection {
         guard let image = UIImage(data: data), let cgImage = image.cgImage else {
             return .init(category: .top, kind: nil, confidence: 0, source: .fallback)
@@ -219,17 +223,25 @@ enum ClothingTypeDetector {
             return .init(category: .bottom, kind: kind, confidence: 0.9, source: .silhouette)
         }
 
-        // Restrict semantic labels to garment kinds that Apple's general image
-        // classifier identifies consistently. In particular, "jacket" and
-        // "jeans" are not trusted without the silhouette because denim jackets
-        // commonly receive both labels.
+        // Foreground shape gets first refusal for split-leg garments, then a
+        // specific outerwear label can identify jackets and hoodies. The import
+        // review remains the final authority when Vision is uncertain.
+        let outerwearMatches = matches.filter { match, _ in
+            match.category == .outerwear && match.kind != nil
+        }
+        if let best = outerwearMatches.max(by: { $0.1 < $1.1 }), best.1 >= 0.18 {
+            return .init(category: .outerwear, kind: best.0.kind, confidence: best.1, source: .vision)
+        }
+
+        // Restrict the remaining semantic labels to garment kinds that Apple's
+        // general image classifier identifies consistently.
         let reliableSpecificMatches = matches.filter { match, _ in
             guard let kind = match.kind else { return false }
             switch kind {
             case .dress, .jumpsuit, .watch, .bag, .scarf, .belt, .tie, .hat,
-                    .tShirt, .shirt, .blouse, .tankTop, .sweater, .hoodie:
+                    .tShirt, .shirt, .blouse, .tankTop, .sweater:
                 return true
-            case .trousers, .jeans, .shorts, .skirt, .leggings, .coat, .jacket,
+            case .trousers, .jeans, .shorts, .skirt, .leggings, .hoodie, .coat, .jacket,
                     .blazer, .cardigan, .sneakers, .shoes, .loafers, .boots, .sandals:
                 return false
             }
