@@ -6,6 +6,7 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 
 ### Fixed
 
+- Made the Simulator media loader verify the actual camera roll on every run, preventing stale loader markers or repeated commands from copying the same test images again.
 - Tightened the outfit canvas waist overlap and normalized footwear placement so isolated pieces read as one dressed look instead of disconnected images.
 - Made the import-review flow so metadata choices advance to the next relevant section and confirming one piece returns immediately to the top of the next piece.
 - Expanded low-confidence footwear recognition and shoe-related filename vocabulary without allowing generic clothing labels to override a specific shoe result.

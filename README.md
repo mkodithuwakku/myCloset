@@ -59,7 +59,7 @@ The authoritative implementation boundary is maintained in [Prototype Status](PR
 ### Seed a test closet from laptop images
 
 1. Put up to 50 garment images in the repository's `TestClosetImages/` directory and boot the iPhone Simulator. These local images are ignored by Git. The loader transparently converts WebP files to temporary JPEG copies because Simulator Photos does not accept WebP directly.
-2. From the repository root, load the folder into the simulator's Photos library. The loader tracks image content per Simulator and safely skips files it has already loaded, including same-content duplicates in the folder:
+2. From the repository root, load the folder into the simulator's Photos library. On every run, the loader hashes the Simulator's actual camera-roll files and safely skips content already present, including same-content duplicates in the folder. Its saved markers are advisory only, so replacing or clearing app data cannot cause repeated imports or prevent a deliberately removed photo from being restored:
 
 ```sh
 ./scripts/load_test_closet_images.sh
