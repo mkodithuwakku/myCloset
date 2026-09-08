@@ -204,7 +204,7 @@ enum ClothingTypeDetector {
         let footwearMatches = matches.filter { match, _ in
             match.category == .footwear && match.kind != nil
         }
-        if let best = footwearMatches.max(by: { $0.1 < $1.1 }), best.1 >= 0.08 {
+        if let best = footwearMatches.max(by: { $0.1 < $1.1 }), best.1 >= 0.035 {
             return .init(category: best.0.category, kind: best.0.kind, confidence: best.1, source: .vision)
         }
 
@@ -346,11 +346,11 @@ enum ClothingTypeDetector {
             (.coat, ["overcoat", "raincoat", "trench", "parka", " coat "]),
             (.jacket, ["windbreaker", " jacket "]),
             (.cardigan, ["cardigan"]),
-            (.sneakers, ["sneaker", "trainer", "running shoe", "tennis shoe"]),
+            (.sneakers, ["sneaker", "trainer", "running shoe", "walking shoe", "tennis shoe", "athletic shoe", "basketball shoe", "cleat"]),
             (.loafers, ["loafer", "moccasin"]),
-            (.boots, [" boot ", "boots"]),
-            (.sandals, ["sandal", "slipper", "clog"]),
-            (.shoes, [" shoe ", "footwear"]),
+            (.boots, [" boot ", "boots", "ankle boot", "combat boot"]),
+            (.sandals, ["sandal", "slipper", "clog", "flip flop"]),
+            (.shoes, [" shoe ", "shoes", "footwear", "high heel", "pump"]),
             (.watch, ["watch", "timepiece"]),
             (.bag, ["handbag", "purse", "backpack", "tote bag"]),
             (.scarf, ["scarf", "shawl"]),
@@ -416,10 +416,14 @@ enum ClosetImageImporter {
             ImageUtilities.preparedImageData(from: rawData)
         }).value else { return nil }
         async let detectionTask = ClothingTypeDetector.detect(in: prepared, filename: filename)
-        async let colorsTask = Task.detached(priority: .userInitiated) {
-            ImageUtilities.suggestedColors(from: prepared)
+        async let isolationTask = Task.detached(priority: .userInitiated) {
+            ImageUtilities.isolatedGarmentData(from: prepared)
         }.value
-        let (detection, colors) = await (detectionTask, colorsTask)
+        let (detection, isolatedPhotoData) = await (detectionTask, isolationTask)
+        let colorSource = isolatedPhotoData ?? prepared
+        let colors = await Task.detached(priority: .userInitiated) {
+            ImageUtilities.suggestedColors(from: colorSource)
+        }.value
         let fallbackColor = ClothingColor.palette.first { $0.name == "Grey" } ?? ClothingColor.palette[0]
         let dominantColor = colors?.dominant ?? fallbackColor
         let name = ClothingTypeDetector.suggestedName(
@@ -434,6 +438,7 @@ enum ClosetImageImporter {
             name: name,
             category: detection.category,
             photoData: prepared,
+            isolatedPhotoData: isolatedPhotoData,
             dominantColor: dominantColor,
             accentColor: colors?.accent,
             seasons: detection.kind?.suggestedSeasons ?? Set(WardrobeSeason.allCases),
@@ -448,6 +453,14 @@ enum ClosetImageImporter {
         case .outerwear: [.casual, .smartCasual, .business]
         case .accessory: [.casual, .smartCasual, .business, .formal]
         case .top, .bottom, .onePiece: [.veryCasual, .casual, .smartCasual]
+        }
+    }
+
+    static func defaultSeasons(for category: ClothingCategory) -> Set<WardrobeSeason> {
+        switch category {
+        case .outerwear: [.spring, .autumn, .winter]
+        case .onePiece: [.spring, .summer, .autumn]
+        case .top, .bottom, .footwear, .accessory: Set(WardrobeSeason.allCases)
         }
     }
 }

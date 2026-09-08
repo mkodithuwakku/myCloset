@@ -1,4 +1,5 @@
 import CoreGraphics
+import CoreImage
 import UIKit
 import Vision
 
@@ -15,16 +16,21 @@ struct ForegroundMaskReader {
     }
 
     func containsForeground(x: Int, y: Int) -> Bool {
+        instanceIdentifier(x: x, y: y) != 0
+    }
+
+    func instanceIdentifier(x: Int, y: Int) -> Int {
         let row = baseAddress.advanced(by: y * bytesPerRow)
         switch pixelFormat {
         case kCVPixelFormatType_OneComponent8:
-            return row.assumingMemoryBound(to: UInt8.self)[x] != 0
+            return Int(row.assumingMemoryBound(to: UInt8.self)[x])
         case kCVPixelFormatType_OneComponent16Half:
-            return row.assumingMemoryBound(to: UInt16.self)[x] != 0
+            let rawValue = row.assumingMemoryBound(to: UInt16.self)[x]
+            return Int(Float16(bitPattern: rawValue).rounded())
         case kCVPixelFormatType_OneComponent32Float:
-            return row.assumingMemoryBound(to: Float.self)[x] > 0.001
+            return Int(row.assumingMemoryBound(to: Float.self)[x].rounded())
         default:
-            return false
+            return 0
         }
     }
 }
@@ -41,6 +47,271 @@ enum ImageUtilities {
         let renderer = UIGraphicsImageRenderer(size: size, format: format)
         let resized = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
         return resized.jpegData(compressionQuality: 0.82)
+    }
+
+    static func croppedImageData(
+        from data: Data,
+        scale: Double,
+        horizontalPosition: Double = 0.5,
+        verticalPosition: Double
+    ) -> Data? {
+        guard let image = UIImage(data: data), let cgImage = image.cgImage else { return nil }
+        let clampedScale = min(1, max(0.45, scale))
+        let clampedHorizontalPosition = min(1, max(0, horizontalPosition))
+        let clampedPosition = min(1, max(0, verticalPosition))
+        let cropWidth = Double(cgImage.width) * clampedScale
+        let cropHeight = Double(cgImage.height) * clampedScale
+        let originX = (Double(cgImage.width) - cropWidth) * clampedHorizontalPosition
+        let originY = (Double(cgImage.height) - cropHeight) * clampedPosition
+        let cropRect = CGRect(x: originX, y: originY, width: cropWidth, height: cropHeight).integral
+        guard let cropped = cgImage.cropping(to: cropRect) else { return nil }
+        return preparedImageData(from: UIImage(cgImage: cropped).pngData() ?? Data())
+    }
+
+    static func isolatedGarmentData(from data: Data) -> Data? {
+        guard let image = UIImage(data: data), let cgImage = image.cgImage else { return nil }
+        let request = VNGenerateForegroundInstanceMaskRequest()
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        guard (try? handler.perform([request])) != nil,
+              let observation = request.results?.first,
+              let instance = bestForegroundInstance(
+                in: observation,
+                width: 64,
+                height: 64
+              ),
+              let mask = binaryMaskImage(from: observation.instanceMask, instance: instance) else {
+            return adaptiveBorderCutout(from: cgImage)
+        }
+
+        let sourceImage = CIImage(cgImage: cgImage)
+        let sourceExtent = sourceImage.extent
+        let maskImage = CIImage(cgImage: mask).transformed(
+            by: CGAffineTransform(
+                scaleX: sourceExtent.width / CGFloat(mask.width),
+                y: sourceExtent.height / CGFloat(mask.height)
+            )
+        ).cropped(to: sourceExtent)
+        let clearBackground = CIImage(color: CIColor.clear).cropped(to: sourceImage.extent)
+        let isolatedImage = sourceImage.applyingFilter(
+            "CIBlendWithMask",
+            parameters: [
+                kCIInputBackgroundImageKey: clearBackground,
+                kCIInputMaskImageKey: maskImage
+            ]
+        ).cropped(to: sourceImage.extent)
+        let context = CIContext(options: nil)
+        guard let fullSize = context.createCGImage(isolatedImage, from: sourceImage.extent),
+              let isolated = croppedToVisibleAlpha(fullSize) else {
+            return adaptiveBorderCutout(from: cgImage)
+        }
+        return transparentImageData(from: UIImage(cgImage: isolated))
+    }
+
+    /// A conservative local fallback for environments where Vision's foreground
+    /// model is unavailable (notably some Simulator runtimes). It models several
+    /// colors around the photo border rather than one average background color,
+    /// which handles floorboards and patterned rugs without treating their mean as
+    /// a garment color. Ambiguous results are rejected so the original plus quick
+    /// crop remain available instead of persisting a visibly damaged cutout.
+    private static func adaptiveBorderCutout(from source: CGImage) -> Data? {
+        let maximumDimension = 700.0
+        let scale = min(1, maximumDimension / Double(max(source.width, source.height)))
+        let width = max(1, Int((Double(source.width) * scale).rounded()))
+        let height = max(1, Int((Double(source.height) * scale).rounded()))
+        let bytesPerRow = width * 4
+        var pixels = [UInt8](repeating: 0, count: height * bytesPerRow)
+        guard let context = CGContext(
+            data: &pixels,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+        context.interpolationQuality = .medium
+        context.draw(source, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+        struct Bucket {
+            var red = 0
+            var green = 0
+            var blue = 0
+            var count = 0
+        }
+        let borderWidth = max(4, min(width, height) / 24)
+        var buckets: [Int: Bucket] = [:]
+        for y in stride(from: 0, to: height, by: 2) {
+            for x in stride(from: 0, to: width, by: 2)
+            where x < borderWidth || x >= width - borderWidth || y < borderWidth || y >= height - borderWidth {
+                let index = y * bytesPerRow + x * 4
+                let key = (Int(pixels[index]) / 16) << 8 |
+                    (Int(pixels[index + 1]) / 16) << 4 |
+                    Int(pixels[index + 2]) / 16
+                var bucket = buckets[key, default: Bucket()]
+                bucket.red += Int(pixels[index])
+                bucket.green += Int(pixels[index + 1])
+                bucket.blue += Int(pixels[index + 2])
+                bucket.count += 1
+                buckets[key] = bucket
+            }
+        }
+        let palette = buckets.values
+            .sorted { $0.count > $1.count }
+            .prefix(32)
+            .map { bucket in
+                (
+                    red: Double(bucket.red) / Double(bucket.count * 255),
+                    green: Double(bucket.green) / Double(bucket.count * 255),
+                    blue: Double(bucket.blue) / Double(bucket.count * 255)
+                )
+            }
+        guard !palette.isEmpty else { return nil }
+
+        let clearDistance = 0.010
+        let solidDistance = 0.040
+        for y in 0..<height {
+            for x in 0..<width {
+                let index = y * bytesPerRow + x * 4
+                let color = (
+                    red: Double(pixels[index]) / 255,
+                    green: Double(pixels[index + 1]) / 255,
+                    blue: Double(pixels[index + 2]) / 255
+                )
+                let distance = palette.reduce(Double.infinity) {
+                    min($0, squaredDistance(color, $1))
+                }
+                let alpha: Double
+                if distance <= clearDistance {
+                    alpha = 0
+                } else if distance >= solidDistance {
+                    alpha = 1
+                } else {
+                    alpha = (distance - clearDistance) / (solidDistance - clearDistance)
+                }
+
+                // The buffer is premultiplied-alpha, so scale color channels too.
+                pixels[index] = UInt8((Double(pixels[index]) * alpha).rounded())
+                pixels[index + 1] = UInt8((Double(pixels[index + 1]) * alpha).rounded())
+                pixels[index + 2] = UInt8((Double(pixels[index + 2]) * alpha).rounded())
+                pixels[index + 3] = UInt8((255 * alpha).rounded())
+            }
+        }
+
+        // Any surviving region connected to the image edge is much more likely to
+        // be floor or wall texture than the centered garment. Remove it, including
+        // its antialiased fringe, before deciding whether the fallback is credible.
+        var connectedToBorder = [Bool](repeating: false, count: width * height)
+        var queue: [Int] = []
+        func enqueue(_ x: Int, _ y: Int) {
+            let pixel = y * width + x
+            guard !connectedToBorder[pixel], pixels[y * bytesPerRow + x * 4 + 3] > 20 else { return }
+            connectedToBorder[pixel] = true
+            queue.append(pixel)
+        }
+        for x in 0..<width {
+            enqueue(x, 0)
+            enqueue(x, height - 1)
+        }
+        for y in 0..<height {
+            enqueue(0, y)
+            enqueue(width - 1, y)
+        }
+        var cursor = 0
+        while cursor < queue.count {
+            let pixel = queue[cursor]
+            cursor += 1
+            let x = pixel % width
+            let y = pixel / width
+            if x > 0 { enqueue(x - 1, y) }
+            if x + 1 < width { enqueue(x + 1, y) }
+            if y > 0 { enqueue(x, y - 1) }
+            if y + 1 < height { enqueue(x, y + 1) }
+        }
+
+        var visibleCount = 0
+        var centralVisibleCount = 0
+        let centerX = (width * 3 / 10)..<(width * 7 / 10)
+        let centerY = (height * 3 / 10)..<(height * 7 / 10)
+        for y in 0..<height {
+            for x in 0..<width {
+                let pixel = y * width + x
+                let index = y * bytesPerRow + x * 4
+                if connectedToBorder[pixel] {
+                    pixels[index] = 0
+                    pixels[index + 1] = 0
+                    pixels[index + 2] = 0
+                    pixels[index + 3] = 0
+                } else if pixels[index + 3] > 115 {
+                    visibleCount += 1
+                    if centerX.contains(x), centerY.contains(y) {
+                        centralVisibleCount += 1
+                    }
+                }
+            }
+        }
+
+        let visibleRatio = Double(visibleCount) / Double(width * height)
+        let centerArea = max(1, centerX.count * centerY.count)
+        let centralVisibleRatio = Double(centralVisibleCount) / Double(centerArea)
+        guard (0.025...0.72).contains(visibleRatio), centralVisibleRatio >= 0.16,
+              let masked = context.makeImage(),
+              let cropped = croppedToVisibleAlpha(masked) else {
+            return nil
+        }
+        return transparentImageData(from: UIImage(cgImage: cropped))
+    }
+
+    private static func transparentImageData(from image: UIImage) -> Data? {
+        let maximumDimension: CGFloat = 900
+        let scale = min(1, maximumDimension / max(image.size.width, image.size.height))
+        let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = false
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: size))
+        }.pngData()
+    }
+
+    private static func croppedToVisibleAlpha(_ image: CGImage) -> CGImage? {
+        let width = image.width
+        let height = image.height
+        let bytesPerRow = width * 4
+        var pixels = [UInt8](repeating: 0, count: height * bytesPerRow)
+        guard let context = CGContext(
+            data: &pixels,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+        var minimumX = width
+        var minimumY = height
+        var maximumX = -1
+        var maximumY = -1
+        for y in 0..<height {
+            for x in 0..<width where pixels[y * bytesPerRow + x * 4 + 3] > 20 {
+                minimumX = min(minimumX, x)
+                minimumY = min(minimumY, y)
+                maximumX = max(maximumX, x)
+                maximumY = max(maximumY, y)
+            }
+        }
+        guard maximumX >= minimumX, maximumY >= minimumY else { return nil }
+
+        let padding = max(4, Int(Double(max(width, height)) * 0.015))
+        let crop = CGRect(
+            x: max(0, minimumX - padding),
+            y: max(0, minimumY - padding),
+            width: min(width - max(0, minimumX - padding), maximumX - minimumX + 1 + padding * 2),
+            height: min(height - max(0, minimumY - padding), maximumY - minimumY + 1 + padding * 2)
+        )
+        return image.cropping(to: crop)
     }
 
     static func suggestedColors(from data: Data) -> (dominant: ClothingColor, accent: ClothingColor?)? {
@@ -64,7 +335,17 @@ enum ImageUtilities {
         context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
 
         let background = estimatedBackground(in: pixels, width: width, height: height, bytesPerRow: bytesPerRow)
-        let foregroundMask = foregroundMask(for: cgImage, width: width, height: height)
+        // A saved cutout already carries the most reliable foreground boundary in
+        // its alpha channel. Avoid rerunning Vision and sample only opaque pixels.
+        let hasTransparency = hasTransparentPixels(
+            pixels,
+            bytesPerRow: bytesPerRow,
+            width: width,
+            height: height
+        )
+        let foregroundMask = hasTransparency
+            ? nil
+            : foregroundMask(for: cgImage, width: width, height: height)
         let foregroundSamples = foregroundMask.map {
             colorSamples(
                 in: pixels,
@@ -96,7 +377,26 @@ enum ImageUtilities {
                     excluding: nil
                 ))
 
-        return rankedColors(from: samples)
+        guard let ranked = rankedColors(from: samples) else { return nil }
+        let hasReliableForeground = hasTransparency || foregroundSamples.count >= 120
+        return (
+            dominant: ranked.dominant,
+            accent: hasReliableForeground ? ranked.accent : nil
+        )
+    }
+
+    private static func hasTransparentPixels(
+        _ pixels: [UInt8],
+        bytesPerRow: Int,
+        width: Int,
+        height: Int
+    ) -> Bool {
+        for y in 0..<height {
+            for x in 0..<width where pixels[y * bytesPerRow + x * 4 + 3] < 50 {
+                return true
+            }
+        }
+        return false
     }
 
     struct ColorSample {
@@ -203,33 +503,56 @@ enum ImageUtilities {
         let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
         guard (try? handler.perform([request])) != nil,
               let observation = request.results?.first,
-              !observation.allInstances.isEmpty else {
+              let instance = bestForegroundInstance(
+                in: observation,
+                width: width,
+                height: height
+              ),
+              let bestMask = sampledMask(
+                from: observation.instanceMask,
+                instance: instance,
+                width: width,
+                height: height
+              ) else {
             return nil
         }
 
-        var bestMask: [Bool]?
+        let inset = eroded(bestMask, width: width, height: height)
+        return inset.filter { $0 }.count >= 120 ? inset : bestMask
+    }
+
+    private static func bestForegroundInstance(
+        in observation: VNInstanceMaskObservation,
+        width: Int,
+        height: Int
+    ) -> Int? {
+        var bestInstance: Int?
         var bestScore = -Double.infinity
         for instance in observation.allInstances {
-            guard let buffer = try? observation.generateScaledMaskForImage(
-                forInstances: IndexSet(integer: instance),
-                from: handler
-            ), let candidate = sampledMask(from: buffer, width: width, height: height) else {
+            guard let candidate = sampledMask(
+                from: observation.instanceMask,
+                instance: instance,
+                width: width,
+                height: height
+            ) else {
                 continue
             }
 
             let score = foregroundScore(candidate, width: width, height: height)
             if score > bestScore {
                 bestScore = score
-                bestMask = candidate
+                bestInstance = instance
             }
         }
-
-        guard let bestMask else { return nil }
-        let inset = eroded(bestMask, width: width, height: height)
-        return inset.filter { $0 }.count >= 120 ? inset : bestMask
+        return bestInstance
     }
 
-    private static func sampledMask(from buffer: CVPixelBuffer, width: Int, height: Int) -> [Bool]? {
+    private static func sampledMask(
+        from buffer: CVPixelBuffer,
+        instance: Int,
+        width: Int,
+        height: Int
+    ) -> [Bool]? {
         CVPixelBufferLockBaseAddress(buffer, .readOnly)
         defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
         let maskWidth = CVPixelBufferGetWidth(buffer)
@@ -241,10 +564,34 @@ enum ImageUtilities {
             let maskY = min(maskHeight - 1, y * maskHeight / height)
             for x in 0..<width {
                 let maskX = min(maskWidth - 1, x * maskWidth / width)
-                mask[y * width + x] = reader.containsForeground(x: maskX, y: maskY)
+                mask[y * width + x] = reader.instanceIdentifier(x: maskX, y: maskY) == instance
             }
         }
         return mask
+    }
+
+    private static func binaryMaskImage(from buffer: CVPixelBuffer, instance: Int) -> CGImage? {
+        CVPixelBufferLockBaseAddress(buffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+        let width = CVPixelBufferGetWidth(buffer)
+        let height = CVPixelBufferGetHeight(buffer)
+        guard let reader = ForegroundMaskReader(buffer: buffer) else { return nil }
+        var pixels = [UInt8](repeating: 0, count: width * height)
+        for y in 0..<height {
+            for x in 0..<width where reader.instanceIdentifier(x: x, y: y) == instance {
+                pixels[y * width + x] = 255
+            }
+        }
+        guard let context = CGContext(
+            data: &pixels,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: width,
+            space: CGColorSpaceCreateDeviceGray(),
+            bitmapInfo: CGImageAlphaInfo.none.rawValue
+        ) else { return nil }
+        return context.makeImage()
     }
 
     private static func foregroundScore(_ mask: [Bool], width: Int, height: Int) -> Double {

@@ -20,7 +20,7 @@ This file is the durable handoff for Codex and other coding agents working in th
 - Platform: native iPhone application built with SwiftUI.
 - Minimum deployment target: iOS 17.0.
 - Current version/slice: `0.1.0`, Phase 0 local functional prototype complete.
-- Next planned phase: Phase 1, Capture and Wardrobe Quality.
+- Current phase: Phase 1, Capture and Wardrobe Quality, in progress after the first isolation/review/composition slice.
 - Current bundle identifier: `com.mkodi.myCloset.prototype`.
 - Cost model: completely free to users; the only authorized mandatory recurring cash cost is Apple Developer Program membership.
 
@@ -47,7 +47,7 @@ The five tabs are Home, Closet, Generate, Following, and Profile.
 
 - Home: minimalist Outfit of the Day canvas that composes garment images into one look, plus compact season/weather context and secondary actions.
 - Closet: local create/bulk-import/edit/search/filter/favorite/archive/delete and availability management.
-- Item intelligence: Photos/Files batch import, filename-first and on-device foreground-silhouette type suggestions including jacket/hoodie outerwear, metadata-synchronized default names, kind-specific season/formality defaults, fixed 1,200-pixel resizing, garment-focused perceptual palette suggestions, explicit batch re-analysis, and editable metadata.
+- Item intelligence: Photos/Files batch import, filename-first and on-device foreground-silhouette type suggestions, expanded footwear/outerwear recognition, metadata-synchronized default names, kind-specific season/formality defaults, fixed 1,200-pixel resizing, automatic transparent garment renditions, foreground-only palette suggestions, guided review with quick crop correction, explicit batch re-analysis, and editable metadata.
 - Generator: visual outfit brief, six formality levels, locks, different-look/full/single-piece rerolls, closet-readiness recovery, and explanations.
 - Weather: foreground approximate location, manual city through Apple geocoding, Open-Meteo current conditions, and season fallback.
 - History: separate saved and worn collections backed by immutable snapshots.
@@ -143,7 +143,7 @@ Load Git-ignored project-local garment images into a booted Simulator with:
 ./scripts/load_test_closet_images.sh
 ```
 
-Current automated inventory: 56 unit tests and 5 UI tests. The latest recorded execution evidence is [docs/testing/TEST_EXECUTION_2026-09-01.md](docs/testing/TEST_EXECUTION_2026-09-01.md).
+Current automated inventory: 62 unit tests and 5 UI tests. The latest recorded execution evidence is [docs/testing/TEST_EXECUTION_2026-09-02.md](docs/testing/TEST_EXECUTION_2026-09-02.md).
 
 Debug-only UI launch arguments are:
 
@@ -181,7 +181,7 @@ Documentation is part of the change, not cleanup for later.
 
 Do not duplicate long specifications here. Update the authoritative document and keep this file as a concise map of durable decisions.
 
-## 10. Phase 1 next-slice priorities
+## 10. Phase 1 remaining priorities
 
 Unless the user reprioritizes, the highest-value next slice is:
 

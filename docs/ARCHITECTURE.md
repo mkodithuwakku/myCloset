@@ -89,13 +89,14 @@ The Generate view starts with no required piece and treats occasion and formalit
 - decodes imported images;
 - resizes them to a 1,200-pixel maximum dimension;
 - compresses them to JPEG;
-- samples a 40 × 40 pixel grid and suppresses a visually consistent border background when enough foreground pixels remain;
+- creates a trimmed transparent PNG rendition from the selected Vision foreground instance, with a conservative multi-color border fallback for runtimes where the OS model is unavailable;
+- samples a 64 × 64 pixel grid from the isolated rendition when available, otherwise suppresses a visually consistent border background and omits untrusted accent suggestions;
 - maps pixels to a curated clothing palette;
 - returns editable dominant and accent suggestions.
 
-`ClothingTypeDetector` first maps descriptive filenames to specific garment kinds. When filenames are unavailable or machine-generated, it combines Apple's on-device foreground-instance mask with conservative semantic signals: silhouette structure drives top-versus-bottom separation and semantic labels are retained only where they proved dependable. `ImageUtilities` reuses an aligned foreground mask so palette sampling excludes the photographed background. `ClosetImageImporter` combines these signals into editable name, category, season, formality, and color defaults; the Closet UI can explicitly re-analyze older photographed records without changing curated non-analysis fields.
+`ClothingTypeDetector` first maps descriptive filenames to specific garment kinds. When filenames are unavailable or machine-generated, it combines Apple's on-device foreground-instance mask with conservative semantic signals: silhouette structure drives top-versus-bottom separation, specific footwear labels receive precedence over generic clothing, and semantic labels are retained only where they proved dependable. `ImageUtilities` reuses the chosen mask for a local transparent rendition so palette sampling and body-aligned outfit composition can exclude the photographed background. When that OS model is unavailable, a multi-color border model removes only a credible centered foreground and rejects ambiguous output. `ClosetImageImporter` combines these signals into editable name, category, kind-aware season, formality, and color defaults; the guided review includes a quick crop fallback and the Closet UI can explicitly re-analyze older photographed records without changing curated non-analysis fields.
 
-Phase 1 must isolate the garment before color sampling, add quality/confidence states, and support user mask/crop correction.
+The remaining Phase 1 pipeline must add quality/confidence states, brush-based mask correction, rotation/reset, direct guided capture, physical-device qualification, and file-backed media persistence with schema migration.
 
 ### 3.5 Weather pipeline
 

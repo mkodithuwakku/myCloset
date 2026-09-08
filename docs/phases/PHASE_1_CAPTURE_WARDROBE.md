@@ -1,6 +1,6 @@
 # Phase 1 — Capture and Wardrobe Quality
 
-**Status:** Next
+**Status:** In progress
 **Primary SRS groups:** ITEM, CLO, A11Y, PERF
 **Goal:** Turn a phone photo into a reliable, editable, private garment record.
 
@@ -23,6 +23,15 @@
 - Recover manually from every processing failure.
 
 ## Workstreams
+
+### Delivered in the current slice
+
+- Automatic Vision foreground-instance isolation, with a conservative border-palette fallback where the OS model is unavailable, stored as a private transparent outfit rendition while preserving the original.
+- Color analysis prefers isolated opaque pixels and omits untrusted accent suggestions when no dependable foreground is available.
+- A quick crop fallback with size and horizontal/vertical positioning, followed by another isolation attempt.
+- Guided sequential metadata review with automatic next-section movement and a top reset for every next item.
+- Expanded footwear labels plus kind-aware and category-aware season defaults that remain user-editable.
+- Body-aligned outfit composition using the isolated rendition in live and immutable historical looks.
 
 ### Camera and guidance
 

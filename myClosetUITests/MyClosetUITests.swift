@@ -80,30 +80,38 @@ final class MyClosetUITests: XCTestCase {
         let name = app.textFields["import-review-name"]
         XCTAssertTrue(name.exists)
 
-        let bottom = app.buttons["import-review-category-bottom"]
-        bottom.tap()
-        XCTAssertEqual(bottom.value as? String, "Selected")
-        XCTAssertEqual(name.value as? String, "Navy Bottom")
-
         name.tap()
         name.clearAndEnterText("Black Trousers")
         app.buttons["Done"].tap()
-        let black = app.buttons["import-review-dominant-black"]
-        if !black.waitForExistence(timeout: 1) {
-            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
-                .press(
-                    forDuration: 0.05,
-                    thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.52))
-                )
-        }
-        XCTAssertTrue(black.waitForExistence(timeout: 3))
-        for _ in 0..<3 where !black.isHittable {
-            app.swipeUp()
-        }
-        XCTAssertTrue(black.isHittable)
-        black.tap()
-        XCTAssertEqual(black.value as? String, "Selected")
+
+        let bottom = app.buttons["import-review-category-bottom"]
+        bottom.tap()
+        XCTAssertEqual(bottom.value as? String, "Selected")
         XCTAssertEqual(name.value as? String, "Black Trousers")
+
+        let black = app.buttons["import-review-dominant-black"]
+        XCTAssertTrue(black.waitForExistence(timeout: 3))
+        XCTAssertTrue(black.waitUntilHittable(timeout: 3))
+        black.tap()
+
+        let noAccent = app.buttons["import-review-accent-none"]
+        XCTAssertTrue(noAccent.waitForExistence(timeout: 3))
+        XCTAssertTrue(noAccent.waitUntilHittable(timeout: 3))
+        noAccent.tap()
+
+        let seasonsContinue = app.buttons["import-review-seasons-continue"]
+        XCTAssertTrue(seasonsContinue.waitForExistence(timeout: 3))
+        XCTAssertTrue(seasonsContinue.waitUntilHittable(timeout: 3))
+        seasonsContinue.tap()
+
+        let next = app.buttons["import-review-next"]
+        XCTAssertTrue(next.waitForExistence(timeout: 3))
+        next.tap()
+
+        let secondHeader = app.staticTexts["Piece 2 of 2"]
+        XCTAssertTrue(secondHeader.waitForExistence(timeout: 3))
+        XCTAssertTrue(secondHeader.waitUntilHittable(timeout: 3))
+        XCTAssertEqual(app.textFields["import-review-name"].value as? String, "Beige Footwear")
 
         let save = app.buttons["import-review-save"]
         XCTAssertTrue(save.waitForExistence(timeout: 3))
@@ -117,6 +125,13 @@ final class MyClosetUITests: XCTestCase {
 }
 
 private extension XCUIElement {
+    func waitUntilHittable(timeout: TimeInterval) -> Bool {
+        XCTWaiter.wait(
+            for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: self)],
+            timeout: timeout
+        ) == .completed
+    }
+
     func clearAndEnterText(_ text: String) {
         guard let currentValue = value as? String else {
             typeText(text)

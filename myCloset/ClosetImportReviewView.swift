@@ -1,5 +1,14 @@
 import SwiftUI
 
+private enum ImportReviewSection: Hashable {
+    case top, photo, name, category, dominantColor, accentColor, seasons, formality
+}
+
+private struct ImportReviewScrollRequest {
+    let id = UUID()
+    let section: ImportReviewSection
+}
+
 struct ClosetImportReviewBatch: Identifiable {
     enum Mode {
         case newImport
@@ -25,6 +34,13 @@ struct ClosetImportReviewBatch: Identifiable {
                     accentColor: beige,
                     seasons: Set(WardrobeSeason.allCases),
                     formalities: [.casual]
+                ),
+                ClosetItem(
+                    name: "Beige Footwear",
+                    category: .footwear,
+                    dominantColor: beige ?? navy,
+                    seasons: Set(WardrobeSeason.allCases),
+                    formalities: [.casual]
                 )
             ],
             uncertainItemIDs: [],
@@ -41,7 +57,11 @@ struct ClosetImportReviewView: View {
     @State private var currentIndex = 0
     @State private var confirmedItemIDs = Set<UUID>()
     @State private var automaticallyNamedItemIDs: Set<UUID>
+    @State private var automaticallySeasonedItemIDs: Set<UUID>
     @State private var showingDiscardConfirmation = false
+    @State private var showingCropEditor = false
+    @State private var isProcessingCrop = false
+    @State private var scrollRequest: ImportReviewScrollRequest?
     @FocusState private var nameFieldIsFocused: Bool
 
     private let batch: ClosetImportReviewBatch
@@ -66,23 +86,37 @@ struct ClosetImportReviewView: View {
         _automaticallyNamedItemIDs = State(
             initialValue: batch.mode == .newImport ? Set(batch.items.map(\.id)) : []
         )
+        _automaticallySeasonedItemIDs = State(
+            initialValue: batch.mode == .newImport ? Set(batch.items.map(\.id)) : []
+        )
     }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    reviewHeader
-                    photoPreview
-                    nameEditor
-                    categoryEditor
-                    dominantColorEditor
-                    accentColorEditor
-                    seasonEditor
-                    formalityEditor
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        reviewHeader.id(ImportReviewSection.top)
+                        photoPreview.id(ImportReviewSection.photo)
+                        nameEditor.id(ImportReviewSection.name)
+                        categoryEditor.id(ImportReviewSection.category)
+                        dominantColorEditor.id(ImportReviewSection.dominantColor)
+                        accentColorEditor.id(ImportReviewSection.accentColor)
+                        seasonEditor.id(ImportReviewSection.seasons)
+                        formalityEditor.id(ImportReviewSection.formality)
+                    }
+                    .padding(16)
+                    .padding(.bottom, 92)
                 }
-                .padding(16)
-                .padding(.bottom, 92)
+                .onChange(of: currentIndex) { _, _ in
+                    proxy.scrollTo(ImportReviewSection.top, anchor: .top)
+                }
+                .onChange(of: scrollRequest?.id) { _, _ in
+                    guard let scrollRequest else { return }
+                    withAnimation(.smooth) {
+                        proxy.scrollTo(scrollRequest.section, anchor: .top)
+                    }
+                }
             }
             .background(ClosetTheme.canvas.ignoresSafeArea())
             .scrollDismissesKeyboard(.interactively)
@@ -114,6 +148,13 @@ struct ClosetImportReviewView: View {
                 Text(batch.mode == .newImport
                      ? "None of these pieces have been saved yet."
                      : "Your existing closet will stay unchanged.")
+            }
+            .sheet(isPresented: $showingCropEditor) {
+                if let photoData = items[currentIndex].photoData {
+                    QuickGarmentCropEditor(imageData: photoData) { croppedData in
+                        applyCroppedPhoto(croppedData)
+                    }
+                }
             }
         }
         .accessibilityIdentifier("import-review-screen")
@@ -164,16 +205,51 @@ struct ClosetImportReviewView: View {
     }
 
     private var photoPreview: some View {
-        ItemArtwork(
-            photoData: items[currentIndex].photoData,
-            color: items[currentIndex].dominantColor,
-            category: items[currentIndex].category,
-            height: 260
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(ClosetTheme.ink.opacity(0.12))
+        VStack(alignment: .leading, spacing: 10) {
+            ZStack {
+                ClosetTheme.card
+                if let data = items[currentIndex].outfitPhotoData,
+                   let image = UIImage(data: data) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                        .padding(12)
+                }
+                if isProcessingCrop {
+                    ProgressView("Updating cutout…")
+                        .padding(14)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            .frame(height: 260)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(ClosetTheme.ink.opacity(0.12))
+            }
+
+            HStack {
+                Label(
+                    items[currentIndex].isolatedPhotoData == nil
+                        ? "Full photo — adjust crop if the garment is too small"
+                        : "Background-removed outfit preview",
+                    systemImage: items[currentIndex].isolatedPhotoData == nil
+                        ? "exclamationmark.triangle"
+                        : "checkmark.circle"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                Spacer()
+                if items[currentIndex].photoData != nil {
+                    Button("Adjust crop", systemImage: "crop") {
+                        showingCropEditor = true
+                    }
+                    .font(.caption.weight(.semibold))
+                    .disabled(isProcessingCrop)
+                    .accessibilityIdentifier("import-review-adjust-crop")
+                }
+            }
         }
     }
 
@@ -183,6 +259,11 @@ struct ClosetImportReviewView: View {
                 .font(.headline)
             TextField("Piece name", text: currentName)
                 .textInputAutocapitalization(.words)
+                .submitLabel(.next)
+                .onSubmit {
+                    nameFieldIsFocused = false
+                    requestScroll(to: .category)
+                }
                 .focused($nameFieldIsFocused)
                 .padding(12)
                 .background(ClosetTheme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -206,7 +287,9 @@ struct ClosetImportReviewView: View {
                         selected: items[currentIndex].category == category
                     ) {
                         items[currentIndex].category = category
+                        refreshAutomaticSeasons()
                         refreshAutomaticName()
+                        requestScroll(to: .dominantColor)
                     }
                     .accessibilityIdentifier("import-review-category-\(category.rawValue)")
                 }
@@ -226,6 +309,7 @@ struct ClosetImportReviewView: View {
                     ) {
                         items[currentIndex].dominantColor = color
                         refreshAutomaticName()
+                        requestScroll(to: .accentColor)
                     }
                     .accessibilityIdentifier("import-review-dominant-\(color.name.lowercased())")
                 }
@@ -244,12 +328,14 @@ struct ClosetImportReviewView: View {
                     selected: items[currentIndex].accentColor == nil
                 ) {
                     items[currentIndex].accentColor = nil
+                    requestScroll(to: .seasons)
                 }
                 .accessibilityIdentifier("import-review-accent-none")
 
                 ForEach(ClothingColor.palette) { color in
                     colorButton(color: color, selected: items[currentIndex].accentColor == color) {
                         items[currentIndex].accentColor = color
+                        requestScroll(to: .seasons)
                     }
                     .accessibilityIdentifier("import-review-accent-\(color.name.lowercased())")
                 }
@@ -271,14 +357,24 @@ struct ClosetImportReviewView: View {
                         icon: items[currentIndex].seasons.contains(season) ? "checkmark.circle.fill" : "circle",
                         selected: items[currentIndex].seasons.contains(season)
                     ) {
+                        automaticallySeasonedItemIDs.remove(items[currentIndex].id)
                         if items[currentIndex].seasons.contains(season) {
                             items[currentIndex].seasons.remove(season)
                         } else {
                             items[currentIndex].seasons.insert(season)
                         }
                     }
+                    .accessibilityIdentifier("import-review-season-\(season.rawValue)")
                 }
             }
+
+            Button("Continue to formality", systemImage: "arrow.down") {
+                requestScroll(to: .formality)
+            }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.capsule)
+            .disabled(items[currentIndex].seasons.isEmpty)
+            .accessibilityIdentifier("import-review-seasons-continue")
         }
     }
 
@@ -344,6 +440,7 @@ struct ClosetImportReviewView: View {
     }
 
     private func confirmCurrentItem() {
+        nameFieldIsFocused = false
         items[currentIndex].name = items[currentIndex].name.trimmingCharacters(in: .whitespacesAndNewlines)
         confirmedItemIDs.insert(items[currentIndex].id)
 
@@ -362,6 +459,41 @@ struct ClosetImportReviewView: View {
             category: items[currentIndex].category,
             dominantColor: items[currentIndex].dominantColor
         )
+    }
+
+    private func refreshAutomaticSeasons() {
+        let id = items[currentIndex].id
+        guard automaticallySeasonedItemIDs.contains(id) else { return }
+        items[currentIndex].seasons = ClosetImageImporter.defaultSeasons(
+            for: items[currentIndex].category
+        )
+    }
+
+    private func requestScroll(to section: ImportReviewSection) {
+        scrollRequest = ImportReviewScrollRequest(section: section)
+    }
+
+    private func applyCroppedPhoto(_ croppedData: Data) {
+        let itemID = items[currentIndex].id
+        isProcessingCrop = true
+        Task {
+            let result = await Task.detached(priority: .userInitiated) {
+                let isolated = ImageUtilities.isolatedGarmentData(from: croppedData)
+                let colors = ImageUtilities.suggestedColors(from: isolated ?? croppedData)
+                return (isolated, colors)
+            }.value
+            guard let index = items.firstIndex(where: { $0.id == itemID }) else { return }
+            items[index].photoData = croppedData
+            items[index].isolatedPhotoData = result.0
+            if let colors = result.1 {
+                items[index].dominantColor = colors.dominant
+                items[index].accentColor = colors.accent
+            }
+            if index == currentIndex {
+                refreshAutomaticName()
+            }
+            isProcessingCrop = false
+        }
     }
 
     private func selectionButton(

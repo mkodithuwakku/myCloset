@@ -20,7 +20,20 @@ final class ClothingTypeDetectorTests: XCTestCase {
 
     func testFilenameDetectsFootwearAndAccessory() {
         XCTAssertEqual(ClothingTypeDetector.category(forFilename: "white-sneakers.jpg"), .footwear)
+        XCTAssertEqual(ClothingTypeDetector.kind(forFilename: "red-athletic-shoes.jpg"), .sneakers)
+        XCTAssertEqual(ClothingTypeDetector.kind(forFilename: "black-ankle-boots.heic"), .boots)
         XCTAssertEqual(ClothingTypeDetector.category(forFilename: "silver-watch.jpg"), .accessory)
+    }
+
+    func testLowConfidenceSpecificShoeBeatsGenericClothingLabel() {
+        let detection = ClothingTypeDetector.detection(forVisionObservations: [
+            ("clothing", 0.91),
+            ("athletic shoe", 0.05)
+        ])
+
+        XCTAssertEqual(detection.category, .footwear)
+        XCTAssertEqual(detection.kind, .sneakers)
+        XCTAssertEqual(detection.source, .vision)
     }
 
     func testSuggestedNameCleansFilename() {
@@ -71,6 +84,12 @@ final class ClothingTypeDetectorTests: XCTestCase {
     func testShortsReceiveWarmWeatherCasualDefaults() {
         XCTAssertEqual(GarmentKind.shorts.suggestedSeasons, [.spring, .summer])
         XCTAssertEqual(GarmentKind.shorts.suggestedFormalities, [.active, .veryCasual, .casual])
+    }
+
+    func testGenericCategorySeasonDefaultsRemainEditableStartingPoints() {
+        XCTAssertEqual(ClosetImageImporter.defaultSeasons(for: .outerwear), [.spring, .autumn, .winter])
+        XCTAssertEqual(ClosetImageImporter.defaultSeasons(for: .onePiece), [.spring, .summer, .autumn])
+        XCTAssertEqual(ClosetImageImporter.defaultSeasons(for: .footwear), Set(WardrobeSeason.allCases))
     }
 
     func testVisionPrefersSpecificGarmentAndFlagsGenericClothing() {

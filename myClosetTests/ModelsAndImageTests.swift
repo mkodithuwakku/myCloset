@@ -42,12 +42,71 @@ final class ModelsAndImageTests: XCTestCase {
         XCTAssertEqual(snapshot.dominantColor, item.dominantColor)
     }
 
+    func testSnapshotPrefersIsolatedOutfitRendition() {
+        var item = TestFixtures.item("Navy Shirt", category: .top)
+        item.photoData = Data([1, 2, 3])
+        item.isolatedPhotoData = Data([4, 5, 6])
+
+        XCTAssertEqual(OutfitSnapshotItem(item: item).photoData, item.isolatedPhotoData)
+    }
+
     func testPreparedImageIsResizedToMaximumDimension() throws {
         let source = solidImageData(color: .red, size: CGSize(width: 2_400, height: 1_200))
         let prepared = try XCTUnwrap(ImageUtilities.preparedImageData(from: source))
         let image = try XCTUnwrap(UIImage(data: prepared))
 
         XCTAssertLessThanOrEqual(max(image.size.width, image.size.height), 1_200.5)
+    }
+
+    func testQuickCropUsesRequestedScaleAndPosition() throws {
+        let source = solidImageData(color: .red, size: CGSize(width: 200, height: 100))
+        let original = try XCTUnwrap(UIImage(data: source))
+        let cropped = try XCTUnwrap(ImageUtilities.croppedImageData(
+            from: source,
+            scale: 0.5,
+            horizontalPosition: 1,
+            verticalPosition: 0
+        ))
+        let image = try XCTUnwrap(UIImage(data: cropped))
+
+        XCTAssertEqual(image.size.width, original.size.width * 0.5, accuracy: 0.5)
+        XCTAssertEqual(image.size.height, original.size.height * 0.5, accuracy: 0.5)
+    }
+
+    func testSuggestedColorIgnoresTransparentCutoutBackground() throws {
+        let format = UIGraphicsImageRendererFormat()
+        format.opaque = false
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 200, height: 200), format: format)
+        let source = renderer.image { context in
+            UIColor.clear.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 200, height: 200))
+            UIColor.green.setFill()
+            context.fill(CGRect(x: 65, y: 20, width: 70, height: 160))
+        }.pngData()!
+
+        let result = try XCTUnwrap(ImageUtilities.suggestedColors(from: source))
+
+        XCTAssertEqual(result.dominant.name, "Green")
+        XCTAssertNil(result.accent)
+    }
+
+    func testIsolationProducesTrimmedTransparentRenditionOnPlainBackground() throws {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 240, height: 240), format: format)
+        let source = renderer.image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 240, height: 240))
+            UIColor.red.setFill()
+            context.fill(CGRect(x: 70, y: 30, width: 100, height: 180))
+        }.pngData()!
+
+        let isolatedData = try XCTUnwrap(ImageUtilities.isolatedGarmentData(from: source))
+        let isolated = try XCTUnwrap(UIImage(data: isolatedData))
+
+        XCTAssertLessThan(isolated.size.width, 180)
+        XCTAssertLessThan(isolated.size.height, 230)
+        XCTAssertTrue(isolatedData.starts(with: [0x89, 0x50, 0x4E, 0x47]))
     }
 
     func testSuggestedColorFindsRedGarment() throws {

@@ -172,6 +172,7 @@ struct ClosetItem: Codable, Hashable, Identifiable {
     var name: String
     var category: ClothingCategory
     var photoData: Data?
+    var isolatedPhotoData: Data? = nil
     var dominantColor: ClothingColor
     var accentColor: ClothingColor?
     var seasons: Set<WardrobeSeason>
@@ -181,6 +182,7 @@ struct ClosetItem: Codable, Hashable, Identifiable {
     var createdAt: Date = Date()
 
     var isAvailable: Bool { availability == .available }
+    var outfitPhotoData: Data? { isolatedPhotoData ?? photoData }
 }
 
 enum Occasion: String, Codable, CaseIterable, Identifiable {
@@ -280,7 +282,7 @@ struct OutfitSnapshotItem: Codable, Hashable, Identifiable {
         id = item.id
         name = item.name
         category = item.category
-        photoData = item.photoData
+        photoData = item.outfitPhotoData
         dominantColor = item.dominantColor
     }
 }

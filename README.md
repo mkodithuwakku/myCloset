@@ -4,11 +4,11 @@
 ![Platform](https://img.shields.io/badge/platform-iPhone-111111)
 ![iOS](https://img.shields.io/badge/iOS-17%2B-111111)
 ![Swift](https://img.shields.io/badge/Swift-5-orange)
-![Phase](https://img.shields.io/badge/phase-0%20prototype-c45f45)
+![Phase](https://img.shields.io/badge/phase-1%20in%20progress-c45f45)
 
 myCloset is a native SwiftUI iPhone application that turns a private wardrobe into practical outfit recommendations. Users can add clothing, confirm detected colors and metadata, generate outfits for an occasion and formality level, lock pieces they want to wear, reroll the remaining pieces, and retain saved or worn outfit history.
 
-> **Project status:** Phase 0 local functional prototype is complete. The approved first App Store release remains account-free and local-only; Following is a truthful Coming Soon screen. If released users show interest, Phase 7 adds CloudKit profiles and following without uploading private closets or introducing a separate hosting subscription.
+> **Project status:** Phase 0 local functional prototype is complete and Phase 1 capture/wardrobe quality is in progress. The approved first App Store release remains account-free and local-only; Following is a truthful Coming Soon screen. If released users show interest, Phase 7 adds CloudKit profiles and following without uploading private closets or introducing a separate hosting subscription.
 
 ![myCloset Home prototype](docs/assets/prototype-home.png)
 
@@ -26,16 +26,16 @@ The long-term product is designed around three principles:
 
 | Area | Working in Phase 0 |
 |---|---|
-| Home | Minimal Outfit of the Day canvas that composes garment images into one look, with compact weather context and secondary actions |
+| Home | Minimal Outfit of the Day canvas that layers isolated garments in a body-aligned look, with compact weather context and secondary actions |
 | Closet | Local creation, bulk image import, full metadata editing, metadata-aware search, category filtering, favorites, availability, archive, and deletion |
-| Item intelligence | Filename-first suggestions plus on-device foreground-shape analysis, jacket/hoodie outerwear recognition, garment-focused perceptual color sampling, metadata-synchronized default names, and mandatory per-piece confirmation before a batch is saved |
-| Generator | Photo-first editorial outfit board, automatic first look, visual occasion/formality brief, locked pieces, single-piece reroll, reliably different alternatives when the closet permits, and visible actionable feedback after every generation attempt |
+| Item intelligence | Filename-first suggestions plus on-device foreground-shape analysis, expanded shoe and outerwear recognition, kind-aware season defaults, automatic transparent garment renditions, garment-only perceptual color sampling, quick crop correction, guided per-field review, metadata-synchronized default names, and mandatory per-piece confirmation before a batch is saved |
+| Generator | Body-aligned layered outfit composition using isolated garment renditions, automatic first look, visual occasion/formality brief, locked pieces, single-piece reroll, reliably different alternatives when the closet permits, and visible actionable feedback after every generation attempt |
 | Weather | Optional approximate current location, manual city lookup, Open-Meteo conditions, or date-derived season fallback |
 | History | Separate saved and worn outfit collections using immutable snapshots |
 | Profile | Local display name, handle, biography, and profile image editing |
 | Following | Minimal Coming Soon state for the gated post-release CloudKit social phase; no fake profiles or posts |
 | Persistence | Local JSON application-support storage that survives relaunches |
-| Tests | 56 unit tests and 5 end-to-end UI smoke tests |
+| Tests | 62 unit tests and 5 end-to-end UI smoke tests |
 
 The authoritative implementation boundary is maintained in [Prototype Status](PROTOTYPE_STATUS.md).
 
@@ -65,7 +65,7 @@ The authoritative implementation boundary is maintained in [Prototype Status](PR
 ./scripts/load_test_closet_images.sh
 ```
 
-3. In the app, open **Closet**, tap **Import**, and multi-select the images. The app proposes on-device name, type, dominant/accent color, season, and formality values, then shows every photo in a required review queue. Changing the suggested type or main color updates the default name automatically; typing a custom name keeps that name fixed. Correct any field and confirm each piece; nothing is added to the closet until the batch is confirmed. To repair pieces imported by an older build, choose **Closet → + → Re-analyze photo details** and confirm the reviewed batch.
+3. In the app, open **Closet**, tap **Import**, and multi-select the images. The app proposes on-device name, type, dominant/accent color, season, and formality values, creates a transparent garment rendition when Vision can isolate it, then shows every photo in a required review queue. The review advances through related fields and returns to the top for each next piece. Changing the suggested type or main color updates the default name automatically; typing a custom name keeps that name fixed. Use **Adjust crop** when the automatic isolation or framing needs help. Correct any field and confirm each piece; nothing is added to the closet until the batch is confirmed. To repair pieces imported by an older build, choose **Closet → + → Re-analyze photo details** and confirm the reviewed batch.
 
 For deterministic type detection, use descriptive names such as `navy-shirt.jpg`, `black-jeans.png`, `white-sneakers.jpeg`, `camel-coat.jpg`, and `silver-watch.png`, make those files available in the simulator's Files app (for example through iCloud Drive), then choose **Closet → + → Import image files**. Filename rules take priority over image classification.
 

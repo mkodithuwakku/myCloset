@@ -78,8 +78,8 @@ struct ItemArtwork: View {
     }
 }
 
-/// A deliberately editorial outfit board. The complete garment photos stay visible
-/// instead of being cropped into a conventional list of product cards.
+/// A body-aligned outfit board. Isolated garment renditions overlap at the waist
+/// and stack from outerwear through footwear like a flat-lay of a worn outfit.
 struct OutfitCanvas: View {
     let items: [ClosetItem]
     var height: CGFloat = 430
@@ -96,17 +96,15 @@ struct OutfitCanvas: View {
         GeometryReader { proxy in
             let width = proxy.size.width
             ZStack(alignment: .topLeading) {
-                ClosetTheme.board
+                ClosetTheme.card
 
                 Path { path in
                     path.move(to: CGPoint(x: 18, y: 46))
                     path.addLine(to: CGPoint(x: width - 18, y: 46))
-                    path.move(to: CGPoint(x: width * 0.67, y: 18))
-                    path.addLine(to: CGPoint(x: width * 0.67, y: proxy.size.height - 18))
                 }
                 .stroke(ClosetTheme.ink.opacity(0.09), lineWidth: 1)
 
-                Text("OUTFIT STUDY")
+                Text("GET DRESSED")
                     .font(.system(size: 9, weight: .bold, design: .monospaced))
                     .tracking(1.8)
                     .foregroundStyle(ClosetTheme.secondaryInk)
@@ -119,41 +117,45 @@ struct OutfitCanvas: View {
                     .position(x: width - 31, y: 23)
 
                 if let onePiece {
-                    EditorialGarmentTile(item: onePiece)
-                        .frame(width: width * 0.53, height: height * 0.63)
-                        .position(x: width * 0.43, y: height * 0.46)
+                    LayeredGarment(item: onePiece)
+                        .frame(width: width * 0.60, height: height * 0.63)
+                        .position(x: width * 0.50, y: height * 0.47)
+                        .zIndex(2)
                 } else {
-                    if let top {
-                        EditorialGarmentTile(item: top)
-                            .frame(width: width * 0.45, height: height * 0.30)
-                            .position(x: width * 0.38, y: height * 0.24)
-                    }
                     if let bottom {
-                        EditorialGarmentTile(item: bottom)
-                            .frame(width: width * 0.42, height: height * 0.37)
-                            .position(x: width * 0.47, y: height * 0.60)
+                        LayeredGarment(item: bottom)
+                            .frame(width: width * 0.50, height: height * 0.46)
+                            .position(x: width * 0.50, y: height * 0.61)
+                            .zIndex(1)
+                    }
+                    if let top {
+                        LayeredGarment(item: top)
+                            .frame(width: width * 0.62, height: height * 0.35)
+                            .position(x: width * 0.50, y: height * 0.30)
+                            .zIndex(2)
                     }
                 }
 
                 if let outerwear {
-                    EditorialGarmentTile(item: outerwear)
-                        .frame(width: width * 0.29, height: height * 0.34)
-                        .rotationEffect(.degrees(2))
-                        .position(x: width * 0.81, y: height * 0.30)
+                    LayeredGarment(item: outerwear)
+                        .frame(width: width * 0.70, height: height * 0.39)
+                        .position(x: width * 0.50, y: height * 0.30)
+                        .zIndex(3)
                 }
 
                 if let footwear {
-                    EditorialGarmentTile(item: footwear)
-                        .frame(width: width * 0.35, height: height * 0.19)
-                        .rotationEffect(.degrees(-1.5))
-                        .position(x: width * 0.75, y: height * 0.79)
+                    LayeredGarment(item: footwear)
+                        .frame(width: width * 0.43, height: height * 0.18)
+                        .position(x: width * 0.50, y: height * 0.87)
+                        .zIndex(4)
                 }
 
                 if let accessory {
-                    EditorialGarmentTile(item: accessory)
-                        .frame(width: width * 0.23, height: height * 0.15)
-                        .rotationEffect(.degrees(-3))
-                        .position(x: width * 0.18, y: height * 0.83)
+                    LayeredGarment(item: accessory)
+                        .frame(width: width * 0.24, height: height * 0.18)
+                        .rotationEffect(.degrees(-4))
+                        .position(x: width * 0.80, y: height * 0.62)
+                        .zIndex(5)
                 }
             }
         }
@@ -173,29 +175,13 @@ struct OutfitCanvas: View {
     }
 }
 
-private struct EditorialGarmentTile: View {
+private struct LayeredGarment: View {
     let item: ClosetItem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            GarmentVisual(item: item)
-                .padding(5)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(ClosetTheme.card)
-                .clipped()
-
-            Text(item.category.title.uppercased())
-                .font(.system(size: 7, weight: .bold, design: .monospaced))
-                .tracking(1.1)
-                .foregroundStyle(ClosetTheme.secondaryInk)
-                .lineLimit(1)
-        }
-        .padding(4)
-        .background(ClosetTheme.card)
-        .overlay {
-            Rectangle().stroke(ClosetTheme.ink.opacity(0.12), lineWidth: 0.75)
-        }
-        .shadow(color: ClosetTheme.ink.opacity(0.07), radius: 4, x: 0, y: 2)
+        GarmentVisual(item: item)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .shadow(color: ClosetTheme.ink.opacity(0.15), radius: 5, x: 0, y: 3)
     }
 }
 
@@ -204,7 +190,7 @@ private struct GarmentVisual: View {
 
     var body: some View {
         Group {
-            if let photoData = item.photoData,
+            if let photoData = item.outfitPhotoData,
                let image = UIImage(data: photoData) {
                 Image(uiImage: image)
                     .resizable()

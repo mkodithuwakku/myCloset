@@ -1,7 +1,7 @@
 # Product and Engineering Roadmap
 
 **Baseline:** SRS 1.2
-**Current phase:** Phase 0 complete; Phase 1 next
+**Current phase:** Phase 0 complete; Phase 1 in progress
 **Planning model:** exit-gate driven, not date-driven
 
 ## 1. Roadmap objective
@@ -22,7 +22,7 @@ The roadmap sequences myCloset so that each phase produces a testable product in
 | Phase | Name | Primary outcome | Status | Depends on |
 |---:|---|---|---|---|
 | 0 | Local Prototype and Foundation | Validate the wardrobe-to-outfit loop | Complete | SRS baseline |
-| 1 | Capture and Wardrobe Quality | Produce reliable isolated garment records | Next | Phase 0 |
+| 1 | Capture and Wardrobe Quality | Produce reliable isolated garment records | In progress | Phase 0 |
 | 2 | Conventional Cloud Identity and Private Data | Superseded backend/account reference design | **Superseded** | A new ADR only if CloudKit is insufficient |
 | 3 | Recommendation Quality | Better local personalization and explainability | Planned | Phase 1 wardrobe quality |
 | 4 | Conventional Social and Safety | Superseded server-based social reference design | **Superseded** | A new ADR only if CloudKit is insufficient |
@@ -67,7 +67,7 @@ Exit evidence: [Phase 0 document](phases/PHASE_0_LOCAL_PROTOTYPE.md) and [Protot
 
 ### Phase 1 — Capture and Wardrobe Quality
 
-Build on the prototype's automatic Vision foreground mask and shape/color analysis with direct guided camera capture, adjustable masks/crops, quality and confidence states, schema versioning, richer taxonomy, and capture accessibility. The result is a trustworthy private garment record.
+The first slice now saves automatic Vision-isolated garment renditions, samples colors from the cutout, supplies kind-aware seasons and a quick crop fallback, and guides users through confirmation. Continue with direct guided camera capture, brush-adjustable masks, quality/confidence states, schema versioning, richer taxonomy, and capture accessibility. The result is a trustworthy private garment record.
 
 Exit gate: supported garment categories meet agreed segmentation/color accuracy thresholds and users can recover every automated failure manually.
 

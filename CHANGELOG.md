@@ -6,6 +6,10 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 
 ### Fixed
 
+- Made the import-review flow so metadata choices advance to the next relevant section and confirming one piece returns immediately to the top of the next piece.
+- Expanded low-confidence footwear recognition and shoe-related filename vocabulary without allowing generic clothing labels to override a specific shoe result.
+- Prevented photographed floors and other untrusted backgrounds from becoming accent suggestions when a dependable foreground mask is unavailable.
+- Replaced separated outfit-photo cards with a body-aligned composition that overlaps tops, outerwear, bottoms, footwear, and accessories like a dressed flat lay.
 - Reworked on-device color suggestions to select and inset one garment-like foreground instance, emphasize the garment center, classify neutrals and hues perceptually, suppress background leakage, and omit insignificant accent colors.
 - Added explicit jacket and hoodie outerwear suggestions after structural bottom detection.
 - Made generated import names follow confirmed type and main-color changes until the user manually edits the name, after which the custom name remains fixed.
@@ -22,6 +26,8 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 
 ### Added
 
+- Added kind-aware and category-aware season defaults, including spring/summer defaults for shorts, while keeping every suggested season user-editable.
+- Added on-device transparent garment renditions for outfit composition plus a fast movable crop control when automatic isolation or framing needs correction.
 - Added garment-kind-aware import defaults: opaque Photos/file names now become useful color-and-kind names such as “Blue Shorts,” with editable type, season, formality, dominant color, and accent color suggestions.
 - Added a required sequential import-review screen where the photo, name, type, dominant/accent colors, seasons, and formality can be corrected for every piece before the batch is committed; canceling saves nothing.
 - Added kind-specific defaults for common garments including shorts, shirts, jeans, dresses, coats, footwear, and accessories, while keeping uncertain on-device Vision results explicitly reviewable.
@@ -32,7 +38,7 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 - Updated the Simulator media loader to import WebP test assets through temporary JPEG copies without modifying the source images.
 - Added a root `AGENTS.md` durable Codex handoff covering current product boundaries, architecture, commands, testing expectations, documentation synchronization, and phase priorities.
 - Added bulk Photos and Files closet import for up to 50 images, with filename-first and on-device Vision clothing-type suggestions, automatic color/default metadata, duplicate-name suffixing, progress, and review feedback.
-- Added deterministic clothing-type, outerwear, silhouette, Vision-mask-format, metadata-default, perceptual foreground-color, accent-threshold, batch-persistence, legacy-demo cleanup, recommendation-fallback, alternative-generation, and editable import-review UI coverage; the current suite contains 56 unit tests and 5 UI tests.
+- Added deterministic clothing-type, footwear, outerwear, silhouette, Vision-mask-format, metadata-default, perceptual foreground-color, transparent-background, isolation-fallback, crop, snapshot-rendition, batch-persistence, legacy-demo cleanup, recommendation-fallback, alternative-generation, and guided import-review UI coverage; the current suite contains 62 unit tests and 5 UI tests.
 - Added a repository-local `TestClosetImages/` workflow and simulator loader script; test photos remain ignored by Git.
 - Added ADR-0003 and SRS 1.1 to establish a zero-backend, on-device App Store release with no mandatory recurring service cost beyond Apple Developer Program membership.
 - Added ADR-0004, SRS 1.2, and a dedicated post-release phase for gated CloudKit profiles, following, controlled outfit posts, and required safety operations.

@@ -334,6 +334,7 @@ struct ClosetView: View {
             }
             updated.dominantColor = suggestion.item.dominantColor
             updated.accentColor = suggestion.item.accentColor
+            updated.isolatedPhotoData = suggestion.item.isolatedPhotoData
             updatedItems.append(updated)
         }
 
@@ -657,6 +658,7 @@ private struct ClosetItemEditor: View {
               ) else { return }
 
         item.photoData = suggestion.item.photoData
+        item.isolatedPhotoData = suggestion.item.isolatedPhotoData
         item.dominantColor = suggestion.item.dominantColor
         item.accentColor = suggestion.item.accentColor
 
