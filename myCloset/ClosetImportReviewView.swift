@@ -18,32 +18,50 @@ struct ClosetImportReviewBatch: Identifiable {
     let id = UUID()
     let items: [ClosetItem]
     let uncertainItemIDs: Set<UUID>
+    let assessments: [UUID: ImportReviewAssessment]
     let failures: Int
     let mode: Mode
+
+    init(
+        items: [ClosetItem],
+        uncertainItemIDs: Set<UUID>,
+        assessments: [UUID: ImportReviewAssessment] = [:],
+        failures: Int,
+        mode: Mode
+    ) {
+        self.items = items
+        self.uncertainItemIDs = uncertainItemIDs
+        self.assessments = assessments
+        self.failures = failures
+        self.mode = mode
+    }
 
 #if DEBUG
     static var debugPreview: ClosetImportReviewBatch {
         let navy = ClothingColor.palette.first { $0.name == "Navy" } ?? ClothingColor.palette[0]
         let beige = ClothingColor.palette.first { $0.name == "Beige" }
+        let first = ClosetItem(
+            name: "Navy Top 1",
+            category: .top,
+            dominantColor: navy,
+            accentColor: beige,
+            seasons: Set(WardrobeSeason.allCases),
+            formalities: [.casual]
+        )
+        let second = ClosetItem(
+            name: "Beige Footwear",
+            category: .footwear,
+            dominantColor: beige ?? navy,
+            seasons: Set(WardrobeSeason.allCases),
+            formalities: [.casual]
+        )
         return ClosetImportReviewBatch(
-            items: [
-                ClosetItem(
-                    name: "Navy Top 1",
-                    category: .top,
-                    dominantColor: navy,
-                    accentColor: beige,
-                    seasons: Set(WardrobeSeason.allCases),
-                    formalities: [.casual]
-                ),
-                ClosetItem(
-                    name: "Beige Footwear",
-                    category: .footwear,
-                    dominantColor: beige ?? navy,
-                    seasons: Set(WardrobeSeason.allCases),
-                    formalities: [.casual]
-                )
+            items: [first, second],
+            uncertainItemIDs: [first.id],
+            assessments: [
+                first.id: .init(type: .needsCheck, color: .needsCheck, cutout: .needsCheck),
+                second.id: .init(type: .strong, color: .strong, cutout: .strong)
             ],
-            uncertainItemIDs: [],
             failures: 0,
             mode: .newImport
         )
@@ -58,7 +76,9 @@ struct ClosetImportReviewView: View {
     @State private var confirmedItemIDs = Set<UUID>()
     @State private var automaticallyNamedItemIDs: Set<UUID>
     @State private var automaticallySeasonedItemIDs: Set<UUID>
+    @State private var assessments: [UUID: ImportReviewAssessment]
     @State private var showingDiscardConfirmation = false
+    @State private var showingSkipConfirmation = false
     @State private var showingCropEditor = false
     @State private var isProcessingCrop = false
     @State private var scrollRequest: ImportReviewScrollRequest?
@@ -89,6 +109,7 @@ struct ClosetImportReviewView: View {
         _automaticallySeasonedItemIDs = State(
             initialValue: batch.mode == .newImport ? Set(batch.items.map(\.id)) : []
         )
+        _assessments = State(initialValue: batch.assessments)
     }
 
     var body: some View {
@@ -114,7 +135,10 @@ struct ClosetImportReviewView: View {
                 .onChange(of: scrollRequest?.id) { _, _ in
                     guard let scrollRequest else { return }
                     withAnimation(.smooth) {
-                        proxy.scrollTo(scrollRequest.section, anchor: .top)
+                        proxy.scrollTo(
+                            scrollRequest.section,
+                            anchor: scrollRequest.section == .top ? .top : .center
+                        )
                     }
                 }
             }
@@ -148,6 +172,20 @@ struct ClosetImportReviewView: View {
                 Text(batch.mode == .newImport
                      ? "None of these pieces have been saved yet."
                      : "Your existing closet will stay unchanged.")
+            }
+            .confirmationDialog(
+                batch.mode == .newImport ? "Skip this photo?" : "Skip this update?",
+                isPresented: $showingSkipConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button(batch.mode == .newImport ? "Skip photo" : "Skip update", role: .destructive) {
+                    skipCurrentItem()
+                }
+                Button("Keep reviewing", role: .cancel) {}
+            } message: {
+                Text(batch.mode == .newImport
+                     ? "This photo will not be added. The rest of the import will continue."
+                     : "This piece will keep its existing details. The rest of the review will continue.")
             }
             .sheet(isPresented: $showingCropEditor) {
                 if let photoData = items[currentIndex].photoData {
@@ -187,7 +225,9 @@ struct ClosetImportReviewView: View {
             ProgressView(value: Double(currentIndex + 1), total: Double(items.count))
                 .tint(ClosetTheme.accent)
 
-            if batch.uncertainItemIDs.contains(items[currentIndex].id) {
+            if let assessment = currentAssessment {
+                confidenceSummary(assessment)
+            } else if batch.uncertainItemIDs.contains(items[currentIndex].id) {
                 Label(
                     "The app could not identify this type reliably. Choose the correct details below.",
                     systemImage: "exclamationmark.triangle.fill"
@@ -412,6 +452,16 @@ struct ClosetImportReviewView: View {
             .buttonBorderShape(.capsule)
             .disabled(currentIndex == 0)
 
+            Button {
+                showingSkipConfirmation = true
+            } label: {
+                Label("Skip", systemImage: "forward.end")
+            }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.capsule)
+            .tint(.red)
+            .accessibilityIdentifier("import-review-skip")
+
             Button(currentIndex == items.count - 1 ? finalButtonTitle : "Confirm & next") {
                 confirmCurrentItem()
             }
@@ -452,6 +502,71 @@ struct ClosetImportReviewView: View {
         }
     }
 
+    private var currentAssessment: ImportReviewAssessment? {
+        assessments[items[currentIndex].id]
+    }
+
+    @ViewBuilder
+    private func confidenceSummary(_ assessment: ImportReviewAssessment) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if assessment.needsAttention {
+                Label(
+                    "Please check \(assessment.componentsNeedingAttention.joined(separator: ", ")).",
+                    systemImage: "exclamationmark.triangle.fill"
+                )
+                .foregroundStyle(.orange)
+                .accessibilityIdentifier("import-review-confidence-warning")
+            } else {
+                Label("Suggestions look reliable. You still control every detail.", systemImage: "checkmark.circle")
+                    .foregroundStyle(.secondary)
+
+                Button("Looks good — confirm piece", systemImage: "checkmark") {
+                    confirmCurrentItem()
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .disabled(!currentItemIsValid)
+                .accessibilityIdentifier("import-review-fast-confirm")
+            }
+
+            HStack(spacing: 8) {
+                confidencePill("Type", assessment.type)
+                confidencePill("Colour", assessment.color)
+                confidencePill("Cutout", assessment.cutout)
+            }
+        }
+    }
+
+    private func confidencePill(_ title: String, _ confidence: ImportSuggestionConfidence) -> some View {
+        Label("\(title): \(confidence.title)", systemImage: confidence.icon)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(confidence == .needsCheck ? Color.orange : ClosetTheme.secondaryInk)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(ClosetTheme.card, in: Capsule())
+    }
+
+    private func skipCurrentItem() {
+        guard items.count > 1 else {
+            onCommit([])
+            dismiss()
+            return
+        }
+
+        let removedID = items[currentIndex].id
+        items.remove(at: currentIndex)
+        confirmedItemIDs.remove(removedID)
+        automaticallyNamedItemIDs.remove(removedID)
+        automaticallySeasonedItemIDs.remove(removedID)
+        assessments[removedID] = nil
+
+        if currentIndex >= items.count {
+            currentIndex = items.count - 1
+        } else {
+            requestScroll(to: .top)
+        }
+    }
+
     private func refreshAutomaticName() {
         let id = items[currentIndex].id
         guard automaticallyNamedItemIDs.contains(id) else { return }
@@ -488,6 +603,13 @@ struct ClosetImportReviewView: View {
             if let colors = result.1 {
                 items[index].dominantColor = colors.dominant
                 items[index].accentColor = colors.accent
+            }
+            if let existing = assessments[itemID] {
+                assessments[itemID] = ImportReviewAssessment(
+                    type: existing.type,
+                    color: result.1 == nil ? .needsCheck : (result.0 == nil ? .likely : .strong),
+                    cutout: result.0 == nil ? .needsCheck : .strong
+                )
             }
             if index == currentIndex {
                 refreshAutomaticName()

@@ -1,10 +1,10 @@
 # Testing Strategy and Guide
 
-**Current automated inventory:** 62 unit tests + 5 UI tests
+**Current automated inventory:** 69 unit tests + 6 UI tests
 **Current verified environment:** Xcode 26.3, iPhone 17 simulator, iOS 26.3.1
 **Minimum deployment target:** iOS 17.0
 
-Latest recorded evidence: [Test Execution Report — 2026-09-02](testing/TEST_EXECUTION_2026-09-02.md) (67 passed, 0 failed).
+Latest recorded evidence: [Test Execution Report — 2026-09-08](testing/TEST_EXECUTION_2026-09-08.md) (75 passed, 0 failed).
 
 ## 1. Objectives
 
@@ -69,7 +69,7 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 | Immutable worn snapshots | CLO-010, HIST-003 |
 | Full local reset | Account/deletion precursor |
 
-### 3.3 `ModelsAndImageTests` — 18 tests
+### 3.3 `ModelsAndImageTests` — 20 tests
 
 | Coverage | SRS relationship |
 |---|---|
@@ -78,7 +78,7 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 | Temperature display rounding | UX/weather presentation |
 | Nearest clothing color | ITEM-009–ITEM-011 |
 | Historical snapshot copy and isolated-rendition preference | HIST-003 |
-| Maximum image dimension and movable quick-crop geometry | PERF-007, ITEM-005 |
+| Maximum image dimension, movable quick-crop geometry, and quarter-turn rotation | PERF-007, ITEM-005–ITEM-008 |
 | Dominant red extraction | ITEM-009–ITEM-010 |
 | Plain and transparent-background suppression during color extraction | ITEM-009–ITEM-010 |
 | Automatic isolation with a deterministic Simulator fallback | ITEM-005, ITEM-009–ITEM-010 |
@@ -86,8 +86,9 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 | Insignificant accent suppression and meaningful accent retention | ITEM-009–ITEM-011 |
 | Vision 32-bit foreground-mask decoding | ITEM-007–ITEM-010 |
 | Invalid-image graceful failure | ITEM-019 |
+| Body-aligned waist overlap and standardized footwear frame | HOME-002, COMP-001–COMP-003 |
 
-### 3.4 `ClothingTypeDetectorTests` — 18 tests
+### 3.4 `ClothingTypeDetectorTests` — 20 tests
 
 | Coverage | SRS relationship |
 |---|---|
@@ -102,17 +103,27 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 | Strong denim labels and compact center openings cannot turn a jacket-shaped garment into a bottom | ITEM-007–ITEM-008 |
 | Jacket and hoodie labels produce editable outerwear suggestions | ITEM-007–ITEM-008 |
 | Confirmed category/color metadata produces a synchronized default name | ITEM-001, ITEM-007–ITEM-011 |
+| Weak type/color/cutout signals remain separate, user-visible review states | ITEM-007–ITEM-011, ITEM-018–ITEM-019 |
 
 The suite keeps OS-owned Vision at the boundary and tests the deterministic structural interpretation separately, because Apple's exact semantic labels may evolve between system releases.
 
-### 3.5 `MyClosetUITests` — 5 tests
+### 3.5 `ClosetImportSummaryTests` — 3 tests
+
+| Coverage | SRS relationship |
+|---|---|
+| Per-category counts include only the completed import | ITEM-018 |
+| Existing top-and-bottom closet reports generator readiness | COMP-001–COMP-003 |
+| Missing-bottom summary gives an actionable recovery | REC-016 |
+
+### 3.6 `MyClosetUITests` — 6 tests
 
 | Journey | Primary assertion |
 |---|---|
 | Empty closet → own-image import | Real users start without demo garments and can reach personal photo import |
 | Closet → generator → visual brief → outfit | Stored pieces produce an unlocked outfit without a starting-piece prompt, accept a visual Work brief, and retain generated-piece lock controls |
 | Closet piece → metadata editor | Imported/stored item exposes editable name and metadata controls |
-| Import suggestions → guided required review → closet | Metadata choices advance to the next section, confirming advances to a visible next-piece header at the top, a manual rename stays fixed, and the corrected batch is added only after confirmation |
+| Import suggestions → guided required review → summary → closet | Confidence guidance is visible, metadata choices advance, confirming returns to the next-piece top, a manual rename stays fixed, and category/readiness results appear only after confirmation |
+| Import review → skip accidental photo → summary | One selected photo can be skipped without cancelling or losing the rest of the batch |
 | Following tab → Coming Soon | Social roadmap is visible without fake profiles, posts, or service behavior |
 
 ## 4. Running tests

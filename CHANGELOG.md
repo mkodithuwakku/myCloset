@@ -6,6 +6,7 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 
 ### Fixed
 
+- Tightened the outfit canvas waist overlap and normalized footwear placement so isolated pieces read as one dressed look instead of disconnected images.
 - Made the import-review flow so metadata choices advance to the next relevant section and confirming one piece returns immediately to the top of the next piece.
 - Expanded low-confidence footwear recognition and shoe-related filename vocabulary without allowing generic clothing labels to override a specific shoe result.
 - Prevented photographed floors and other untrusted backgrounds from becoming accent suggestions when a dependable foreground mask is unavailable.
@@ -26,6 +27,12 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 
 ### Added
 
+- Added a visible “Analyzing x of y” counter for large Photos, Files, and re-analysis batches.
+- Added per-photo skip controls so accidental selections can be removed without cancelling the remaining import.
+- Added left/right rotation and one-tap reset to the quick garment crop editor.
+- Added separate type, colour, and cutout confidence guidance with an explicit “Please check” warning for weak or merely likely results and a one-tap explicit confirmation path only when all three signals are strong.
+- Added single-item photo re-analysis inside the piece editor while preserving curated name, season, formality, favorite, and availability fields until save.
+- Added a post-import summary with per-category counts, skipped/failed-image details, and an actionable closet-readiness result.
 - Added kind-aware and category-aware season defaults, including spring/summer defaults for shorts, while keeping every suggested season user-editable.
 - Added on-device transparent garment renditions for outfit composition plus a fast movable crop control when automatic isolation or framing needs correction.
 - Added garment-kind-aware import defaults: opaque Photos/file names now become useful color-and-kind names such as “Blue Shorts,” with editable type, season, formality, dominant color, and accent color suggestions.
@@ -38,7 +45,7 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 - Updated the Simulator media loader to import WebP test assets through temporary JPEG copies without modifying the source images.
 - Added a root `AGENTS.md` durable Codex handoff covering current product boundaries, architecture, commands, testing expectations, documentation synchronization, and phase priorities.
 - Added bulk Photos and Files closet import for up to 50 images, with filename-first and on-device Vision clothing-type suggestions, automatic color/default metadata, duplicate-name suffixing, progress, and review feedback.
-- Added deterministic clothing-type, footwear, outerwear, silhouette, Vision-mask-format, metadata-default, perceptual foreground-color, transparent-background, isolation-fallback, crop, snapshot-rendition, batch-persistence, legacy-demo cleanup, recommendation-fallback, alternative-generation, and guided import-review UI coverage; the current suite contains 62 unit tests and 5 UI tests.
+- Added deterministic clothing-type, footwear, outerwear, silhouette, Vision-mask-format, confidence-assessment, perceptual foreground-color, transparent-background, isolation-fallback, crop/rotation, import-summary/readiness, outfit-layout, snapshot-rendition, batch-persistence, legacy-demo cleanup, recommendation-fallback, alternative-generation, and guided import-review UI coverage; the current suite contains 69 unit tests and 6 UI tests.
 - Added a repository-local `TestClosetImages/` workflow and simulator loader script; test photos remain ignored by Git.
 - Added ADR-0003 and SRS 1.1 to establish a zero-backend, on-device App Store release with no mandatory recurring service cost beyond Apple Developer Program membership.
 - Added ADR-0004, SRS 1.2, and a dedicated post-release phase for gated CloudKit profiles, following, controlled outfit posts, and required safety operations.
@@ -55,7 +62,7 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 
 ### Planned
 
-- Phase 1 guided camera capture, foreground isolation, crop correction, and improved color confidence.
+- Phase 1 guided camera capture, brush-based mask correction, calibrated photo/color confidence, and persistence migration.
 - Phase 7 CloudKit profiles and following after the first App Store release demonstrates user interest.
 
 ## [0.1.0] - 2026-07-14

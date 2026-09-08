@@ -28,14 +28,14 @@ The long-term product is designed around three principles:
 |---|---|
 | Home | Minimal Outfit of the Day canvas that layers isolated garments in a body-aligned look, with compact weather context and secondary actions |
 | Closet | Local creation, bulk image import, full metadata editing, metadata-aware search, category filtering, favorites, availability, archive, and deletion |
-| Item intelligence | Filename-first suggestions plus on-device foreground-shape analysis, expanded shoe and outerwear recognition, kind-aware season defaults, automatic transparent garment renditions, garment-only perceptual color sampling, quick crop correction, guided per-field review, metadata-synchronized default names, and mandatory per-piece confirmation before a batch is saved |
-| Generator | Body-aligned layered outfit composition using isolated garment renditions, automatic first look, visual occasion/formality brief, locked pieces, single-piece reroll, reliably different alternatives when the closet permits, and visible actionable feedback after every generation attempt |
+| Item intelligence | Visible batch-analysis progress, filename-first suggestions plus on-device foreground-shape analysis, expanded shoe and outerwear recognition, separate type/color/cutout confidence guidance with fast confirmation only when every signal is strong, kind-aware season defaults, automatic transparent garment renditions, garment-only perceptual color sampling, rotate/reset crop correction, skippable guided review, single-item re-analysis, metadata-synchronized default names, and an import/readiness summary |
+| Generator | Tighter body-aligned layered outfit composition with standardized footwear scale, automatic first look, visual occasion/formality brief, locked pieces, single-piece reroll, reliably different alternatives when the closet permits, and visible actionable feedback after every generation attempt |
 | Weather | Optional approximate current location, manual city lookup, Open-Meteo conditions, or date-derived season fallback |
 | History | Separate saved and worn outfit collections using immutable snapshots |
 | Profile | Local display name, handle, biography, and profile image editing |
 | Following | Minimal Coming Soon state for the gated post-release CloudKit social phase; no fake profiles or posts |
 | Persistence | Local JSON application-support storage that survives relaunches |
-| Tests | 62 unit tests and 5 end-to-end UI smoke tests |
+| Tests | 69 unit tests and 6 end-to-end UI journey tests |
 
 The authoritative implementation boundary is maintained in [Prototype Status](PROTOTYPE_STATUS.md).
 
@@ -65,7 +65,7 @@ The authoritative implementation boundary is maintained in [Prototype Status](PR
 ./scripts/load_test_closet_images.sh
 ```
 
-3. In the app, open **Closet**, tap **Import**, and multi-select the images. The app proposes on-device name, type, dominant/accent color, season, and formality values, creates a transparent garment rendition when Vision can isolate it, then shows every photo in a required review queue. The review advances through related fields and returns to the top for each next piece. Changing the suggested type or main color updates the default name automatically; typing a custom name keeps that name fixed. Use **Adjust crop** when the automatic isolation or framing needs help. Correct any field and confirm each piece; nothing is added to the closet until the batch is confirmed. To repair pieces imported by an older build, choose **Closet → + → Re-analyze photo details** and confirm the reviewed batch.
+3. In the app, open **Closet**, tap **Import**, and multi-select the images. A visible counter reports which image is being analyzed. The app proposes on-device name, type, dominant/accent color, season, and formality values, creates a transparent garment rendition when Vision can isolate it, then shows every photo in a required review queue with separate type, colour, and cutout confidence. “Likely” or weak signals ask for a check; pieces with three strong signals can be explicitly confirmed from the top in one tap. Skip accidental photos without cancelling the batch. The review advances through related fields and returns to the top for each next piece. Changing the suggested type or main color updates the default name automatically; typing a custom name keeps that name fixed. Use **Adjust crop** to rotate, reposition, resize, or reset the photo before background removal runs again. After confirmation, the summary shows imported category counts and whether the closet can generate an outfit. To repair all older imports, choose **Closet → + → Re-analyze photo details**; to retry only one piece, open its editor and choose **Re-analyze this photo**.
 
 For deterministic type detection, use descriptive names such as `navy-shirt.jpg`, `black-jeans.png`, `white-sneakers.jpeg`, `camel-coat.jpg`, and `silver-watch.png`, make those files available in the simulator's Files app (for example through iCloud Drive), then choose **Closet → + → Import image files**. Filename rules take priority over image classification.
 
@@ -141,7 +141,7 @@ The current build and first release are deliberately local-only. Persistence evo
 | Phase | Outcome | Status |
 |---:|---|---|
 | 0 | Local functional prototype and engineering foundation | **Complete** |
-| 1 | Production-quality garment capture and wardrobe data | Next |
+| 1 | Production-quality garment capture and wardrobe data | **In progress** |
 | 2 | Conventional identity, backend, sync, and hosted media | **Superseded reference** |
 | 3 | Local recommendation quality, feedback, weather resilience, and explainability | Planned |
 | 4 | Conventional server-based social architecture | **Superseded reference** |
@@ -162,7 +162,7 @@ Read the [Master Roadmap](docs/ROADMAP.md) and the linked phase documents for en
 | [Architecture](docs/ARCHITECTURE.md) | Current design, production target, boundaries, and data flow |
 | [Roadmap](docs/ROADMAP.md) | Sequenced delivery phases and release gates |
 | [Testing](docs/TESTING.md) | Automated/manual strategy, commands, matrices, and quality gates |
-| [Latest Test Execution](docs/testing/TEST_EXECUTION_2026-09-01.md) | Environment, commands, results, fixes, and remaining qualification work |
+| [Latest Test Execution](docs/testing/TEST_EXECUTION_2026-09-08.md) | Environment, commands, results, fixes, and remaining qualification work |
 | [Development Guide](docs/DEVELOPMENT.md) | Setup, workflow, conventions, and debugging |
 | [Requirements Traceability](docs/REQUIREMENTS_TRACEABILITY.md) | SRS-to-phase-to-test mapping |
 | [Contributing](CONTRIBUTING.md) | Branch, change, review, and documentation rules |

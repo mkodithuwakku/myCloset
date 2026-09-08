@@ -77,6 +77,7 @@ final class MyClosetUITests: XCTestCase {
         app.launch()
 
         XCTAssertTrue(app.otherElements["import-review-screen"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["import-review-confidence-warning"].exists)
         let name = app.textFields["import-review-name"]
         XCTAssertTrue(name.exists)
 
@@ -117,10 +118,32 @@ final class MyClosetUITests: XCTestCase {
         XCTAssertTrue(save.waitForExistence(timeout: 3))
         save.tap()
 
+        XCTAssertTrue(app.otherElements["import-summary-screen"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["2 pieces added"].exists)
+        XCTAssertTrue(app.staticTexts["import-summary-readiness"].exists)
+        app.buttons["import-summary-done"].tap()
         XCTAssertTrue(app.staticTexts["Black Trousers"].waitForExistence(timeout: 5))
-        if app.buttons["OK"].exists {
-            app.buttons["OK"].tap()
-        }
+    }
+
+    func testImportReviewCanSkipAnAccidentalPhoto() {
+        app.launchArguments = ["-resetPrototypeData", "-openPrototypeImportReview"]
+        app.launch()
+
+        XCTAssertTrue(app.otherElements["import-review-screen"].waitForExistence(timeout: 5))
+        app.buttons["import-review-skip"].tap()
+        XCTAssertTrue(app.buttons["Skip photo"].waitForExistence(timeout: 3))
+        app.buttons["Skip photo"].tap()
+
+        XCTAssertTrue(app.staticTexts["Piece 1 of 1"].waitForExistence(timeout: 3))
+        XCTAssertEqual(app.textFields["import-review-name"].value as? String, "Beige Footwear")
+        XCTAssertTrue(app.buttons["import-review-fast-confirm"].exists)
+        app.buttons["import-review-fast-confirm"].tap()
+
+        XCTAssertTrue(app.otherElements["import-summary-screen"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["1 piece added"].exists)
+        XCTAssertTrue(app.staticTexts["1 photo was skipped."].exists)
+        app.buttons["import-summary-done"].tap()
+        XCTAssertTrue(app.staticTexts["Beige Footwear"].waitForExistence(timeout: 5))
     }
 }
 

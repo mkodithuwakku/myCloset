@@ -6,11 +6,18 @@ struct QuickGarmentCropEditor: View {
     @State private var cropScale = 0.82
     @State private var horizontalPosition = 0.5
     @State private var verticalPosition = 0.5
+    @State private var workingImageData: Data
 
     let imageData: Data
     let onApply: (Data) -> Void
 
-    private var image: UIImage? { UIImage(data: imageData) }
+    init(imageData: Data, onApply: @escaping (Data) -> Void) {
+        self.imageData = imageData
+        self.onApply = onApply
+        _workingImageData = State(initialValue: imageData)
+    }
+
+    private var image: UIImage? { UIImage(data: workingImageData) }
 
     var body: some View {
         NavigationStack {
@@ -44,6 +51,29 @@ struct QuickGarmentCropEditor: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
 
+                HStack(spacing: 10) {
+                    Button("Rotate left", systemImage: "rotate.left") {
+                        rotate(by: -1)
+                    }
+                    .accessibilityIdentifier("crop-rotate-left")
+
+                    Button("Rotate right", systemImage: "rotate.right") {
+                        rotate(by: 1)
+                    }
+                    .accessibilityIdentifier("crop-rotate-right")
+
+                    Button("Reset", systemImage: "arrow.counterclockwise") {
+                        cropScale = 0.82
+                        horizontalPosition = 0.5
+                        verticalPosition = 0.5
+                        workingImageData = imageData
+                    }
+                    .accessibilityIdentifier("crop-reset")
+                }
+                .font(.caption.weight(.semibold))
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+
                 VStack(spacing: 14) {
                     LabeledContent("Crop size") {
                         Slider(value: $cropScale, in: 0.45...1)
@@ -75,7 +105,7 @@ struct QuickGarmentCropEditor: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Apply") {
                         guard let cropped = ImageUtilities.croppedImageData(
-                            from: imageData,
+                            from: workingImageData,
                             scale: cropScale,
                             horizontalPosition: horizontalPosition,
                             verticalPosition: verticalPosition
@@ -88,5 +118,12 @@ struct QuickGarmentCropEditor: View {
                 }
             }
         }
+    }
+
+    private func rotate(by quarterTurns: Int) {
+        workingImageData = ImageUtilities.rotatedImageData(
+            from: workingImageData,
+            quarterTurns: quarterTurns
+        ) ?? workingImageData
     }
 }

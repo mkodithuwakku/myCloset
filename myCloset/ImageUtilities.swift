@@ -68,6 +68,35 @@ enum ImageUtilities {
         return preparedImageData(from: UIImage(cgImage: cropped).pngData() ?? Data())
     }
 
+    static func rotatedImageData(from data: Data, quarterTurns: Int) -> Data? {
+        guard let image = UIImage(data: data) else { return nil }
+        let normalizedTurns = ((quarterTurns % 4) + 4) % 4
+        guard normalizedTurns != 0 else { return data }
+
+        let swapsDimensions = normalizedTurns.isMultiple(of: 2) == false
+        let outputSize = swapsDimensions
+            ? CGSize(width: image.size.height, height: image.size.width)
+            : image.size
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+        let renderer = UIGraphicsImageRenderer(size: outputSize, format: format)
+        let rotated = renderer.image { context in
+            let cgContext = context.cgContext
+            cgContext.translateBy(x: outputSize.width / 2, y: outputSize.height / 2)
+            cgContext.rotate(by: CGFloat(normalizedTurns) * .pi / 2)
+            image.draw(
+                in: CGRect(
+                    x: -image.size.width / 2,
+                    y: -image.size.height / 2,
+                    width: image.size.width,
+                    height: image.size.height
+                )
+            )
+        }
+        return preparedImageData(from: rotated.jpegData(compressionQuality: 0.9) ?? Data())
+    }
+
     static func isolatedGarmentData(from data: Data) -> Data? {
         guard let image = UIImage(data: data), let cgImage = image.cgImage else { return nil }
         let request = VNGenerateForegroundInstanceMaskRequest()

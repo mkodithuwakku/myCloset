@@ -47,7 +47,7 @@ The five tabs are Home, Closet, Generate, Following, and Profile.
 
 - Home: minimalist Outfit of the Day canvas that composes garment images into one look, plus compact season/weather context and secondary actions.
 - Closet: local create/bulk-import/edit/search/filter/favorite/archive/delete and availability management.
-- Item intelligence: Photos/Files batch import, filename-first and on-device foreground-silhouette type suggestions, expanded footwear/outerwear recognition, metadata-synchronized default names, kind-specific season/formality defaults, fixed 1,200-pixel resizing, automatic transparent garment renditions, foreground-only palette suggestions, guided review with quick crop correction, explicit batch re-analysis, and editable metadata.
+- Item intelligence: Photos/Files batch import with visible per-item progress, filename-first and on-device foreground-silhouette type suggestions, expanded footwear/outerwear recognition, separate type/color/cutout confidence guidance, metadata-synchronized default names, kind-specific season/formality defaults, fixed 1,200-pixel resizing, automatic transparent garment renditions, foreground-only palette suggestions, guided review with skip and rotate/reset crop correction, batch and single-item re-analysis, import summaries, and editable metadata.
 - Generator: visual outfit brief, six formality levels, locks, different-look/full/single-piece rerolls, closet-readiness recovery, and explanations.
 - Weather: foreground approximate location, manual city through Apple geocoding, Open-Meteo current conditions, and season fallback.
 - History: separate saved and worn collections backed by immutable snapshots.
@@ -76,7 +76,7 @@ Important boundaries:
 
 - `ClosetStore` currently combines observable application state, persistence, and recommendation orchestration. This is accepted prototype debt, not the production service shape.
 - `OutfitEngine` is a stateless domain service. Keep hard filtering/validation separate from soft scoring.
-- `ClosetImageImporter` coordinates editable name/category/season/formality/color defaults. `ClothingTypeDetector` uses deterministic filename rules, Apple Vision foreground-instance masks for structural top/bottom analysis, and explicit outerwear signals. `ImageUtilities` handles decoding, resizing, compression, single-instance garment sampling, perceptual palette mapping, and insignificant-accent suppression. User-adjustable segmentation, crop correction, and confidence UX belong to Phase 1.
+- `ClosetImageImporter` coordinates editable name/category/season/formality/color defaults and review-confidence assessments. `ClothingTypeDetector` uses deterministic filename rules, Apple Vision foreground-instance masks for structural top/bottom analysis, and explicit outerwear signals. `ImageUtilities` handles decoding, resizing, rotation, cropping, compression, single-instance garment sampling, perceptual palette mapping, and insignificant-accent suppression. Brush-adjustable segmentation and production confidence calibration remain Phase 1 work.
 - `WeatherService` owns location/city/provider behavior. Do not spread transport code into views.
 - Views may own temporary UI state but should not own persistence, transport, or recommendation rules.
 
@@ -143,7 +143,7 @@ Load Git-ignored project-local garment images into a booted Simulator with:
 ./scripts/load_test_closet_images.sh
 ```
 
-Current automated inventory: 62 unit tests and 5 UI tests. The latest recorded execution evidence is [docs/testing/TEST_EXECUTION_2026-09-02.md](docs/testing/TEST_EXECUTION_2026-09-02.md).
+Current automated inventory: 69 unit tests and 6 UI tests. The latest recorded execution evidence is [docs/testing/TEST_EXECUTION_2026-09-08.md](docs/testing/TEST_EXECUTION_2026-09-08.md).
 
 Debug-only UI launch arguments are:
 
@@ -186,9 +186,9 @@ Do not duplicate long specifications here. Update the authoritative document and
 Unless the user reprioritizes, the highest-value next slice is:
 
 1. direct camera capture with category-specific framing guides;
-2. Vision foreground-instance masking and user-adjustable crop/mask correction;
-3. dominant/accent extraction from the isolated garment only;
-4. photo quality/confidence states and retry guidance;
+2. brush-adjustable foreground-mask correction and physical-device segmentation qualification;
+3. calibrated photo-quality and color-confidence states with retry guidance;
+4. EXIF/privacy validation and original/derivative lifecycle hardening;
 5. persistence schema versioning and tests for capture failure/recovery.
 
 Phase 1 and the first App Store release must remain useful without accounts or a backend. Conventional Phase 2 cloud work is superseded; the only approved social path is post-release Phase 7 under ADR-0004.

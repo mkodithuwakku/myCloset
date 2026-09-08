@@ -67,7 +67,7 @@ Exit evidence: [Phase 0 document](phases/PHASE_0_LOCAL_PROTOTYPE.md) and [Protot
 
 ### Phase 1 — Capture and Wardrobe Quality
 
-The first slice now saves automatic Vision-isolated garment renditions, samples colors from the cutout, supplies kind-aware seasons and a quick crop fallback, and guides users through confirmation. Continue with direct guided camera capture, brush-adjustable masks, quality/confidence states, schema versioning, richer taxonomy, and capture accessibility. The result is a trustworthy private garment record.
+The current slices save automatic Vision-isolated garment renditions, sample colors from the cutout, supply kind-aware seasons, report batch progress and per-result confidence, support skip plus rotate/reset crop recovery, summarize closet readiness, and offer batch or single-item re-analysis. Continue with direct guided camera capture, brush-adjustable masks, calibrated quality/confidence states, schema versioning, richer taxonomy, and capture accessibility. The result is a trustworthy private garment record.
 
 Exit gate: supported garment categories meet agreed segmentation/color accuracy thresholds and users can recover every automated failure manually.
 

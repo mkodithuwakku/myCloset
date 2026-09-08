@@ -80,6 +80,26 @@ struct ItemArtwork: View {
 
 /// A body-aligned outfit board. Isolated garment renditions overlap at the waist
 /// and stack from outerwear through footwear like a flat-lay of a worn outfit.
+struct OutfitCanvasPlacement: Equatable {
+    let width: CGFloat
+    let height: CGFloat
+    let x: CGFloat
+    let y: CGFloat
+
+    var verticalRange: ClosedRange<CGFloat> {
+        (y - height / 2)...(y + height / 2)
+    }
+}
+
+enum OutfitCanvasLayout {
+    static let onePiece = OutfitCanvasPlacement(width: 0.58, height: 0.70, x: 0.50, y: 0.50)
+    static let top = OutfitCanvasPlacement(width: 0.58, height: 0.34, x: 0.50, y: 0.31)
+    static let bottom = OutfitCanvasPlacement(width: 0.48, height: 0.50, x: 0.50, y: 0.61)
+    static let outerwear = OutfitCanvasPlacement(width: 0.66, height: 0.42, x: 0.50, y: 0.32)
+    static let footwear = OutfitCanvasPlacement(width: 0.38, height: 0.14, x: 0.50, y: 0.88)
+    static let accessory = OutfitCanvasPlacement(width: 0.23, height: 0.17, x: 0.80, y: 0.62)
+}
+
 struct OutfitCanvas: View {
     let items: [ClosetItem]
     var height: CGFloat = 430
@@ -118,43 +138,44 @@ struct OutfitCanvas: View {
 
                 if let onePiece {
                     LayeredGarment(item: onePiece)
-                        .frame(width: width * 0.60, height: height * 0.63)
-                        .position(x: width * 0.50, y: height * 0.47)
+                        .outfitPlacement(OutfitCanvasLayout.onePiece, width: width, height: height)
                         .zIndex(2)
                 } else {
                     if let bottom {
                         LayeredGarment(item: bottom)
-                            .frame(width: width * 0.50, height: height * 0.46)
-                            .position(x: width * 0.50, y: height * 0.61)
+                            .outfitPlacement(OutfitCanvasLayout.bottom, width: width, height: height)
                             .zIndex(1)
                     }
                     if let top {
                         LayeredGarment(item: top)
-                            .frame(width: width * 0.62, height: height * 0.35)
-                            .position(x: width * 0.50, y: height * 0.30)
+                            .outfitPlacement(OutfitCanvasLayout.top, width: width, height: height)
                             .zIndex(2)
                     }
                 }
 
                 if let outerwear {
                     LayeredGarment(item: outerwear)
-                        .frame(width: width * 0.70, height: height * 0.39)
-                        .position(x: width * 0.50, y: height * 0.30)
+                        .outfitPlacement(OutfitCanvasLayout.outerwear, width: width, height: height)
                         .zIndex(3)
                 }
 
                 if let footwear {
                     LayeredGarment(item: footwear)
-                        .frame(width: width * 0.43, height: height * 0.18)
-                        .position(x: width * 0.50, y: height * 0.87)
+                        .outfitPlacement(OutfitCanvasLayout.footwear, width: width, height: height)
                         .zIndex(4)
                 }
 
                 if let accessory {
                     LayeredGarment(item: accessory)
-                        .frame(width: width * 0.24, height: height * 0.18)
+                        .frame(
+                            width: width * OutfitCanvasLayout.accessory.width,
+                            height: height * OutfitCanvasLayout.accessory.height
+                        )
                         .rotationEffect(.degrees(-4))
-                        .position(x: width * 0.80, y: height * 0.62)
+                        .position(
+                            x: width * OutfitCanvasLayout.accessory.x,
+                            y: height * OutfitCanvasLayout.accessory.y
+                        )
                         .zIndex(5)
                 }
             }
@@ -172,6 +193,17 @@ struct OutfitCanvas: View {
 
     private func item(in category: ClothingCategory) -> ClosetItem? {
         items.first { $0.category == category }
+    }
+}
+
+private extension View {
+    func outfitPlacement(
+        _ placement: OutfitCanvasPlacement,
+        width: CGFloat,
+        height: CGFloat
+    ) -> some View {
+        frame(width: width * placement.width, height: height * placement.height)
+            .position(x: width * placement.x, y: height * placement.y)
     }
 }
 

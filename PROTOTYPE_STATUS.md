@@ -1,7 +1,7 @@
 # myCloset prototype slice status
 
 **Slice:** 0.1.0 local functional prototype
-**Verified:** September 2, 2026
+**Verified:** September 8, 2026
 **Runtime:** iPhone 17 simulator, iOS 26.3.1
 **Minimum configured OS:** iOS 17.0
 
@@ -17,7 +17,7 @@ This slice provides a genuinely usable local wardrobe and outfit-generation loop
 | Local closet | CLO-001–CLO-011 | Starts empty for real users; create, bulk-import, edit, metadata-aware search, filter, favorite, archive, set availability, and delete |
 | Clothing metadata | ITEM-001–ITEM-018 | Name, category, dominant/accent colors, multiple seasons, multiple formalities, and confirmation form |
 | Duplicate-name warning | ITEM-013–ITEM-014 | Case- and whitespace-normalized warning without blocking save |
-| Photo import | ITEM-006–ITEM-018 | Up to 50 Photos/Files images per batch, filename-first and on-device type/color suggestions including expanded footwear and jacket/hoodie outerwear, kind-aware season defaults, automatic transparent garment renditions, quick crop correction, metadata-synchronized default names, a guided required per-piece review before any batch is saved, and review-first re-analysis for older imports |
+| Photo import | ITEM-006–ITEM-019 | Up to 50 Photos/Files images per batch with live analysis progress, filename-first and on-device suggestions, separate type/color/cutout confidence, one-tap explicit confirmation only when all signals are strong, kind-aware defaults, automatic transparent renditions, rotate/reset crop correction, skippable guided review, metadata-synchronized names, batch or single-item re-analysis, and a post-import category/readiness summary |
 | Capture guidance preview | ITEM-004–ITEM-005 | Category-aware framing outline and guidance text in the editor |
 | Weather fallback | WEA-001–WEA-011 | Current foreground location, manually entered city, or date-derived season |
 | Outfit of the Day | HOME-001–HOME-009 | Isolated garments layered into a body-aligned visual look, compact weather context, explanation, refresh, save, and mark worn |
@@ -30,15 +30,15 @@ This slice provides a genuinely usable local wardrobe and outfit-generation loop
 | Following roadmap state | SOC | Minimal Coming Soon screen; no fake profiles, posts, or service behavior |
 | Accessibility foundations | A11Y | Dynamic native controls, text color names, accessibility labels on key icon controls, and no color-only status |
 | Local persistence | OFF-001 | Codable application-support storage survives relaunches |
-| Automated verification | ENG-004–ENG-006 | Shared scheme, 62 unit tests, 5 UI tests, and GitHub Actions CI |
+| Automated verification | ENG-004–ENG-006 | Shared scheme, 69 unit tests, 6 UI tests, and GitHub Actions CI |
 
 ## Partial or prototype-only
 
 | Capability | Current limitation |
 |---|---|
-| Garment isolation | Vision creates a cropped transparent rendition for outfit display, a conservative border-palette path covers unsupported Simulator runtimes, and the review offers a fast crop fallback; automatic-isolation confidence, brush-based mask repair, rotation, and physical-device qualification remain |
+| Garment isolation | Vision creates a cropped transparent rendition for outfit display, a conservative border-palette path covers unsupported Simulator runtimes, and review shows cutout confidence plus rotate/reset crop recovery; brush-based mask repair, calibrated confidence, and physical-device qualification remain |
 | Camera guidance | The outline appears in the import editor, but direct camera capture is deferred |
-| Color extraction | Samples the saved transparent rendition when available, suppresses frame/background colors and untrusted accents, and classifies hue and neutrals perceptually; editable masks and production confidence remain |
+| Color extraction | Samples the saved transparent rendition when available, suppresses frame/background colors and untrusted accents, classifies hue and neutrals perceptually, and flags weak full-photo results for review; editable masks and calibrated production confidence remain |
 | Clothing-type detection | Filename rules remain deterministic; Apple's visual labels and silhouettes are best-effort, with expanded shoe terms and explicit jacket/hoodie outerwear handling. Generic results are explicitly uncertain, and every imported piece requires user confirmation before persistence |
 | Recommendation learning | Save/worn actions persist, but explicit feedback preference training is deferred |
 | Weather | Uses keyless Open-Meteo and Apple geocoding without production caching, provider contracts, or severe-weather rules |
@@ -69,7 +69,7 @@ CloudKit profiles and following are approved only as the gated post-release Phas
 6. Relaunched the installed app and verified local persistence.
 7. Opened Generate through a debug smoke-test launch argument and verified the automatic editorial outfit board rendered with piece-level lock and reroll controls.
 8. Exercised the visual outfit brief through the UI journey and verified a Work brief produced a rendered outfit.
-9. Ran all 62 unit tests and all five end-to-end UI tests successfully, including guided metadata progression, next-piece top reset, automatic default-name synchronization, and preservation of a manually edited import name.
+9. Ran all 69 unit tests and all six end-to-end UI tests successfully, including guided metadata progression, confidence guidance, skip recovery, import summary/readiness, next-piece top reset, and preservation of a manually edited import name.
 
 Build command:
 
@@ -88,8 +88,8 @@ xcodebuild -project myCloset.xcodeproj \
 The next highest-value vertical slice is **complete garment capture and cleanup**:
 
 1. direct camera capture with category-specific guides;
-2. foreground-mask brush correction, rotation, reset, and isolation-confidence guidance building on the current quick crop;
-3. photo-quality and color-confidence states with retry guidance;
+2. foreground-mask brush correction and physical-device isolation qualification building on the current rotate/reset crop;
+3. calibrated photo-quality and color-confidence states with retry guidance;
 4. persistence schema versioning for capture failure/recovery;
 5. physical-device capture and accessibility qualification.
 

@@ -17,6 +17,7 @@ struct ClosetView: View {
     @State private var showingImportResult = false
     @State private var showingReanalysisConfirmation = false
     @State private var pendingImportReview: ClosetImportReviewBatch?
+    @State private var pendingImportSummary: ClosetImportSummary?
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
@@ -31,9 +32,16 @@ struct ClosetView: View {
                             .accessibilityIdentifier("closet-piece-count")
                         Spacer()
                         if isImporting {
-                            ProgressView(value: Double(importProgress), total: Double(max(importTotal, 1)))
-                                .frame(width: 72)
-                                .accessibilityLabel("Importing closet photos")
+                            VStack(alignment: .trailing, spacing: 4) {
+                                Text("Analyzing \(min(importProgress + 1, importTotal)) of \(importTotal)")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(ClosetTheme.secondaryInk)
+                                    .accessibilityIdentifier("closet-import-progress-label")
+                                ProgressView(value: Double(importProgress), total: Double(max(importTotal, 1)))
+                                    .frame(width: 112)
+                                    .accessibilityLabel("Analyzing closet photos")
+                                    .accessibilityValue("\(importProgress) of \(importTotal) complete")
+                            }
                         } else {
                             PhotosPicker(
                                 selection: $selectedImportPhotos,
@@ -118,6 +126,11 @@ struct ClosetView: View {
                     pendingImportReview = nil
                 }
                 .interactiveDismissDisabled()
+            }
+            .sheet(item: $pendingImportSummary) { summary in
+                ClosetImportSummaryView(summary: summary) {
+                    pendingImportSummary = nil
+                }
             }
             .fileImporter(
                 isPresented: $showingFileImporter,
@@ -274,6 +287,9 @@ struct ClosetView: View {
             uncertainItemIDs: Set(zip(uniqueItems, pieces).compactMap { item, piece in
                 piece.detection.needsReview ? item.id : nil
             }),
+            assessments: Dictionary(uniqueKeysWithValues: zip(uniqueItems, pieces).map { item, piece in
+                (item.id, piece.assessment)
+            }),
             failures: failures,
             mode: .newImport
         )
@@ -283,6 +299,16 @@ struct ClosetView: View {
     private func completeImportReview(_ confirmedItems: [ClosetItem], batch: ClosetImportReviewBatch) {
         store.upsert(confirmedItems)
         pendingImportReview = nil
+
+        if batch.mode == .newImport {
+            pendingImportSummary = ClosetImportSummary(
+                importedItems: confirmedItems,
+                availableClosetItems: store.visibleItems.filter(\.isAvailable),
+                skipped: max(0, batch.items.count - confirmedItems.count),
+                failures: batch.failures
+            )
+            return
+        }
 
         let action = batch.mode == .newImport ? "Added" : "Updated"
         var details = ["\(action) \(confirmedItems.count) confirmed piece\(confirmedItems.count == 1 ? "" : "s") in your closet."]
@@ -315,6 +341,7 @@ struct ClosetView: View {
         beginImport(total: photographedItems.count)
         var updatedItems: [ClosetItem] = []
         var uncertainItemIDs = Set<UUID>()
+        var assessments: [UUID: ImportReviewAssessment] = [:]
         var failures = 0
 
         for (offset, existing) in photographedItems.enumerated() {
@@ -336,6 +363,7 @@ struct ClosetView: View {
             updated.accentColor = suggestion.item.accentColor
             updated.isolatedPhotoData = suggestion.item.isolatedPhotoData
             updatedItems.append(updated)
+            assessments[existing.id] = suggestion.assessment
         }
 
         isImporting = false
@@ -348,6 +376,7 @@ struct ClosetView: View {
         pendingImportReview = ClosetImportReviewBatch(
             items: updatedItems,
             uncertainItemIDs: uncertainItemIDs,
+            assessments: assessments,
             failures: failures,
             mode: .reanalysis
         )
@@ -528,6 +557,19 @@ private struct ClosetItemEditor: View {
                     Task { await process(newValue) }
                 }
 
+                if item.photoData != nil {
+                    Button {
+                        Task { await reanalyzeCurrentPhoto() }
+                    } label: {
+                        Label("Re-analyze this photo", systemImage: "viewfinder")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
+                    .disabled(isProcessingPhoto)
+                    .accessibilityIdentifier("reanalyze-current-photo")
+                }
+
                 Text("For the cleanest color result, use even light and a plain background that contrasts with the item.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -672,6 +714,34 @@ private struct ClosetItemEditor: View {
                 : "Name, type, colors, seasons, and formality were suggested from this photo."
         } else {
             photoSuggestionMessage = "Colors were refreshed from the new photo; your existing details were preserved."
+        }
+    }
+
+    @MainActor
+    private func reanalyzeCurrentPhoto() async {
+        guard let photoData = item.photoData else { return }
+        isProcessingPhoto = true
+        defer { isProcessingPhoto = false }
+        guard let suggestion = await ClosetImageImporter.makePiece(
+            from: photoData,
+            index: store.items.firstIndex(where: { $0.id == item.id }).map { $0 + 1 } ?? 1
+        ) else {
+            photoSuggestionMessage = "This photo could not be analyzed. Your current details were left unchanged."
+            return
+        }
+
+        if suggestion.detection.source != .fallback {
+            item.category = suggestion.item.category
+        }
+        item.dominantColor = suggestion.item.dominantColor
+        item.accentColor = suggestion.item.accentColor
+        item.isolatedPhotoData = suggestion.item.isolatedPhotoData
+
+        if suggestion.assessment.needsAttention {
+            let fields = suggestion.assessment.componentsNeedingAttention.joined(separator: ", ")
+            photoSuggestionMessage = "Re-analysis finished. Please check \(fields) before saving. Your name, seasons, and formality were preserved."
+        } else {
+            photoSuggestionMessage = "Type, colours, and cutout were refreshed. Your name, seasons, and formality were preserved until you save."
         }
     }
 

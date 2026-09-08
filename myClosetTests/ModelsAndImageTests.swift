@@ -73,6 +73,23 @@ final class ModelsAndImageTests: XCTestCase {
         XCTAssertEqual(image.size.height, original.size.height * 0.5, accuracy: 0.5)
     }
 
+    func testQuarterTurnRotationSwapsImageDimensions() throws {
+        let source = solidImageData(color: .purple, size: CGSize(width: 160, height: 80))
+        let original = try XCTUnwrap(UIImage(data: source))
+        let rotatedData = try XCTUnwrap(ImageUtilities.rotatedImageData(from: source, quarterTurns: 1))
+        let rotated = try XCTUnwrap(UIImage(data: rotatedData))
+
+        XCTAssertEqual(rotated.size.width, original.size.height, accuracy: 0.5)
+        XCTAssertEqual(rotated.size.height, original.size.width, accuracy: 0.5)
+    }
+
+    func testOutfitLayoutOverlapsWaistAndStandardizesFootwearScale() {
+        XCTAssertTrue(OutfitCanvasLayout.top.verticalRange.overlaps(OutfitCanvasLayout.bottom.verticalRange))
+        XCTAssertTrue(OutfitCanvasLayout.bottom.verticalRange.overlaps(OutfitCanvasLayout.footwear.verticalRange))
+        XCTAssertLessThan(OutfitCanvasLayout.footwear.width, OutfitCanvasLayout.bottom.width)
+        XCTAssertLessThan(OutfitCanvasLayout.footwear.height, 0.2)
+    }
+
     func testSuggestedColorIgnoresTransparentCutoutBackground() throws {
         let format = UIGraphicsImageRendererFormat()
         format.opaque = false

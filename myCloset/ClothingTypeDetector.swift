@@ -79,6 +79,76 @@ struct ClothingTypeDetection: Equatable {
     }
 }
 
+enum ImportSuggestionConfidence: Int, Comparable {
+    case needsCheck
+    case likely
+    case strong
+
+    static func < (lhs: Self, rhs: Self) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+
+    var title: String {
+        switch self {
+        case .needsCheck: "Please check"
+        case .likely: "Likely"
+        case .strong: "Strong"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .needsCheck: "exclamationmark.triangle.fill"
+        case .likely: "questionmark.circle"
+        case .strong: "checkmark.circle.fill"
+        }
+    }
+}
+
+struct ImportReviewAssessment: Equatable {
+    let type: ImportSuggestionConfidence
+    let color: ImportSuggestionConfidence
+    let cutout: ImportSuggestionConfidence
+
+    var needsAttention: Bool {
+        type < .strong || color < .strong || cutout < .strong
+    }
+
+    var componentsNeedingAttention: [String] {
+        [
+            type < .strong ? "type" : nil,
+            color < .strong ? "colour" : nil,
+            cutout < .strong ? "cutout" : nil
+        ].compactMap { $0 }
+    }
+
+    static func make(
+        detection: ClothingTypeDetection,
+        foundColors: Bool,
+        isolatedGarment: Bool
+    ) -> Self {
+        let type: ImportSuggestionConfidence
+        if detection.needsReview {
+            type = .needsCheck
+        } else {
+            switch detection.source {
+            case .filename, .silhouette:
+                type = .strong
+            case .vision:
+                type = detection.confidence >= 0.65 ? .strong : .likely
+            case .fallback:
+                type = .needsCheck
+            }
+        }
+
+        return .init(
+            type: type,
+            color: foundColors ? (isolatedGarment ? .strong : .needsCheck) : .needsCheck,
+            cutout: isolatedGarment ? .strong : .needsCheck
+        )
+    }
+}
+
 struct GarmentSilhouetteFeatures: Equatable {
     let heightToWidthRatio: Double
     let centerOccupancyByBand: [Double]
@@ -408,6 +478,7 @@ enum ClothingTypeDetector {
 struct ImportedClosetPiece {
     let item: ClosetItem
     let detection: ClothingTypeDetection
+    let assessment: ImportReviewAssessment
 }
 
 enum ClosetImageImporter {
@@ -444,7 +515,15 @@ enum ClosetImageImporter {
             seasons: detection.kind?.suggestedSeasons ?? Set(WardrobeSeason.allCases),
             formalities: detection.kind?.suggestedFormalities ?? defaultFormalities(for: detection.category)
         )
-        return .init(item: item, detection: detection)
+        return .init(
+            item: item,
+            detection: detection,
+            assessment: .make(
+                detection: detection,
+                foundColors: colors != nil,
+                isolatedGarment: isolatedPhotoData != nil
+            )
+        )
     }
 
     static func defaultFormalities(for category: ClothingCategory) -> Set<FormalityLevel> {

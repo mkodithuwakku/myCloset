@@ -32,6 +32,10 @@
 - Guided sequential metadata review with automatic next-section movement and a top reset for every next item.
 - Expanded footwear labels plus kind-aware and category-aware season defaults that remain user-editable.
 - Body-aligned outfit composition using the isolated rendition in live and immutable historical looks.
+- Visible per-image analysis progress, per-photo skip recovery, and a post-import category/readiness summary.
+- Separate type, colour, and cutout confidence guidance that calls non-strong suggestions out for manual review and offers one-tap explicit confirmation only when every signal is strong.
+- Left/right rotation and reset in the quick crop flow, plus single-item re-analysis that preserves curated metadata until save.
+- Tighter body-aligned outfit geometry with standardized footwear scale.
 
 ### Camera and guidance
 
@@ -44,8 +48,8 @@
 
 - Qualify the prototype Vision foreground-instance mask across supported iOS versions and representative physical devices.
 - Preserve original privately; create normalized display rendition.
-- Add mask selection, erase/restore brush, crop, rotate, and reset.
-- Define confidence and manual-fallback states.
+- Add mask selection and erase/restore brush controls on top of the delivered crop, rotate, and reset recovery.
+- Calibrate the delivered review-confidence states and add photo-quality retry guidance.
 
 ### Color and metadata
 

@@ -217,4 +217,42 @@ final class ClothingTypeDetectorTests: XCTestCase {
         XCTAssertEqual(result.item.formalities, [.active, .veryCasual, .casual])
     }
 
+    func testAssessmentSeparatesWeakTypeColorAndCutoutResults() {
+        let assessment = ImportReviewAssessment.make(
+            detection: ClothingTypeDetection(
+                category: .top,
+                kind: nil,
+                confidence: 0,
+                source: .fallback
+            ),
+            foundColors: true,
+            isolatedGarment: false
+        )
+
+        XCTAssertTrue(assessment.needsAttention)
+        XCTAssertEqual(assessment.type, .needsCheck)
+        XCTAssertEqual(assessment.color, .needsCheck)
+        XCTAssertEqual(assessment.cutout, .needsCheck)
+        XCTAssertEqual(assessment.componentsNeedingAttention, ["type", "colour", "cutout"])
+    }
+
+    func testAssessmentRetainsLikelyVisionResultWithoutCallingItStrong() {
+        let assessment = ImportReviewAssessment.make(
+            detection: ClothingTypeDetection(
+                category: .footwear,
+                kind: .shoes,
+                confidence: 0.5,
+                source: .vision
+            ),
+            foundColors: true,
+            isolatedGarment: true
+        )
+
+        XCTAssertEqual(assessment.type, .likely)
+        XCTAssertEqual(assessment.color, .strong)
+        XCTAssertEqual(assessment.cutout, .strong)
+        XCTAssertTrue(assessment.needsAttention)
+        XCTAssertEqual(assessment.componentsNeedingAttention, ["type"])
+    }
+
 }
