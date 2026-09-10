@@ -3,6 +3,14 @@ import XCTest
 @testable import myCloset
 
 final class ClothingTypeDetectorTests: XCTestCase {
+    func testLongSleeveNamesAreSpecificAndJacketKeywordsKeepTheirType() {
+        for filename in ["navy-long-sleeve.jpg", "black_longsleeve.png", "white-long-sleeved-shirt.jpg"] {
+            XCTAssertEqual(ClothingTypeDetector.kind(forFilename: filename), .longSleeve)
+        }
+        XCTAssertEqual(ClothingTypeDetector.kind(forFilename: "long-sleeve-jacket.jpg"), .jacket)
+        XCTAssertEqual(ClothingTypeDetector.metadataName(category: .top, dominantColor: TestFixtures.color("Navy"), kind: .longSleeve), "Navy Long Sleeve")
+    }
+
     func testFilenameDetectsTop() {
         XCTAssertEqual(ClothingTypeDetector.category(forFilename: "navy-oxford-shirt.jpg"), .top)
     }
@@ -213,8 +221,21 @@ final class ClothingTypeDetectorTests: XCTestCase {
 
         XCTAssertEqual(result.item.name, "Yellow Shorts")
         XCTAssertEqual(result.item.category, .bottom)
+        XCTAssertEqual(result.item.kind, .shorts)
         XCTAssertEqual(result.item.seasons, [.spring, .summer])
         XCTAssertEqual(result.item.formalities, [.active, .veryCasual, .casual])
+        XCTAssertNil(result.item.isolatedPhotoData)
+        XCTAssertEqual(result.assessment.cutout, .needsCheck)
+
+        let outlined = await ClosetImageImporter.makePiece(
+            from: data,
+            filename: "shorts.webp",
+            index: 1,
+            confirmedOutlineData: data
+        )
+        let outlinedImport = try XCTUnwrap(outlined)
+        XCTAssertEqual(outlinedImport.item.isolatedPhotoData, data)
+        XCTAssertEqual(outlinedImport.assessment.cutout, .strong)
     }
 
     func testAssessmentSeparatesWeakTypeColorAndCutoutResults() {

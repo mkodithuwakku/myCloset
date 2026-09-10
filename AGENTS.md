@@ -46,9 +46,9 @@ The prototype is usable locally. The first App Store release has no production b
 The five tabs are Home, Closet, Generate, Following, and Profile.
 
 - Home: minimalist Outfit of the Day canvas that composes garment images into one look, plus compact season/weather context and secondary actions.
-- Closet: local create/bulk-import/edit/search/filter/favorite/archive/delete and availability management.
-- Item intelligence: Photos/Files batch import with visible per-item progress, filename-first and on-device foreground-silhouette type suggestions, expanded footwear/outerwear recognition, separate type/color/cutout confidence guidance, metadata-synchronized default names, kind-specific season/formality defaults, fixed 1,200-pixel resizing, automatic transparent garment renditions, foreground-only palette suggestions, guided review with skip and rotate/reset crop correction, batch and single-item re-analysis, import summaries, and editable metadata.
-- Generator: visual outfit brief, six formality levels, locks, different-look/full/single-piece rerolls, closet-readiness recovery, and explanations.
+- Closet: local create/bulk-import/edit/search/filter/favorite/archive/delete and availability management; Delete is available in the card hold menu with confirmation. The editor/import review expose 29 persisted specific garment types with matching editable defaults and type filters.
+- Item intelligence: Photos/Files batch import with visible per-item progress, filename-first and on-device foreground-silhouette type suggestions, expanded footwear/outerwear recognition, a mandatory category-independent lasso before any imported or replacement photo can reach metadata confirmation, enclosed-area transparent garment renditions, foreground-only palette suggestions, separate editable confidence guidance, metadata-synchronized default names, kind-specific season/formality defaults, skip recovery, batch and single-item re-analysis, import summaries, and editable metadata.
+- Generator: visual outfit brief, six formality levels, locks, different-look/full/single-piece rerolls, closet-readiness recovery, and explanations. Separates use a top or outerwear plus a bottom: jackets replace shirts. A locked top blocks adding outerwear; double upper-body locks conflict. See SRS 1.3 and ADR-0005. Footwear has a larger proportional canvas frame; lasso guidance teaches separate outlines for each shoe.
 - Weather: foreground approximate location, manual city through Apple geocoding, Open-Meteo current conditions, and season fallback.
 - History: separate saved and worn collections backed by immutable snapshots.
 - Profile: local display name, handle, biography, and profile image.
@@ -76,7 +76,7 @@ Important boundaries:
 
 - `ClosetStore` currently combines observable application state, persistence, and recommendation orchestration. This is accepted prototype debt, not the production service shape.
 - `OutfitEngine` is a stateless domain service. Keep hard filtering/validation separate from soft scoring.
-- `ClosetImageImporter` coordinates editable name/category/season/formality/color defaults and review-confidence assessments. `ClothingTypeDetector` uses deterministic filename rules, Apple Vision foreground-instance masks for structural top/bottom analysis, and explicit outerwear signals. `ImageUtilities` handles decoding, resizing, rotation, cropping, compression, single-instance garment sampling, perceptual palette mapping, and insignificant-accent suppression. Brush-adjustable segmentation and production confidence calibration remain Phase 1 work.
+- `ClosetImageImporter` coordinates editable name/category/season/formality/color defaults and review-confidence assessments. `ClothingTypeDetector` uses deterministic filename rules, Apple Vision foreground-instance masks for structural top/bottom analysis, and explicit outerwear signals. `ImageUtilities` handles decoding, higher-quality resizing, rotation, closed-lasso alpha compositing, automatic-mask coverage/coherence rejection, compression, garment-only sampling, perceptual palette mapping, and insignificant-accent suppression. `GarmentOutlineEditor` is the only image-import isolation UI: it closes a finger-traced lasso, previews and keeps the enclosed source pixels, removes the exterior, and supports retrace, multiple regions, rotation, and reset. Metadata confirmation is gated until each new image has a valid saved lasso; outline-point refinement and production confidence calibration remain Phase 1 work.
 - `WeatherService` owns location/city/provider behavior. Do not spread transport code into views.
 - Views may own temporary UI state but should not own persistence, transport, or recommendation rules.
 
@@ -118,18 +118,13 @@ xcodebuild \
   build
 ```
 
-Run the complete signed simulator test plan:
+Run the complete signed simulator test plan on an isolated, disposable simulator:
 
 ```sh
-xcodebuild \
-  -project myCloset.xcodeproj \
-  -scheme myCloset \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
-  -derivedDataPath /tmp/myClosetTestDerivedData \
-  test
+./scripts/test_ios.py
 ```
 
-Do not set `CODE_SIGNING_ALLOWED=NO` on UI-test commands; the UI runner needs local simulator signing.
+Do not set `CODE_SIGNING_ALLOWED=NO` on runnable or UI-test products; the simulator needs local signing. Unsigned builds above are compile-only and must never be installed. Keep automated tests off the user’s interactive simulator: the test script creates and removes only its own temporary device. Never erase/uninstall the interactive app or reset its closet data as launch recovery. The shared Xcode Run pre-action (`scripts/prepare_simulator_run.sh`) waits for the selected simulator and refreshes the signed installation to clear stale SpringBoard updating placeholders. Xcode caches schemes: close the project before editing the shared scheme externally, then reopen and confirm the loaded pre-action and its preparation log. Verify actual Command-R launch when changing this workflow; a bundle build alone is insufficient.
 
 Run narrower suites with `-only-testing:myClosetTests` or `-only-testing:myClosetUITests`. Validate documentation with:
 
@@ -143,7 +138,7 @@ Load Git-ignored project-local garment images into a booted Simulator with:
 ./scripts/load_test_closet_images.sh
 ```
 
-Current automated inventory: 69 unit tests and 6 UI tests. The latest recorded execution evidence is [docs/testing/TEST_EXECUTION_2026-09-08.md](docs/testing/TEST_EXECUTION_2026-09-08.md).
+Current automated inventory: 83 unit tests and 9 UI tests, plus 8 host-side launch-workflow checks (`python3 -m unittest discover -s scripts/tests -v`). The latest recorded execution evidence is [docs/testing/TEST_EXECUTION_2026-09-09.md](docs/testing/TEST_EXECUTION_2026-09-09.md).
 
 Debug-only UI launch arguments are:
 
@@ -151,6 +146,7 @@ Debug-only UI launch arguments are:
 - `-loadPrototypeSamples`
 - `-openPrototypeGenerator`
 - `-openPrototypeImportReview`
+- `-openPrototypeImportOutline`
 - `-generatePrototypeOutfit`
 
 Keep test data isolated through an injected `ClosetStore(storageURL:)`; never use a developer's real Application Support data in tests.
@@ -186,7 +182,7 @@ Do not duplicate long specifications here. Update the authoritative document and
 Unless the user reprioritizes, the highest-value next slice is:
 
 1. direct camera capture with category-specific framing guides;
-2. brush-adjustable foreground-mask correction and physical-device segmentation qualification;
+2. outline-point/edge refinement, undo, and physical-device qualification building on the required closed-outline mask;
 3. calibrated photo-quality and color-confidence states with retry guidance;
 4. EXIF/privacy validation and original/derivative lifecycle hardening;
 5. persistence schema versioning and tests for capture failure/recovery.

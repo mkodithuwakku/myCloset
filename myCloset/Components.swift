@@ -93,10 +93,15 @@ struct OutfitCanvasPlacement: Equatable {
 
 enum OutfitCanvasLayout {
     static let onePiece = OutfitCanvasPlacement(width: 0.58, height: 0.70, x: 0.50, y: 0.50)
-    static let top = OutfitCanvasPlacement(width: 0.58, height: 0.34, x: 0.50, y: 0.31)
-    static let bottom = OutfitCanvasPlacement(width: 0.48, height: 0.50, x: 0.50, y: 0.61)
-    static let outerwear = OutfitCanvasPlacement(width: 0.66, height: 0.42, x: 0.50, y: 0.32)
-    static let footwear = OutfitCanvasPlacement(width: 0.38, height: 0.14, x: 0.50, y: 0.88)
+    // Keep upper-body pieces close to the trousers' width and end them near
+    // the waistband, so sleeves and hems do not hide most of the pants.
+    static let top = OutfitCanvasPlacement(width: 0.46, height: 0.28, x: 0.50, y: 0.28)
+    static let bottom = OutfitCanvasPlacement(width: 0.48, height: 0.46, x: 0.50, y: 0.56)
+    static let outerwear = OutfitCanvasPlacement(width: 0.50, height: 0.30, x: 0.50, y: 0.28)
+    // Give portrait shoe-pair cutouts enough height to reach a useful scale.
+    // Aspect-fit still preserves the photograph; a small hem overlap connects
+    // shoes to the trousers and the lower edge remains inside the board.
+    static let footwear = OutfitCanvasPlacement(width: 0.46, height: 0.24, x: 0.50, y: 0.85)
     static let accessory = OutfitCanvasPlacement(width: 0.23, height: 0.17, x: 0.80, y: 0.62)
 }
 
@@ -235,7 +240,7 @@ private struct GarmentVisual: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(item.name), \(item.category.title), \(item.dominantColor.name)")
+        .accessibilityLabel("\(item.name), \(item.typeTitle), \(item.dominantColor.name)")
     }
 }
 
@@ -365,7 +370,7 @@ struct OutfitItemRow: View {
                 Text(item.name)
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
-                Text("\(item.category.title) · \(item.dominantColor.name)")
+                Text("\(item.typeTitle) · \(item.dominantColor.name)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

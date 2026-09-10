@@ -4,6 +4,27 @@ import XCTest
 
 @MainActor
 final class ClosetStoreTests: XCTestCase {
+    func testSpecificTypesPersistAndDeletionKeepsSavedAndWornSnapshots() throws {
+        let url = temporaryStorageURL()
+        let store = ClosetStore(storageURL: url)
+        var top = TestFixtures.item("Navy Long Sleeve", category: .top)
+        top.applyType(.kind(.longSleeve), updateName: true)
+        var bottom = TestFixtures.item("Navy Shorts", category: .bottom)
+        bottom.applyType(.kind(.shorts), updateName: true)
+        store.upsert([top, bottom])
+        let outfit = try store.engine.generate(from: store.items, occasion: .errands, formality: .casual, weather: TestFixtures.summerWeather).get()
+        store.save(outfit)
+        store.markWorn(outfit)
+        let loaded = ClosetStore(storageURL: url)
+        XCTAssertEqual(loaded.items.first { $0.id == bottom.id }?.kind, .shorts)
+        XCTAssertEqual(loaded.items.first { $0.id == bottom.id }?.seasons, [.spring, .summer])
+        loaded.delete(top.id)
+        let reloaded = ClosetStore(storageURL: url)
+        XCTAssertFalse(reloaded.items.contains { $0.id == top.id })
+        XCTAssertEqual(reloaded.savedOutfits[0].items.first { $0.id == top.id }?.kind, .longSleeve)
+        XCTAssertEqual(reloaded.wornOutfits[0].items.first { $0.id == top.id }?.name, "Navy Long Sleeve")
+    }
+
     func testUpsertPersistsAndReloadsItem() {
         let url = temporaryStorageURL()
         let store = ClosetStore(storageURL: url)

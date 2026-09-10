@@ -1,10 +1,10 @@
 # Testing Strategy and Guide
 
-**Current automated inventory:** 69 unit tests + 6 UI tests
+**Current automated inventory:** 83 unit tests + 9 UI tests; 8 host-side launch-workflow checks
 **Current verified environment:** Xcode 26.3, iPhone 17 simulator, iOS 26.3.1
 **Minimum deployment target:** iOS 17.0
 
-Latest recorded evidence: [Test Execution Report — 2026-09-08](testing/TEST_EXECUTION_2026-09-08.md) (75 passed, 0 failed).
+Latest recorded evidence: [Test Execution Report — 2026-09-09](testing/TEST_EXECUTION_2026-09-09.md) (92 distinct app tests passed across the full suite and targeted UI reruns; details and initial failures are recorded there).
 
 ## 1. Objectives
 
@@ -33,7 +33,7 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 
 ## 3. Automated suite inventory
 
-### 3.1 `OutfitEngineTests` — 14 tests
+### 3.1 `OutfitEngineTests` — 19 tests
 
 | Coverage | SRS relationship |
 |---|---|
@@ -51,8 +51,10 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 | Cold-weather outerwear | REC-003–REC-004 |
 | Explanation includes lock and weather | COMP-017, REC-008 |
 | Alternative generation changes an eligible slot without breaking locks | COMP-009–COMP-013 |
+| Jackets replace shirts across repeated warm/cold generation; jacket + bottom works without tops | COMP-001–COMP-002 |
+| Upper-body locks are retained, simultaneous top/jacket locks conflict, and single/full replacements preserve other pieces | COMP-005–COMP-013 |
 
-### 3.2 `ClosetStoreTests` — 12 tests
+### 3.2 `ClosetStoreTests` — 13 tests
 
 | Coverage | SRS relationship |
 |---|---|
@@ -68,8 +70,9 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 | Saved-outfit deduplication | HIST-001, HIST-009 |
 | Immutable worn snapshots | CLO-010, HIST-003 |
 | Full local reset | Account/deletion precursor |
+| Specific type/season reload and deletion preserve saved and worn snapshots | ITEM-003, CLO-009–CLO-010, HIST-003 |
 
-### 3.3 `ModelsAndImageTests` — 20 tests
+### 3.3 `ModelsAndImageTests` — 26 tests
 
 | Coverage | SRS relationship |
 |---|---|
@@ -78,21 +81,24 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 | Temperature display rounding | UX/weather presentation |
 | Nearest clothing color | ITEM-009–ITEM-011 |
 | Historical snapshot copy and isolated-rendition preference | HIST-003 |
-| Maximum image dimension, movable quick-crop geometry, and quarter-turn rotation | PERF-007, ITEM-005–ITEM-008 |
+| Maximum image dimension, meaningful lasso-area validation, closed-outline interior retention/exterior transparency, asymmetric hem/sleeve and source-color alignment, separate off-center regions with transparent-bound trimming, and quarter-turn rotation | PERF-007, ITEM-005–ITEM-008 |
 | Dominant red extraction | ITEM-009–ITEM-010 |
 | Plain and transparent-background suppression during color extraction | ITEM-009–ITEM-010 |
-| Automatic isolation with a deterministic Simulator fallback | ITEM-005, ITEM-009–ITEM-010 |
+| Automatic isolation with garment-coverage rejection and a deterministic Simulator fallback | ITEM-005, ITEM-009–ITEM-010 |
 | Perceptual dark-neutral classification | ITEM-009–ITEM-011 |
 | Insignificant accent suppression and meaningful accent retention | ITEM-009–ITEM-011 |
 | Vision 32-bit foreground-mask decoding | ITEM-007–ITEM-010 |
 | Invalid-image graceful failure | ITEM-019 |
-| Body-aligned waist overlap and standardized footwear frame | HOME-002, COMP-001–COMP-003 |
+| Limited top/jacket width and waistband overlap, centered pieces, and standardized footwear frame | HOME-002, COMP-001–COMP-003 |
+| Specific type changes refresh default names/seasons and preserve custom names | ITEM-003, ITEM-013–ITEM-018 |
+| Legacy items and snapshots decode without specific types | OFF-001, HIST-003 |
 
-### 3.4 `ClothingTypeDetectorTests` — 20 tests
+### 3.4 `ClothingTypeDetectorTests` — 21 tests
 
 | Coverage | SRS relationship |
 |---|---|
 | Filename mapping across all garment categories | ITEM-007–ITEM-008 |
+| Long-sleeve filenames produce a specific type without overriding jacket terms | ITEM-003, ITEM-007–ITEM-008 |
 | Human-readable imported names | ITEM-001, ITEM-013 |
 | Generic camera-name fallback | ITEM-001 |
 | Machine-generated filename replacement with color-aware name | ITEM-001, ITEM-007–ITEM-010 |
@@ -107,63 +113,62 @@ Phase 0 emphasizes deterministic domain and store tests, with a small UI smoke s
 
 The suite keeps OS-owned Vision at the boundary and tests the deterministic structural interpretation separately, because Apple's exact semantic labels may evolve between system releases.
 
-### 3.5 `ClosetImportSummaryTests` — 3 tests
+### 3.5 `ClosetImportSummaryTests` — 4 tests
 
 | Coverage | SRS relationship |
 |---|---|
 | Per-category counts include only the completed import | ITEM-018 |
 | Existing top-and-bottom closet reports generator readiness | COMP-001–COMP-003 |
 | Missing-bottom summary gives an actionable recovery | REC-016 |
+| Jacket + bottom reports ready without a shirt | COMP-001–COMP-002 |
 
-### 3.6 `MyClosetUITests` — 6 tests
+### 3.6 `MyClosetUITests` — 9 tests
 
 | Journey | Primary assertion |
 |---|---|
 | Empty closet → own-image import | Real users start without demo garments and can reach personal photo import |
 | Closet → generator → visual brief → outfit | Stored pieces produce an unlocked outfit without a starting-piece prompt, accept a visual Work brief, and retain generated-piece lock controls |
-| Closet piece → metadata editor | Imported/stored item exposes editable name and metadata controls |
+| Closet piece → metadata editor | The selected item's saved name/details open correctly instead of a blank new-item form |
 | Import suggestions → guided required review → summary → closet | Confidence guidance is visible, metadata choices advance, confirming returns to the next-piece top, a manual rename stays fixed, and category/readiness results appear only after confirmation |
 | Import review → skip accidental photo → summary | One selected photo can be skipped without cancelling or losing the rest of the batch |
+| Import review → required item outline | Metadata and confirmation remain gated until the photo enters the category-independent lasso editor; the editor accepts finger tracing and exposes clear/retrace plus an explicit apply action |
 | Following tab → Coming Soon | Social roadmap is visible without fake profiles, posts, or service behavior |
+| Hold closet item → Delete → cancel/confirm → relaunch | Cancellation retains the item; confirmed deletion survives relaunch |
+| Specific import type → colors/seasons → save → editor | Shorts retain matching automatic name and spring/summer defaults in saved metadata |
 
 ## 4. Running tests
 
 ### 4.1 Full suite
 
 ```sh
-xcodebuild \
-  -project myCloset.xcodeproj \
-  -scheme myCloset \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
-  -derivedDataPath /tmp/myClosetTestDerivedData \
-  test
+./scripts/test_ios.py
 ```
+
+The runner creates a disposable iPhone simulator on the newest installed iOS runtime, waits for boot readiness, and runs signed tests serially. Cleanup deletes only the simulator it created. Logs, DerivedData, and `.xcresult` remain at the printed output path. This prevents automated installs and reset launch arguments from affecting the app selected in interactive Xcode.
 
 ### 4.2 Unit only
 
 ```sh
-xcodebuild \
-  -project myCloset.xcodeproj \
-  -scheme myCloset \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
-  -derivedDataPath /tmp/myClosetTestDerivedData \
-  -only-testing:myClosetTests \
-  test
+./scripts/test_ios.py -only-testing:myClosetTests
 ```
 
 ### 4.3 UI only
 
 ```sh
-xcodebuild \
-  -project myCloset.xcodeproj \
-  -scheme myCloset \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
-  -derivedDataPath /tmp/myClosetTestDerivedData \
-  -only-testing:myClosetUITests \
-  test
+./scripts/test_ios.py -only-testing:myClosetUITests
 ```
 
+### Host-side launch workflow — 8 checks
+
+```sh
+python3 -m unittest discover -s scripts/tests -v
+```
+
+Covers shared-scheme wiring, exact simulator destination, ordered boot/install, physical-device no-op, missing destination/product rejection, unsigned product rejection, and propagation of boot/install errors. A disposable signed fixture and stub simulator commands avoid touching real simulator data. Repeated real Command-R launches and a cold start complement these checks; they cannot guarantee every future Apple Simulator release is defect-free.
+
 ### 4.4 Result bundle and coverage
+
+The isolated runner always writes a result bundle. For coverage use `./scripts/test_ios.py -enableCodeCoverage YES`. The raw command below is for a dedicated test device only; never target the interactive simulator.
 
 ```sh
 xcodebuild \

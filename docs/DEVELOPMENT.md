@@ -18,7 +18,7 @@ cd myCloset
 open myCloset.xcodeproj
 ```
 
-Select the shared `myCloset` scheme and an iPhone simulator. Build with `Command-B` and run with `Command-R`.
+Select the shared `myCloset` scheme and an iPhone simulator. Build with `Command-B` and run with `Command-R`. The shared Run pre-action verifies the built signature, waits for that exact simulator UUID to finish booting, and synchronously installs the signed app to clear stale updating placeholders before the debugger launch. It skips physical-device runs. The successful preparation timestamp is recorded in `myCloset-simulator-run.log` under Xcode’s target temporary build directory.
 
 ## 3. Command-line workflows
 
@@ -38,13 +38,18 @@ xcodebuild \
 ### Full tests
 
 ```sh
-xcodebuild \
-  -project myCloset.xcodeproj \
-  -scheme myCloset \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
-  -derivedDataPath /tmp/myClosetTestDerivedData \
-  test
+./scripts/test_ios.py
 ```
+
+This creates a separate temporary iPhone simulator, waits for boot readiness, runs signed tests serially, and removes only that temporary device afterward. Its printed output directory retains DerivedData and the result bundle. Append `-only-testing:myClosetTests` or `-only-testing:myClosetUITests` for narrower suites. Keep the simulator selected in Xcode for interactive runs only.
+
+### Launch preparation checks
+
+```sh
+python3 -m unittest discover -s scripts/tests -v
+```
+
+These eight host-side checks use a signed disposable fixture and stub simulator commands, so they do not modify any simulator.
 
 ### Documentation validation
 
@@ -130,7 +135,12 @@ Use a city or season-only mode. Live weather is optional. Network unit tests sho
 
 ### Simulator service errors
 
-Confirm a runtime is installed, close/reopen Simulator, and run:
+The September 9 launch failure was reproduced outside Xcode. Simulator logs showed a successful delta installation followed by SpringBoard refusing to launch an app it still considered “being updated.” A synchronous signed `simctl install` cleared the stale placeholder without uninstalling or erasing app data. The shared scheme now performs that preparation on every Simulator Run. Do not disable code signing, uninstall the app, erase simulator data, or change bundle identifiers as a routine workaround.
+
+Use the shared `myCloset` scheme so its Run pre-action is included. After editing a scheme file outside Xcode, close the project before applying the edit, then reopen it: Xcode can keep the old scheme in memory and overwrite external changes when closing its scheme editor. Verify **Edit Scheme → Run → Pre-actions → Prepare simulator installation** and the preparation timestamp after a real run. Unsigned compile-only output must never be installed. Keep automated XCTest on the separate simulator created by `scripts/test_ios.py`; never run resetting UI tests on the interactive device.
+
+If an unrelated CoreSimulator failure remains, retain the error details and simulator logs for diagnosis. Confirm the selected runtime is installed with:
+
 
 ```sh
 xcrun simctl list devices available

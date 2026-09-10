@@ -10,6 +10,8 @@ enum ClothingCategory: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    var outfitSlot: ClothingCategory { self == .outerwear ? .top : self }
+
     var title: String {
         switch self {
         case .top: "Top"
@@ -31,6 +33,107 @@ enum ClothingCategory: String, Codable, CaseIterable, Identifiable {
         case .accessory: "sunglasses"
         }
     }
+
+    var suggestedSeasons: Set<WardrobeSeason> {
+        switch self {
+        case .outerwear: [.spring, .autumn, .winter]
+        case .onePiece: [.spring, .summer, .autumn]
+        case .top, .bottom, .footwear, .accessory: Set(WardrobeSeason.allCases)
+        }
+    }
+
+    var suggestedFormalities: Set<FormalityLevel> {
+        switch self {
+        case .footwear: [.active, .veryCasual, .casual, .smartCasual]
+        case .outerwear: [.casual, .smartCasual, .business]
+        case .accessory: [.casual, .smartCasual, .business, .formal]
+        case .top, .bottom, .onePiece: [.veryCasual, .casual, .smartCasual]
+        }
+    }
+}
+
+enum GarmentKind: String, Codable, CaseIterable, Hashable, Identifiable {
+    case tShirt, longSleeve, shirt, blouse, tankTop, sweater, hoodie
+    case trousers, jeans, shorts, skirt, leggings
+    case dress, jumpsuit
+    case coat, jacket, blazer, cardigan
+    case sneakers, shoes, loafers, boots, sandals
+    case watch, bag, scarf, belt, tie, hat
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .tShirt: "T-Shirt"
+        case .longSleeve: "Long Sleeve"
+        case .tankTop: "Tank Top"
+        default: rawValue.capitalized
+        }
+    }
+
+    var category: ClothingCategory {
+        switch self {
+        case .tShirt, .longSleeve, .shirt, .blouse, .tankTop, .sweater: .top
+        case .trousers, .jeans, .shorts, .skirt, .leggings: .bottom
+        case .dress, .jumpsuit: .onePiece
+        case .hoodie, .coat, .jacket, .blazer, .cardigan: .outerwear
+        case .sneakers, .shoes, .loafers, .boots, .sandals: .footwear
+        case .watch, .bag, .scarf, .belt, .tie, .hat: .accessory
+        }
+    }
+
+    var suggestedSeasons: Set<WardrobeSeason> {
+        switch self {
+        case .shorts, .tankTop, .sandals:
+            [.spring, .summer]
+        case .coat, .boots:
+            [.autumn, .winter]
+        case .longSleeve, .sweater, .hoodie, .jacket, .cardigan, .scarf:
+            [.spring, .autumn, .winter]
+        case .dress, .skirt:
+            [.spring, .summer, .autumn]
+        default:
+            Set(WardrobeSeason.allCases)
+        }
+    }
+
+    var suggestedFormalities: Set<FormalityLevel> {
+        switch self {
+        case .tShirt, .longSleeve, .tankTop, .hoodie, .shorts, .leggings, .sneakers:
+            [.active, .veryCasual, .casual]
+        case .jeans, .sweater, .cardigan, .sandals, .hat, .bag:
+            [.veryCasual, .casual, .smartCasual]
+        case .shirt, .blouse, .trousers, .jacket, .shoes, .watch, .belt:
+            [.casual, .smartCasual, .business]
+        case .dress, .coat, .boots, .scarf:
+            [.casual, .smartCasual, .business, .formal]
+        case .jumpsuit, .skirt:
+            [.casual, .smartCasual, .business]
+        case .blazer, .loafers, .tie:
+            [.smartCasual, .business, .formal]
+        }
+    }
+}
+
+
+/// Specific garment types keep the broad outfit slots stable for generation
+/// and for closets saved before subcategories were available.
+enum GarmentType: Hashable {
+    case category(ClothingCategory)
+    case kind(GarmentKind)
+
+    var category: ClothingCategory {
+        switch self {
+        case .category(let category): category
+        case .kind(let kind): kind.category
+        }
+    }
+
+    var kind: GarmentKind? {
+        if case .kind(let kind) = self { kind } else { nil }
+    }
+
+    var title: String { kind?.title ?? category.title }
 }
 
 enum WardrobeSeason: String, Codable, CaseIterable, Identifiable {
@@ -171,6 +274,7 @@ struct ClosetItem: Codable, Hashable, Identifiable {
     var id: UUID = UUID()
     var name: String
     var category: ClothingCategory
+    var kind: GarmentKind? = nil
     var photoData: Data?
     var isolatedPhotoData: Data? = nil
     var dominantColor: ClothingColor
@@ -180,6 +284,20 @@ struct ClosetItem: Codable, Hashable, Identifiable {
     var availability: ItemAvailability = .available
     var isFavorite: Bool = false
     var createdAt: Date = Date()
+
+    var garmentType: GarmentType {
+        if let kind, kind.category == category { .kind(kind) } else { .category(category) }
+    }
+    var typeTitle: String { garmentType.title }
+    var suggestedName: String { "\(dominantColor.name) \(typeTitle)" }
+
+    mutating func applyType(_ type: GarmentType, updateName: Bool) {
+        category = type.category
+        kind = type.kind
+        seasons = kind?.suggestedSeasons ?? category.suggestedSeasons
+        formalities = kind?.suggestedFormalities ?? category.suggestedFormalities
+        if updateName { name = suggestedName }
+    }
 
     var isAvailable: Bool { availability == .available }
     var outfitPhotoData: Data? { isolatedPhotoData ?? photoData }
@@ -275,13 +393,17 @@ struct OutfitSnapshotItem: Codable, Hashable, Identifiable {
     var id: UUID
     var name: String
     var category: ClothingCategory
+    var kind: GarmentKind? = nil
     var photoData: Data?
     var dominantColor: ClothingColor
+
+    var typeTitle: String { kind?.category == category ? kind?.title ?? category.title : category.title }
 
     init(item: ClosetItem) {
         id = item.id
         name = item.name
         category = item.category
+        kind = item.garmentType.kind
         photoData = item.outfitPhotoData
         dominantColor = item.dominantColor
     }

@@ -15,7 +15,7 @@ struct OutfitEngine {
         let available = allItems.filter(\.isAvailable)
         let replaceable = currentItems.filter { item in
             !lockedIDs.contains(item.id) && available.contains {
-                $0.id != item.id && $0.category == item.category
+                $0.id != item.id && $0.category.outfitSlot == item.category.outfitSlot
             }
         }
 
@@ -82,6 +82,9 @@ struct OutfitEngine {
         if lockedCategories.contains(where: { category, items in category != .accessory && items.count > 1 }) {
             return .failure(.conflictingLocks("Unlock one of the pieces that fills the same outfit slot."))
         }
+        if lockedCategories[.top] != nil && lockedCategories[.outerwear] != nil {
+            return .failure(.conflictingLocks("A jacket replaces the top in this look. Unlock the top or outerwear to continue."))
+        }
 
         let hasLockedOnePiece = lockedCategories[.onePiece] != nil
         let hasLockedSeparates = lockedCategories[.top] != nil || lockedCategories[.bottom] != nil
@@ -127,16 +130,21 @@ struct OutfitEngine {
             selected.removeAll { $0.category == .top || $0.category == .bottom }
         } else if !hasLockedSeparates,
                   let onePiece = choose(.onePiece) {
-            let hasCompleteSeparates = !candidates(for: .top).isEmpty &&
+            let hasCompleteSeparates = (!candidates(for: .top).isEmpty || !candidates(for: .outerwear).isEmpty || lockedCategories[.outerwear] != nil) &&
                 !candidates(for: .bottom).isEmpty
             if !hasCompleteSeparates || Bool.random() {
                 selected.append(onePiece)
             }
         }
 
+        let needsOuterwear = (weather.apparentTemperatureCelsius ?? weather.temperatureCelsius).map { $0 < 16 } ??
+            [.autumn, .winter].contains(weather.season)
         if !selected.contains(where: { $0.category == .onePiece }) {
-            guard let top = choose(.top) else { return .failure(.missingCategory("top")) }
-            if !selected.contains(where: { $0.id == top.id }) { selected.append(top) }
+            let lockedUpper = selected.first { $0.category.outfitSlot == .top }
+            let upper = lockedUpper ?? (needsOuterwear ? choose(.outerwear) : nil)
+                ?? choose(.top) ?? choose(.outerwear)
+            guard let upper else { return .failure(.missingCategory("top or jacket")) }
+            if !selected.contains(where: { $0.id == upper.id }) { selected.append(upper) }
 
             guard let bottom = choose(.bottom) else { return .failure(.missingCategory("bottom")) }
             if !selected.contains(where: { $0.id == bottom.id }) { selected.append(bottom) }
@@ -146,9 +154,8 @@ struct OutfitEngine {
             selected.append(footwear)
         }
 
-        let needsOuterwear = (weather.apparentTemperatureCelsius ?? weather.temperatureCelsius).map { $0 < 16 } ??
-            [.autumn, .winter].contains(weather.season)
         if needsOuterwear,
+           selected.contains(where: { $0.category == .onePiece }),
            let outerwear = choose(.outerwear),
            !selected.contains(where: { $0.id == outerwear.id }) {
             selected.append(outerwear)
@@ -222,6 +229,10 @@ struct OutfitEngine {
         }
 
         let colorNames = Array(Set(items.map { $0.dominantColor.name })).prefix(3)
+        if let outerwear = items.first(where: { $0.category == .outerwear }),
+           !items.contains(where: { $0.category == .onePiece }) {
+            parts.append("with \(outerwear.name) as the upper-body piece")
+        }
         if colorNames.count > 1 {
             parts.append("using \(colorNames.joined(separator: ", ").lowercased()) tones")
         }

@@ -16,8 +16,8 @@
 - Choose clothing type before capture.
 - See a category-specific accessible camera guide.
 - Capture or import a garment.
-- Receive the prototype foreground isolation plus a proposed crop and confidence state.
-- Correct the mask/crop when automation is wrong.
+- Outline every imported item with one simple lasso before metadata confirmation.
+- See the enclosed area and correct the outline when needed.
 - Confirm dominant/accent colors sampled only from the garment.
 - Confirm name, category, seasons, multiple formality levels, and availability.
 - Recover manually from every processing failure.
@@ -26,16 +26,19 @@
 
 ### Delivered in the current slice
 
-- Automatic Vision foreground-instance isolation, with a conservative border-palette fallback where the OS model is unavailable, stored as a private transparent outfit rendition while preserving the original.
+- Persisted selectable garment types, including shorts, long sleeve, jacket, and 26 other specific choices, with synchronized default names, editable season/formality defaults, specific-type search/filtering, and legacy-record compatibility.
+- Delete from the closet card's long-press menu with cancellation/confirmation and preserved saved/worn snapshots.
+- Shoe-pair guidance to outline each shoe with a separate area, plus larger proportional footwear on the shared outfit canvas.
+- Automatic Vision foreground-instance isolation with garment-coverage rejection, a conservative border-palette fallback where the OS model is unavailable, and higher-resolution private transparent outfit renditions while preserving the original.
 - Color analysis prefers isolated opaque pixels and omits untrusted accent suggestions when no dependable foreground is available.
-- A quick crop fallback with size and horizontal/vertical positioning, followed by another isolation attempt.
+- One category-independent lasso is the only image-import isolation UI. Metadata and confirmation remain gated until the user traces a meaningful enclosed area; the app closes it on lift, shades the kept area, removes the exterior, and supports retrace, multiple regions, rotation, and reset.
 - Guided sequential metadata review with automatic next-section movement and a top reset for every next item.
-- Expanded footwear labels plus kind-aware and category-aware season defaults that remain user-editable.
+- Expanded footwear and long-sleeve labels plus kind-aware and category-aware season defaults that remain user-editable after outlining or changing type.
 - Body-aligned outfit composition using the isolated rendition in live and immutable historical looks.
 - Visible per-image analysis progress, per-photo skip recovery, and a post-import category/readiness summary.
 - Separate type, colour, and cutout confidence guidance that calls non-strong suggestions out for manual review and offers one-tap explicit confirmation only when every signal is strong.
-- Left/right rotation and reset in the quick crop flow, plus single-item re-analysis that preserves curated metadata until save.
-- Tighter body-aligned outfit geometry with standardized footwear scale.
+- Left/right rotation and reset in the lasso flow, plus single-item re-analysis that preserves curated metadata until save.
+- Body-aligned outfit geometry with standardized footwear scale and smaller tops/jackets whose limited waistband overlap keeps trousers visible.
 
 ### Camera and guidance
 
@@ -48,7 +51,7 @@
 
 - Qualify the prototype Vision foreground-instance mask across supported iOS versions and representative physical devices.
 - Preserve original privately; create normalized display rendition.
-- Add mask selection and erase/restore brush controls on top of the delivered crop, rotate, and reset recovery.
+- Add outline-point adjustment and undo refinement on top of the delivered required closed-outline mask and rotate/reset recovery.
 - Calibrate the delivered review-confidence states and add photo-quality retry guidance.
 
 ### Color and metadata
@@ -98,7 +101,7 @@ Metrics must not upload private images unless Phase 2 consented processing infra
 ## Exit criteria
 
 - [ ] Direct capture and import work for every supported category.
-- [ ] Users can correct any crop/mask/color result.
+- [ ] Users can refine any outline/mask/color result.
 - [ ] No precise image geolocation remains in stored/distributed derivatives.
 - [ ] Accuracy/performance targets are approved and met by the evaluation set.
 - [ ] Phase 0 data migrates without loss.

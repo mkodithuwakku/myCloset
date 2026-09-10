@@ -69,6 +69,7 @@ final class MyClosetUITests: XCTestCase {
 
         XCTAssertTrue(app.buttons["Save"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.textFields["Name"].exists)
+        XCTAssertEqual(app.textFields["Name"].value as? String, "Navy Oxford Shirt")
         XCTAssertTrue(app.staticTexts["Piece details"].exists)
     }
 
@@ -89,6 +90,10 @@ final class MyClosetUITests: XCTestCase {
         bottom.tap()
         XCTAssertEqual(bottom.value as? String, "Selected")
         XCTAssertEqual(name.value as? String, "Black Trousers")
+
+        let typeContinue = app.buttons["import-review-type-continue"]
+        scrollTo(typeContinue)
+        typeContinue.tap()
 
         let black = app.buttons["import-review-dominant-black"]
         XCTAssertTrue(black.waitForExistence(timeout: 3))
@@ -144,6 +149,119 @@ final class MyClosetUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["1 photo was skipped."].exists)
         app.buttons["import-summary-done"].tap()
         XCTAssertTrue(app.staticTexts["Beige Footwear"].waitForExistence(timeout: 5))
+    }
+
+    func testImportRequiresSimpleLassoBeforeMetadata() {
+        app.launchArguments = ["-resetPrototypeData", "-openPrototypeImportOutline"]
+        app.launch()
+
+        XCTAssertTrue(app.otherElements["import-review-screen"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["import-review-outline-required"].exists)
+        XCTAssertFalse(app.textFields["import-review-name"].exists)
+        XCTAssertFalse(app.buttons["import-review-next"].isEnabled)
+
+        let outlineItem = app.buttons["import-review-outline-item"]
+        XCTAssertTrue(outlineItem.waitForExistence(timeout: 3))
+        outlineItem.tap()
+
+        XCTAssertTrue(app.otherElements["outline-editor"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["outline-shoe-pair-guidance"].exists)
+        let outlineCanvas = app.otherElements["outline-canvas"]
+        XCTAssertTrue(outlineCanvas.waitForExistence(timeout: 3))
+        outlineCanvas.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.25)).press(
+            forDuration: 0.1,
+            thenDragTo: outlineCanvas.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.75))
+        )
+        XCTAssertTrue(app.buttons["outline-clear"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["apply-item-outline"].exists)
+        app.navigationBars["Outline item"].buttons["Cancel"].tap()
+    }
+
+    func testLongPressDeleteCanBeCancelledThenPersistsAfterRelaunch() {
+        app.launchArguments = ["-resetPrototypeData", "-loadPrototypeSamples"]
+        app.launch()
+        app.tabBars.buttons["Closet"].tap()
+        let piece = app.staticTexts["Navy Oxford Shirt"]
+        XCTAssertTrue(piece.waitForExistence(timeout: 5))
+        piece.press(forDuration: 1)
+        let delete = app.buttons["closet-delete-item"]
+        XCTAssertTrue(delete.waitForExistence(timeout: 3))
+        delete.tap()
+        XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 3))
+        app.alerts.buttons["Cancel"].tap()
+        XCTAssertTrue(piece.exists)
+        piece.press(forDuration: 1)
+        XCTAssertTrue(delete.waitForExistence(timeout: 3))
+        delete.tap()
+        let confirm = app.alerts.buttons["Delete"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 3))
+        confirm.tap()
+        XCTAssertTrue(app.staticTexts["11 pieces"].waitForExistence(timeout: 5))
+        XCTAssertFalse(piece.exists)
+
+        app.terminate()
+        app.launchArguments = []
+        app.launch()
+        app.tabBars.buttons["Closet"].tap()
+        XCTAssertTrue(app.staticTexts["11 pieces"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Navy Oxford Shirt"].exists)
+    }
+
+    func testSpecificImportTypeUpdatesAutomaticNameSeasonsAndSavedDetails() {
+        app.launchArguments = ["-resetPrototypeData", "-openPrototypeImportReview"]
+        app.launch()
+        XCTAssertTrue(app.otherElements["import-review-screen"].waitForExistence(timeout: 5))
+        let bottom = app.buttons["import-review-category-bottom"]
+        scrollTo(bottom)
+        bottom.tap()
+        let shorts = app.buttons["import-review-kind-shorts"]
+        scrollTo(shorts)
+        shorts.tap()
+        XCTAssertEqual(shorts.value as? String, "Selected")
+        let typeContinue = app.buttons["import-review-type-continue"]
+        scrollTo(typeContinue)
+        typeContinue.tap()
+        let black = app.buttons["import-review-dominant-black"]
+        XCTAssertTrue(black.waitUntilHittable(timeout: 3))
+        black.tap()
+        let noAccent = app.buttons["import-review-accent-none"]
+        XCTAssertTrue(noAccent.waitUntilHittable(timeout: 3))
+        noAccent.tap()
+        let summer = app.buttons["import-review-season-summer"]
+        XCTAssertTrue(summer.waitUntilHittable(timeout: 3))
+        XCTAssertEqual(summer.value as? String, "Selected")
+        XCTAssertEqual(app.buttons["import-review-season-spring"].value as? String, "Selected")
+        XCTAssertEqual(app.buttons["import-review-season-autumn"].value as? String, "Not selected")
+        XCTAssertEqual(app.buttons["import-review-season-winter"].value as? String, "Not selected")
+        app.buttons["import-review-next"].tap()
+        XCTAssertTrue(app.staticTexts["Piece 2 of 2"].waitForExistence(timeout: 3))
+        app.buttons["import-review-save"].tap()
+        XCTAssertTrue(app.otherElements["import-summary-screen"].waitForExistence(timeout: 5))
+        app.buttons["import-summary-done"].tap()
+        let saved = app.staticTexts["Black Shorts"]
+        XCTAssertTrue(saved.waitForExistence(timeout: 5))
+        saved.tap()
+        XCTAssertTrue(app.buttons["Save"].waitForExistence(timeout: 3))
+        XCTAssertEqual(app.textFields["Name"].value as? String, "Black Shorts")
+        XCTAssertTrue(app.buttons["piece-editor-category"].label.contains("Shorts"))
+        let editorSummer = app.buttons["piece-editor-season-summer"]
+        scrollTo(editorSummer)
+        XCTAssertEqual(editorSummer.value as? String, "Selected")
+        XCTAssertEqual(app.buttons["piece-editor-season-winter"].value as? String, "Not selected")
+    }
+
+    private func scrollTo(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        for _ in 0..<12 {
+            // SwiftUI can report an offscreen button as hittable underneath
+            // the sticky import controls. Keep the whole target above them.
+            if element.isHittable, element.frame.minY >= 140,
+               element.frame.maxY <= app.frame.maxY - 120 { return }
+            let scrollingBack = element.exists && element.frame.minY < 140
+            let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: scrollingBack ? 0.40 : 0.70))
+            let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: scrollingBack ? 0.70 : 0.40))
+            start.press(forDuration: 0.05, thenDragTo: end)
+        }
+        XCTFail("Element did not become fully visible", file: file, line: line)
     }
 }
 

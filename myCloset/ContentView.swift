@@ -41,7 +41,8 @@ struct ContentView: View {
             if ProcessInfo.processInfo.arguments.contains("-openPrototypeGenerator") {
                 selectedTab = 2
             }
-            if ProcessInfo.processInfo.arguments.contains("-openPrototypeImportReview") {
+            if ProcessInfo.processInfo.arguments.contains("-openPrototypeImportReview") ||
+                ProcessInfo.processInfo.arguments.contains("-openPrototypeImportOutline") {
                 selectedTab = 1
             }
 #endif

@@ -27,15 +27,19 @@ The long-term product is designed around three principles:
 | Area | Working in Phase 0 |
 |---|---|
 | Home | Minimal Outfit of the Day canvas that layers isolated garments in a body-aligned look, with compact weather context and secondary actions |
-| Closet | Local creation, bulk image import, full metadata editing, metadata-aware search, category filtering, favorites, availability, archive, and deletion |
-| Item intelligence | Visible batch-analysis progress, filename-first suggestions plus on-device foreground-shape analysis, expanded shoe and outerwear recognition, separate type/color/cutout confidence guidance with fast confirmation only when every signal is strong, kind-aware season defaults, automatic transparent garment renditions, garment-only perceptual color sampling, rotate/reset crop correction, skippable guided review, single-item re-analysis, metadata-synchronized default names, and an import/readiness summary |
+| Closet | Local creation, bulk image import, 29 selectable garment types with matching automatic names and editable seasons/formality, type search/filtering, favorites, availability, archive, and Delete in the item hold menu |
+| Item intelligence | Visible batch-analysis progress, filename-first suggestions plus on-device foreground-shape analysis, expanded shoe and outerwear recognition, a required simple lasso for every imported or replacement photo, transparent garment renditions made from the enclosed area, garment-only perceptual color sampling, separate editable type/color/cutout guidance, kind-aware season defaults, skippable guided review, single-item re-analysis, metadata-synchronized default names, and an import/readiness summary |
 | Generator | Tighter body-aligned layered outfit composition with standardized footwear scale, automatic first look, visual occasion/formality brief, locked pieces, single-piece reroll, reliably different alternatives when the closet permits, and visible actionable feedback after every generation attempt |
 | Weather | Optional approximate current location, manual city lookup, Open-Meteo conditions, or date-derived season fallback |
 | History | Separate saved and worn outfit collections using immutable snapshots |
 | Profile | Local display name, handle, biography, and profile image editing |
 | Following | Minimal Coming Soon state for the gated post-release CloudKit social phase; no fake profiles or posts |
 | Persistence | Local JSON application-support storage that survives relaunches |
-| Tests | 69 unit tests and 6 end-to-end UI journey tests |
+| Tests | 83 unit tests and 9 end-to-end UI journey tests |
+
+Hold a closet item and choose **Delete** to remove it after confirmation; saved and worn history stays intact. Import review and the item editor offer specific types such as **Shorts**, **Long Sleeve**, **Jacket**, **Jeans**, and **Hoodie**. Choosing a type updates its default name and seasons (for example, shorts use spring/summer; jackets use spring/autumn/winter). Custom names and all season choices remain editable.
+
+For shoes, outline one shoe, choose **Add another area**, then outline the other; leave the space between them outside both areas. Home and Generate give footwear a larger proportional frame and keep tops/jackets smaller with limited waistband overlap so the pants remain visible. Generated separates contain a top **or** jacket with a bottom: selecting a jacket replaces the shirt, including during rerolls. Locked pieces are preserved, and a top/jacket double lock asks the user to resolve the conflict.
 
 The authoritative implementation boundary is maintained in [Prototype Status](PROTOTYPE_STATUS.md).
 
@@ -65,11 +69,13 @@ The authoritative implementation boundary is maintained in [Prototype Status](PR
 ./scripts/load_test_closet_images.sh
 ```
 
-3. In the app, open **Closet**, tap **Import**, and multi-select the images. A visible counter reports which image is being analyzed. The app proposes on-device name, type, dominant/accent color, season, and formality values, creates a transparent garment rendition when Vision can isolate it, then shows every photo in a required review queue with separate type, colour, and cutout confidence. “Likely” or weak signals ask for a check; pieces with three strong signals can be explicitly confirmed from the top in one tap. Skip accidental photos without cancelling the batch. The review advances through related fields and returns to the top for each next piece. Changing the suggested type or main color updates the default name automatically; typing a custom name keeps that name fixed. Use **Adjust crop** to rotate, reposition, resize, or reset the photo before background removal runs again. After confirmation, the summary shows imported category counts and whether the closet can generate an outfit. To repair all older imports, choose **Closet → + → Re-analyze photo details**; to retry only one piece, open its editor and choose **Re-analyze this photo**.
+3. In the app, open **Closet**, tap **Import**, and multi-select the images. A visible counter reports which image is being analyzed. Every selected image then starts with one required **Outline item** step: drag once just outside the clothing edge and lift to close the lasso automatically. The saved cutout matches the shaded outline, including asymmetric hems and sleeves. The shaded enclosed area is kept at the original prepared resolution and everything outside becomes transparent; use **Clear and retrace** if needed, or **Add another area** for a separate part such as a strap. There are no crop templates, crop sliders, or automatic-background-removal fallback to understand. Metadata remains unavailable until that image has a valid outline. The app then proposes editable on-device name, type, dominant/accent color, season, and formality values, sampling colors from the outlined item rather than the floor. Skip accidental photos without cancelling the batch. The review advances through related fields and returns to the top for each next piece. Changing the suggested type or main color updates the default name automatically; typing a custom name keeps that name fixed. After confirmation, the summary shows imported category counts and whether the closet can generate an outfit. To repair all older imports, choose **Closet → + → Re-analyze photo details**; to retry only one piece, open its editor and choose **Re-analyze this photo**.
 
 For deterministic type detection, use descriptive names such as `navy-shirt.jpg`, `black-jeans.png`, `white-sneakers.jpeg`, `camel-coat.jpg`, and `silver-watch.png`, make those files available in the simulator's Files app (for example through iCloud Drive), then choose **Closet → + → Import image files**. Filename rules take priority over image classification.
 
-Command-line build:
+The shared Xcode Run action waits for the selected simulator to finish booting and refreshes the signed app installation before launching. This clears stale installation placeholders that cause “Busy / Application failed preflight checks,” while retaining the app’s stored closet data.
+
+Command-line build (compile-only; do not install this unsigned product):
 
 ```sh
 xcodebuild \
@@ -84,16 +90,14 @@ xcodebuild \
 
 ### Run the tests
 
-Choose an available simulator and run:
+Run tests on an automatically created, separate simulator so they cannot replace or reset the app you use in Xcode:
 
 ```sh
-xcodebuild \
-  -project myCloset.xcodeproj \
-  -scheme myCloset \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
-  -derivedDataPath /tmp/myClosetTestDerivedData \
-  test
+./scripts/test_ios.py
+python3 -m unittest discover -s scripts/tests -v
 ```
+
+The runner deletes only its own temporary simulator after testing and retains the result bundle at the printed path. The eight host-side checks cover simulator launch preparation; the app inventory remains 83 unit tests and 9 UI tests.
 
 See [Testing](docs/TESTING.md) for unit-only, UI-only, CI, coverage, troubleshooting, and test-quality guidance.
 

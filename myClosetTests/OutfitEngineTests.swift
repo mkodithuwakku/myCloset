@@ -173,6 +173,78 @@ final class OutfitEngineTests: XCTestCase {
         XCTAssertTrue(items.contains { $0.category == .outerwear })
     }
 
+    func testJacketsReplaceTopsAcrossRepeatedGeneration() throws {
+        let closet = TestFixtures.completeCloset
+        for weather in [TestFixtures.summerWeather, TestFixtures.winterWeather] {
+            for _ in 0..<50 {
+                let items = resolve(try generated(from: closet, weather: weather), in: closet)
+                XCTAssertEqual(items.filter { $0.category.outfitSlot == .top }.count, 1)
+                XCTAssertEqual(items.filter { $0.category == .bottom }.count, 1)
+                XCTAssertTrue(items.allSatisfy(\.isAvailable))
+                if weather.season == .winter {
+                    XCTAssertTrue(items.contains { $0.category == .outerwear })
+                    XCTAssertFalse(items.contains { $0.category == .top })
+                }
+            }
+        }
+    }
+
+    func testJacketAndBottomCompleteALookWithoutAnyShirts() throws {
+        let closet = TestFixtures.completeCloset.filter { $0.category != .top }
+        for _ in 0..<30 {
+            let items = resolve(try generated(from: closet), in: closet)
+            XCTAssertTrue(items.contains { $0.category == .outerwear })
+            XCTAssertTrue(items.contains { $0.category == .bottom })
+            XCTAssertFalse(items.contains { $0.category == .top })
+        }
+    }
+
+    func testUpperBodyLocksArePreservedAndConflictingLayerLocksAreRejected() throws {
+        let closet = TestFixtures.completeCloset
+        let shirt = closet.first { $0.category == .top }!
+        let jacket = closet.first { $0.category == .outerwear }!
+        for locked in [shirt, jacket] {
+            for _ in 0..<30 {
+                let items = resolve(try generated(from: closet, weather: TestFixtures.winterWeather, lockedIDs: [locked.id]), in: closet)
+                XCTAssertEqual(items.filter { $0.category.outfitSlot == .top }.map(\.id), [locked.id])
+            }
+        }
+        guard case .conflictingLocks = engine.generate(
+            from: closet, occasion: .errands, formality: .casual,
+            weather: TestFixtures.winterWeather, lockedIDs: [shirt.id, jacket.id]
+        ).failure else { return XCTFail("A top and jacket cannot both fill the upper-body slot") }
+    }
+
+    func testReplacingJacketKeepsOtherPiecesAndCanChooseAShirt() throws {
+        let closet = TestFixtures.completeCloset
+        for _ in 0..<30 {
+            let initial = try generated(from: closet, weather: TestFixtures.winterWeather)
+            let jacket = resolve(initial, in: closet).first { $0.category == .outerwear }!
+            let preserved = Set(initial.itemIDs).subtracting([jacket.id])
+            let replacement = try generated(from: closet, weather: TestFixtures.winterWeather,
+                                            lockedIDs: preserved, excludedIDs: [jacket.id])
+            XCTAssertTrue(preserved.isSubset(of: Set(replacement.itemIDs)))
+            XCTAssertFalse(replacement.itemIDs.contains(jacket.id))
+            XCTAssertEqual(resolve(replacement, in: closet).filter { $0.category == .top }.count, 1)
+        }
+    }
+
+    func testDifferentLookCanSwitchBetweenJacketAndShirtWithBottomLocked() throws {
+        let shirt = TestFixtures.item("Tee", category: .top)
+        let jacket = TestFixtures.item("Jacket", category: .outerwear)
+        let bottom = TestFixtures.item("Jeans", category: .bottom)
+        let closet = [shirt, jacket, bottom]
+        var current = try generated(from: closet, weather: TestFixtures.winterWeather)
+        for _ in 0..<30 {
+            let next = try engine.generateAlternative(to: current, from: closet, occasion: .errands,
+                formality: .casual, weather: TestFixtures.winterWeather, lockedIDs: [bottom.id]).get()
+            XCTAssertNotEqual(Set(next.itemIDs), Set(current.itemIDs))
+            XCTAssertTrue(next.itemIDs.contains(bottom.id))
+            XCTAssertEqual(next.itemIDs.count, 2)
+            current = next
+        }
+    }
+
     func testExplanationIncludesLockedPieceAndWeather() throws {
         let closet = TestFixtures.completeCloset
         let shirt = closet.first { $0.name == "Navy Shirt" }!

@@ -17,7 +17,7 @@ This document maps SRS requirement groups to implementation phases and current v
 | ONB — onboarding/permissions | 1, 6 | Partial | Empty/sample flow exists; account-free onboarding remains |
 | PROF — local/public profile | 0, 6, 7 | Partial | Local profile editing implemented; controlled CloudKit public profile planned after release |
 | SOC — following/feed | 7 | Planned | Coming Soon navigation implemented; CloudKit service gated on interest and safety |
-| ITEM — capture/creation | 0, 1 | Partial | Import and fully editable image-derived defaults implemented; automatic isolated renditions, progress, skip recovery, rotate/reset crop correction, separate review confidence, expanded footwear/outerwear recognition, guided review, single-item re-analysis, summaries, and synchronized default names covered; guided camera, calibrated quality confidence, and brush-adjustable segmentation remain Phase 1 |
+| ITEM — capture/creation | 0, 1 | Partial | Import and fully editable image-derived defaults implemented; every new/replacement photo requires a category-independent closed lasso before metadata confirmation, with exterior transparency, retrace/multiple-region/rotate/reset recovery, progress, skip recovery, separate review guidance, expanded footwear/outerwear recognition, guided review, single-item re-analysis, summaries, and synchronized default names covered; guided camera, calibrated quality confidence, and outline-point refinement remain Phase 1 |
 | CLO — closet management/privacy | 0, 1 | Partial | Local CRUD, metadata-aware search/filter, and availability implemented; capture quality remains |
 | WEA — weather/season | 0, 3 | Partial | Location/city/season works; resilience/caching/safety Phase 3 |
 | HOME — Outfit of the Day | 0, 3 | Partial | Local daily outfit; production stability/personalization Phase 3 |
@@ -51,13 +51,17 @@ This document maps SRS requirement groups to implementation phases and current v
 | Closet models and metadata | `myCloset/Models.swift` | `ModelsAndImageTests` |
 | Local persistence and history | `myCloset/ClosetStore.swift` | `ClosetStoreTests` |
 | Outfit constraints/scoring | `myCloset/OutfitEngine.swift` | `OutfitEngineTests` |
-| Photo preparation, isolated garment renditions, rotate/reset quick crop, garment-focused perceptual colors, and accent suppression | `myCloset/ImageUtilities.swift`, `myCloset/QuickGarmentCropEditor.swift` | `ModelsAndImageTests` |
+| Photo preparation, required closed-lasso isolation, preview-to-cutout orientation including asymmetric hems/sleeves and separate off-center regions, exterior transparency, rotation/reset recovery, garment-focused perceptual colors, and accent suppression | `myCloset/ImageUtilities.swift`, `myCloset/GarmentOutlineEditor.swift` | `ModelsAndImageTests`, `MyClosetUITests.testImportRequiresSimpleLassoBeforeMetadata` |
 | Footwear/outerwear suggestions, season defaults, separate review confidence, guided review, and synchronized import names | `myCloset/ClothingTypeDetector.swift`, `myCloset/ClosetImportReviewView.swift` | `ClothingTypeDetectorTests`, `MyClosetUITests` |
 | Batch progress, image metadata suggestions, batch/single-item re-analysis, and import readiness summary | `myCloset/ClothingTypeDetector.swift`, `myCloset/ClosetView.swift`, `myCloset/ClosetImportSummaryView.swift` | `ClothingTypeDetectorTests`, `ClosetImportSummaryTests`, `ClosetStoreTests` |
 | Required per-piece import confirmation, skip recovery, metadata progression, and next-piece top reset | `myCloset/ClosetImportReviewView.swift`, `myCloset/ClosetView.swift` | `MyClosetUITests.testImportedPieceMustBeConfirmedAndCanBeCorrectedBeforeSaving`, `MyClosetUITests.testImportReviewCanSkipAnAccidentalPhoto` |
 | Empty → personal image import | `HomeView`, `ClosetView`, `ClosetStore` | `MyClosetUITests.testEmptyClosetStartsWithOwnImageImport`, `ClosetStoreTests.testLegacySampleClosetIsRemovedOnNextLaunchWithoutTouchingImportedItems` |
 | Closet → body-aligned isolated Generate composition | `ClosetView`, `GeneratorView`, `OutfitCanvas` | `MyClosetUITests.testCoreClosetAndGeneratorJourney`, `ModelsAndImageTests.testSnapshotPrefersIsolatedOutfitRendition`, `ModelsAndImageTests.testOutfitLayoutOverlapsWaistAndStandardizesFootwearScale`, `OutfitEngineTests.testAlternativeGenerationChangesAvailableSlotsAndKeepsLocks`, `OutfitEngineTests.testSeasonPreferenceFallsBackToOwnedPieces`, `OutfitEngineTests.testOnePieceCompletesOutfitWhenSeparatesAreIncomplete` |
 | Closet piece → editable metadata | `ClosetView` | `MyClosetUITests.testClosetPieceOpensEditableMetadata` |
+| Selectable and persisted garment types/defaults (ITEM-002–ITEM-003, ITEM-013–ITEM-018) | `Models`, `ClosetView`, `ClosetImportReviewView`, `ClothingTypeDetector` | Specific-type model/default and legacy-decoding tests, `ClosetStoreTests.testSpecificTypesPersistAndDeletionKeepsSavedAndWornSnapshots`, `MyClosetUITests.testSpecificImportTypeUpdatesAutomaticNameSeasonsAndSavedDetails` |
+| Hold-menu deletion with history preservation (CLO-009–CLO-010) | `ClosetItemCard`, `ClosetStore` | `MyClosetUITests.testLongPressDeleteCanBeCancelledThenPersistsAfterRelaunch`, snapshot persistence tests |
+| Shoe-pair outlining, proportional footwear, and smaller upper-body pieces (ITEM-005, HOME-002) | `GarmentOutlineEditor`, `OutfitCanvasLayout` | Lasso UI guidance, top/jacket-to-pants width and overlap limits, and footwear sizing/board-bound tests |
+| Jacket replaces the top, including locks, replacements, and readiness (COMP-001–COMP-002, COMP-005–COMP-013) | `OutfitEngine`, `GeneratorView`, `ClosetImportSummary`, ADR-0005 | Five repeated-generation/lock/replacement regressions in `OutfitEngineTests`, `ClosetImportSummaryTests.testJacketAndBottomAreReadyWithoutAShirt` |
 | Following roadmap state | `FollowingView` | `MyClosetUITests.testFollowingIsClearlyMarkedComingSoon` |
 
 ## Traceability workflow
@@ -72,3 +76,5 @@ Each pull request should state:
 6. documentation updated.
 
 This file must be updated when a requirement group changes phase or status. Fine-grained requirement-to-test links may move into a test-management system as the project grows, but stable SRS IDs remain authoritative.
+
+Simulator launch reliability (ENG-004–ENG-006) is covered by the shared Run pre-action, `scripts/tests/test_simulator_run.py` (8 host-side checks), the isolated `scripts/test_ios.py` runner, and repeated Command-R/cold-start execution evidence. These workflow checks are separate from the app’s 83 unit and 9 UI tests.

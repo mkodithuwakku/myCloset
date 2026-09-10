@@ -23,6 +23,8 @@
 
 ## Engine architecture
 
+The current prototype follows [ADR-0005](../decisions/0005-garment-types-and-jacket-composition.md): separates contain a top or outerwear with a bottom. A jacket replaces the top, while a one-piece may still have outerwear. Locked upper-body choices and replacements retain this invariant. This delivered correction does not complete Phase 3's versioning or personalization gates.
+
 1. Version and validate request inputs.
 2. Apply authorization/ownership and item lifecycle constraints.
 3. Construct valid outfit candidates.

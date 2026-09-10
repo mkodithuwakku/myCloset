@@ -36,3 +36,6 @@ Package.resolved
 *.xcresult
 TestResults/
 coverage/
+
+# Host-side Python workflow checks
+__pycache__/

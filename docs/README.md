@@ -11,7 +11,7 @@ This directory is the maintained engineering and delivery knowledge base for myC
 | [Development](DEVELOPMENT.md) | Engineering lead | Toolchain, setup, build, debugging, or coding-convention change |
 | [Roadmap](ROADMAP.md) | Product owner | Phase scope, order, status, entry/exit gate, or release-target change |
 | [Testing](TESTING.md) | QA/engineering | Suite, command, CI, coverage target, test fixture, or quality-gate change |
-| [Latest Test Execution](testing/TEST_EXECUTION_2026-09-01.md) | QA/engineering | A release or phase gate is executed |
+| [Latest Test Execution](testing/TEST_EXECUTION_2026-09-09.md) | QA/engineering | A release or phase gate is executed |
 | [Requirements Traceability](REQUIREMENTS_TRACEABILITY.md) | Product + QA | Requirement, phase assignment, implementation, or verification change |
 | [Prototype Status](../PROTOTYPE_STATUS.md) | Engineering lead | Any change to what the current binary actually supports |
 | [SRS](../SRS.md) | Product owner | Approved product requirement or business-rule change |
@@ -22,7 +22,7 @@ This directory is the maintained engineering and delivery knowledge base for myC
 | Phase | Document | Status |
 |---:|---|---|
 | 0 | [Local Prototype and Foundation](phases/PHASE_0_LOCAL_PROTOTYPE.md) | Complete |
-| 1 | [Capture and Wardrobe Quality](phases/PHASE_1_CAPTURE_WARDROBE.md) | Next |
+| 1 | [Capture and Wardrobe Quality](phases/PHASE_1_CAPTURE_WARDROBE.md) | In progress |
 | 2 | [Conventional Cloud Identity and Private Data](phases/PHASE_2_CLOUD_IDENTITY.md) | Superseded reference |
 | 3 | [Recommendation Quality](phases/PHASE_3_RECOMMENDATIONS.md) | Planned |
 | 4 | [Conventional Social and Safety](phases/PHASE_4_SOCIAL_SAFETY.md) | Superseded reference |
@@ -39,6 +39,7 @@ This directory is the maintained engineering and delivery knowledge base for myC
 | [ADR-0002](decisions/0002-hybrid-recommendation-engine.md) | Keep deterministic constraints around any intelligent ranking |
 | [ADR-0003](decisions/0003-zero-backend-app-store-release.md) | Ship the first App Store release without a backend or recurring runtime service |
 | [ADR-0004](decisions/0004-post-release-cloudkit-social.md) | Add low-cost CloudKit profiles and following only after release interest and safety gates |
+| [ADR-0005](decisions/0005-garment-types-and-jacket-composition.md) | Persist specific garment types and let jackets replace tops in separates |
 
 ## Documentation quality rules
 

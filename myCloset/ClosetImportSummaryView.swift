@@ -10,7 +10,7 @@ struct ClosetImportSummary: Identifiable {
     var canGenerateOutfit: Bool {
         let categories = Set(availableClosetItems.map(\.category))
         return categories.contains(.onePiece) ||
-            (categories.contains(.top) && categories.contains(.bottom))
+            ((categories.contains(.top) || categories.contains(.outerwear)) && categories.contains(.bottom))
     }
 
     var readinessMessage: String {
@@ -19,13 +19,13 @@ struct ClosetImportSummary: Identifiable {
         }
 
         let categories = Set(availableClosetItems.map(\.category))
-        if categories.contains(.top) {
+        if categories.contains(.top) || categories.contains(.outerwear) {
             return "Add an available bottom or one-piece to generate an outfit."
         }
         if categories.contains(.bottom) {
-            return "Add an available top or one-piece to generate an outfit."
+            return "Add an available top, jacket, or one-piece to generate an outfit."
         }
-        return "Add an available top and bottom, or one one-piece, to generate an outfit."
+        return "Add an available top or jacket with a bottom, or one one-piece, to generate an outfit."
     }
 
     func count(in category: ClothingCategory) -> Int {

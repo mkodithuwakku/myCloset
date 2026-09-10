@@ -2,12 +2,17 @@ import PhotosUI
 import SwiftUI
 import UniformTypeIdentifiers
 
+private struct ClosetEditorPresentation: Identifiable {
+    let id = UUID()
+    let item: ClosetItem?
+}
+
 struct ClosetView: View {
     @EnvironmentObject private var store: ClosetStore
     @State private var searchText = ""
     @State private var selectedCategory: ClothingCategory?
-    @State private var showingEditor = false
-    @State private var editingItem: ClosetItem?
+    @State private var selectedKind: GarmentKind?
+    @State private var editorPresentation: ClosetEditorPresentation?
     @State private var selectedImportPhotos: [PhotosPickerItem] = []
     @State private var showingFileImporter = false
     @State private var isImporting = false
@@ -56,8 +61,7 @@ struct ClosetView: View {
 
                             Menu {
                                 Button {
-                                    editingItem = nil
-                                    showingEditor = true
+                                    editorPresentation = ClosetEditorPresentation(item: nil)
                                 } label: {
                                     Label("Add one manually", systemImage: "plus")
                                 }
@@ -103,8 +107,7 @@ struct ClosetView: View {
                         LazyVGrid(columns: columns, spacing: 14) {
                             ForEach(filteredItems) { item in
                                 ClosetItemCard(item: item) {
-                                    editingItem = item
-                                    showingEditor = true
+                                    editorPresentation = ClosetEditorPresentation(item: item)
                                 }
                             }
                         }
@@ -116,8 +119,8 @@ struct ClosetView: View {
             .background(ClosetTheme.canvas.ignoresSafeArea())
             .navigationTitle("Your closet")
             .searchable(text: $searchText, prompt: "Search pieces")
-            .sheet(isPresented: $showingEditor) {
-                ClosetItemEditor(existingItem: editingItem)
+            .sheet(item: $editorPresentation) { presentation in
+                ClosetItemEditor(existingItem: presentation.item)
             }
             .sheet(item: $pendingImportReview) { batch in
                 ClosetImportReviewView(batch: batch) { confirmedItems in
@@ -163,9 +166,12 @@ struct ClosetView: View {
             }
             .task {
 #if DEBUG
-                if ProcessInfo.processInfo.arguments.contains("-openPrototypeImportReview"),
-                   pendingImportReview == nil {
-                    pendingImportReview = .debugPreview
+                if pendingImportReview == nil {
+                    if ProcessInfo.processInfo.arguments.contains("-openPrototypeImportOutline") {
+                        pendingImportReview = .debugOutlinePreview
+                    } else if ProcessInfo.processInfo.arguments.contains("-openPrototypeImportReview") {
+                        pendingImportReview = .debugPreview
+                    }
                 }
 #endif
             }
@@ -177,6 +183,7 @@ struct ClosetView: View {
             let searchableMetadata = [
                 item.name,
                 item.category.title,
+                item.typeTitle,
                 item.dominantColor.name,
                 item.accentColor?.name,
                 item.seasons.map(\.title).joined(separator: " "),
@@ -186,7 +193,8 @@ struct ClosetView: View {
                 .joined(separator: " ")
             let matchesSearch = searchText.isEmpty || searchableMetadata.localizedCaseInsensitiveContains(searchText)
             let matchesCategory = selectedCategory == nil || item.category == selectedCategory
-            return matchesSearch && matchesCategory
+            let matchesKind = selectedKind == nil || item.garmentType.kind == selectedKind
+            return matchesSearch && matchesCategory && matchesKind
         }
     }
 
@@ -194,14 +202,30 @@ struct ClosetView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 Button {
-                    withAnimation { selectedCategory = nil }
+                    withAnimation { selectedCategory = nil; selectedKind = nil }
                 } label: {
-                    TagPill(text: "All", selected: selectedCategory == nil)
+                    TagPill(text: "All", selected: selectedCategory == nil && selectedKind == nil)
                 }
                 .buttonStyle(.plain)
+                Menu {
+                    ForEach(ClothingCategory.allCases) { category in
+                        Section(category.title) {
+                            ForEach(GarmentKind.allCases.filter { $0.category == category }) { kind in
+                                Button(kind.title) {
+                                    selectedCategory = category
+                                    selectedKind = kind
+                                }
+                                .accessibilityIdentifier("closet-filter-kind-\(kind.rawValue)")
+                            }
+                        }
+                    }
+                } label: {
+                    TagPill(text: selectedKind?.title ?? "Specific type", icon: "line.3.horizontal.decrease", selected: selectedKind != nil)
+                }
+                .accessibilityIdentifier("closet-type-filter")
                 ForEach(ClothingCategory.allCases) { category in
                     Button {
-                        withAnimation { selectedCategory = category }
+                        withAnimation { selectedCategory = category; selectedKind = nil }
                     } label: {
                         TagPill(text: category.title, icon: category.icon, selected: selectedCategory == category)
                     }
@@ -347,21 +371,25 @@ struct ClosetView: View {
         for (offset, existing) in photographedItems.enumerated() {
             defer { importProgress = offset + 1 }
             guard let data = existing.photoData,
-                  let suggestion = await ClosetImageImporter.makePiece(from: data, index: offset + 1) else {
+                  let suggestion = await ClosetImageImporter.makePiece(
+                    from: data,
+                    index: offset + 1,
+                    confirmedOutlineData: existing.isolatedPhotoData
+                  ) else {
                 failures += 1
                 continue
             }
 
             var updated = existing
-            if suggestion.detection.source != .fallback {
+            if existing.kind == nil, suggestion.detection.source != .fallback {
                 updated.category = suggestion.item.category
+                updated.kind = suggestion.item.kind
             }
             if suggestion.detection.needsReview {
                 uncertainItemIDs.insert(existing.id)
             }
             updated.dominantColor = suggestion.item.dominantColor
             updated.accentColor = suggestion.item.accentColor
-            updated.isolatedPhotoData = suggestion.item.isolatedPhotoData
             updatedItems.append(updated)
             assessments[existing.id] = suggestion.assessment
         }
@@ -385,6 +413,7 @@ struct ClosetView: View {
 
 private struct ClosetItemCard: View {
     @EnvironmentObject private var store: ClosetStore
+    @State private var showingDeleteConfirmation = false
     let item: ClosetItem
     let onEdit: () -> Void
 
@@ -411,7 +440,7 @@ private struct ClosetItemCard: View {
                         Circle()
                             .fill(Color(hex: item.dominantColor.hex))
                             .frame(width: 10, height: 10)
-                        Text("\(item.category.title) · \(item.dominantColor.name)")
+                        Text("\(item.typeTitle) · \(item.dominantColor.name)")
                             .font(.caption)
                             .foregroundStyle(ClosetTheme.secondaryInk)
                         if item.availability != .available {
@@ -443,6 +472,17 @@ private struct ClosetItemCard: View {
                 }
             }
             Button("Edit", systemImage: "pencil", action: onEdit)
+            Button("Delete", systemImage: "trash", role: .destructive) {
+                showingDeleteConfirmation = true
+            }
+            .accessibilityIdentifier("closet-delete-item")
+        }
+        .alert("Delete “\(item.name)” from your closet?", isPresented: $showingDeleteConfirmation) {
+            Button("Delete", role: .destructive) { store.delete(item.id) }
+                .accessibilityIdentifier("closet-confirm-delete")
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Past saved and worn outfit snapshots will remain intact.")
         }
     }
 }
@@ -453,12 +493,16 @@ private struct ClosetItemEditor: View {
     @State private var item: ClosetItem
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var isProcessingPhoto = false
+    @State private var pendingPhotoSuggestion: ImportedClosetPiece?
+    @State private var showingPhotoOutline = false
     @State private var showingDeleteConfirmation = false
     @State private var photoSuggestionMessage: String?
+    @State private var automaticallyNamed: Bool
     private let isNewItem: Bool
 
     init(existingItem: ClosetItem?) {
         isNewItem = existingItem == nil
+        _automaticallyNamed = State(initialValue: existingItem == nil || existingItem?.name == existingItem?.suggestedName)
         let fallback = ClothingColor.palette.first { $0.name == "Navy" } ?? ClothingColor.palette[0]
         _item = State(initialValue: existingItem ?? ClosetItem(
             name: "",
@@ -519,6 +563,13 @@ private struct ClosetItemEditor: View {
             } message: {
                 Text("Past saved and worn outfit snapshots will remain intact.")
             }
+            .sheet(isPresented: $showingPhotoOutline) {
+                if let photoData = pendingPhotoSuggestion?.item.photoData {
+                    GarmentOutlineEditor(imageData: photoData) { result in
+                        applyOutlinedPhoto(result)
+                    }
+                }
+            }
         }
     }
 
@@ -529,15 +580,11 @@ private struct ClosetItemEditor: View {
                     ItemArtwork(photoData: item.photoData, color: item.dominantColor, category: item.category, height: 220)
                         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     if item.photoData == nil {
-                        RoundedRectangle(cornerRadius: 34, style: .continuous)
-                            .stroke(.white.opacity(0.75), style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
-                            .frame(width: 160, height: 182)
-                            .overlay(alignment: .bottom) {
-                                Text("Centre the \(item.category.title.lowercased())")
-                                    .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(.white)
-                                    .padding(.bottom, 12)
-                            }
+                        Label("Choose a photo, then outline the item", systemImage: "lasso")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(12)
+                            .background(.black.opacity(0.45), in: Capsule())
                     }
                     if isProcessingPhoto {
                         ProgressView()
@@ -570,7 +617,7 @@ private struct ClosetItemEditor: View {
                     .accessibilityIdentifier("reanalyze-current-photo")
                 }
 
-                Text("For the cleanest color result, use even light and a plain background that contrasts with the item.")
+                Text("Every new or replacement photo must be outlined before it can be saved. Trace the real item edge once; the background will be removed.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -588,11 +635,21 @@ private struct ClosetItemEditor: View {
 
     private var detailsSection: some View {
         Section("Piece details") {
-            TextField("Name", text: $item.name)
+            TextField("Name", text: Binding(get: { item.name }, set: {
+                item.name = $0
+                automaticallyNamed = false
+            }))
                 .textInputAutocapitalization(.words)
-            Picker("Category", selection: $item.category) {
+            Picker("Type", selection: Binding(get: { item.garmentType }, set: {
+                item.applyType($0, updateName: automaticallyNamed)
+            })) {
                 ForEach(ClothingCategory.allCases) { category in
-                    Label(category.title, systemImage: category.icon).tag(category)
+                    Section(category.title) {
+                        Text("General \(category.title.lowercased())").tag(GarmentType.category(category))
+                        ForEach(GarmentKind.allCases.filter { $0.category == category }) { kind in
+                            Text(kind.title).tag(GarmentType.kind(kind))
+                        }
+                    }
                 }
             }
             .accessibilityIdentifier("piece-editor-category")
@@ -607,6 +664,9 @@ private struct ClosetItemEditor: View {
                 }
             }
             .accessibilityIdentifier("piece-editor-dominant-color")
+            .onChange(of: item.dominantColor) { _, _ in
+                if automaticallyNamed { item.name = item.suggestedName }
+            }
             Picker("Accent color", selection: $item.accentColor) {
                 Text("None").tag(nil as ClothingColor?)
                 ForEach(ClothingColor.palette) { color in
@@ -634,6 +694,8 @@ private struct ClosetItemEditor: View {
                         TagPill(text: season.title, selected: item.seasons.contains(season))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("piece-editor-season-\(season.rawValue)")
+                    .accessibilityValue(item.seasons.contains(season) ? "Selected" : "Not selected")
                 }
             }
             .padding(.vertical, 4)
@@ -699,22 +761,33 @@ private struct ClosetItemEditor: View {
                 index: store.items.count + 1
               ) else { return }
 
-        item.photoData = suggestion.item.photoData
-        item.isolatedPhotoData = suggestion.item.isolatedPhotoData
-        item.dominantColor = suggestion.item.dominantColor
-        item.accentColor = suggestion.item.accentColor
+        pendingPhotoSuggestion = suggestion
+        selectedPhoto = nil
+        showingPhotoOutline = true
+    }
+
+    private func applyOutlinedPhoto(_ result: GarmentOutlineResult) {
+        guard let suggestion = pendingPhotoSuggestion else { return }
+        let colors = ImageUtilities.suggestedColors(from: result.isolatedImageData)
+
+        item.photoData = result.sourceImageData
+        item.isolatedPhotoData = result.isolatedImageData
+        item.dominantColor = colors?.dominant ?? suggestion.item.dominantColor
+        item.accentColor = colors?.accent
 
         if isNewItem {
-            item.name = suggestion.item.name
             item.category = suggestion.item.category
+            item.kind = suggestion.item.kind
+            if automaticallyNamed { item.name = item.suggestedName }
             item.seasons = suggestion.item.seasons
             item.formalities = suggestion.item.formalities
             photoSuggestionMessage = suggestion.detection.needsReview
-                ? "We filled in a best guess. Please review the type and other details."
-                : "Name, type, colors, seasons, and formality were suggested from this photo."
+                ? "Outline saved. We filled in a best guess; please review the type and other details."
+                : "Outline saved. Name, type, colors, seasons, and formality were suggested from the isolated item."
         } else {
-            photoSuggestionMessage = "Colors were refreshed from the new photo; your existing details were preserved."
+            photoSuggestionMessage = "Outline saved. Colors were refreshed from the isolated item; your existing details were preserved."
         }
+        pendingPhotoSuggestion = nil
     }
 
     @MainActor
@@ -724,18 +797,19 @@ private struct ClosetItemEditor: View {
         defer { isProcessingPhoto = false }
         guard let suggestion = await ClosetImageImporter.makePiece(
             from: photoData,
-            index: store.items.firstIndex(where: { $0.id == item.id }).map { $0 + 1 } ?? 1
+            index: store.items.firstIndex(where: { $0.id == item.id }).map { $0 + 1 } ?? 1,
+            confirmedOutlineData: item.isolatedPhotoData
         ) else {
             photoSuggestionMessage = "This photo could not be analyzed. Your current details were left unchanged."
             return
         }
 
-        if suggestion.detection.source != .fallback {
+        if item.kind == nil, suggestion.detection.source != .fallback {
             item.category = suggestion.item.category
+            item.kind = suggestion.item.kind
         }
         item.dominantColor = suggestion.item.dominantColor
         item.accentColor = suggestion.item.accentColor
-        item.isolatedPhotoData = suggestion.item.isolatedPhotoData
 
         if suggestion.assessment.needsAttention {
             let fields = suggestion.assessment.componentsNeedingAttention.joined(separator: ", ")

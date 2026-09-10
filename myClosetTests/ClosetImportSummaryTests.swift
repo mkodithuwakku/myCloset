@@ -2,6 +2,12 @@ import XCTest
 @testable import myCloset
 
 final class ClosetImportSummaryTests: XCTestCase {
+    func testJacketAndBottomAreReadyWithoutAShirt() {
+        let closet = [TestFixtures.item("Jacket", category: .outerwear), TestFixtures.item("Jeans", category: .bottom)]
+        let summary = ClosetImportSummary(importedItems: closet, availableClosetItems: closet, skipped: 0, failures: 0)
+        XCTAssertTrue(summary.canGenerateOutfit)
+    }
+
     func testSummaryCountsOnlyItemsFromCompletedImport() {
         let imported = [
             TestFixtures.item("Top 1", category: .top),

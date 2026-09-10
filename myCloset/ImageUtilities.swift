@@ -46,26 +46,7 @@ enum ImageUtilities {
         format.scale = 1
         let renderer = UIGraphicsImageRenderer(size: size, format: format)
         let resized = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
-        return resized.jpegData(compressionQuality: 0.82)
-    }
-
-    static func croppedImageData(
-        from data: Data,
-        scale: Double,
-        horizontalPosition: Double = 0.5,
-        verticalPosition: Double
-    ) -> Data? {
-        guard let image = UIImage(data: data), let cgImage = image.cgImage else { return nil }
-        let clampedScale = min(1, max(0.45, scale))
-        let clampedHorizontalPosition = min(1, max(0, horizontalPosition))
-        let clampedPosition = min(1, max(0, verticalPosition))
-        let cropWidth = Double(cgImage.width) * clampedScale
-        let cropHeight = Double(cgImage.height) * clampedScale
-        let originX = (Double(cgImage.width) - cropWidth) * clampedHorizontalPosition
-        let originY = (Double(cgImage.height) - cropHeight) * clampedPosition
-        let cropRect = CGRect(x: originX, y: originY, width: cropWidth, height: cropHeight).integral
-        guard let cropped = cgImage.cropping(to: cropRect) else { return nil }
-        return preparedImageData(from: UIImage(cgImage: cropped).pngData() ?? Data())
+        return resized.jpegData(compressionQuality: 0.92)
     }
 
     static func rotatedImageData(from data: Data, quarterTurns: Int) -> Data? {
@@ -97,6 +78,55 @@ enum ImageUtilities {
         return preparedImageData(from: rotated.jpegData(compressionQuality: 0.9) ?? Data())
     }
 
+    static func outlinedCutoutData(
+        from data: Data,
+        normalizedOutlines: [[CGPoint]]
+    ) -> Data? {
+        guard let source = UIImage(data: data),
+              normalizedOutlines.contains(where: { $0.count >= 3 }) else { return nil }
+        let maximumDimension: CGFloat = 1_200
+        let scale = min(1, maximumDimension / max(source.size.width, source.size.height))
+        let size = CGSize(width: source.size.width * scale, height: source.size.height * scale)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = false
+
+        let mask = UIGraphicsImageRenderer(size: size, format: format).image { rendererContext in
+            let context = rendererContext.cgContext
+            context.setFillColor(UIColor.white.cgColor)
+            context.setAllowsAntialiasing(true)
+            context.setShouldAntialias(true)
+            for outline in normalizedOutlines where outline.count >= 3 {
+                let points = outline.map { point in
+                    CGPoint(
+                        x: min(1, max(0, point.x)) * size.width,
+                        y: min(1, max(0, point.y)) * size.height
+                    )
+                }
+                guard let first = points.first else { continue }
+                context.beginPath()
+                context.move(to: first)
+                for point in points.dropFirst() { context.addLine(to: point) }
+                context.closePath()
+                context.fillPath()
+            }
+        }
+
+        let normalizedSource = UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            source.draw(in: CGRect(origin: .zero, size: size))
+        }
+        let cutout = UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            normalizedSource.draw(in: CGRect(origin: .zero, size: size))
+            // Keep the mask in UIKit's top-left coordinates, just like the
+            // source and lasso preview. Drawing its raw CGImage here flips
+            // it vertically and cuts away correctly outlined hems/sleeves.
+            mask.draw(in: CGRect(origin: .zero, size: size), blendMode: .destinationIn, alpha: 1)
+        }
+        guard let cutoutImage = cutout.cgImage,
+              let cropped = croppedToVisibleAlpha(cutoutImage) else { return nil }
+        return transparentImageData(from: UIImage(cgImage: cropped))
+    }
+
     static func isolatedGarmentData(from data: Data) -> Data? {
         guard let image = UIImage(data: data), let cgImage = image.cgImage else { return nil }
         let request = VNGenerateForegroundInstanceMaskRequest()
@@ -108,6 +138,13 @@ enum ImageUtilities {
                 width: 64,
                 height: 64
               ),
+              let sampled = sampledMask(
+                from: observation.instanceMask,
+                instance: instance,
+                width: 64,
+                height: 64
+              ),
+              maskHasCredibleGarmentCoverage(sampled, width: 64, height: 64),
               let mask = binaryMaskImage(from: observation.instanceMask, instance: instance) else {
             return adaptiveBorderCutout(from: cgImage)
         }
@@ -140,10 +177,10 @@ enum ImageUtilities {
     /// model is unavailable (notably some Simulator runtimes). It models several
     /// colors around the photo border rather than one average background color,
     /// which handles floorboards and patterned rugs without treating their mean as
-    /// a garment color. Ambiguous results are rejected so the original plus quick
-    /// crop remain available instead of persisting a visibly damaged cutout.
+    /// a garment color. Ambiguous results are rejected rather than presenting a
+    /// visibly damaged automatic cutout as a trustworthy suggestion.
     private static func adaptiveBorderCutout(from source: CGImage) -> Data? {
-        let maximumDimension = 700.0
+        let maximumDimension = 1_200.0
         let scale = min(1, maximumDimension / Double(max(source.width, source.height)))
         let width = max(1, Int((Double(source.width) * scale).rounded()))
         let height = max(1, Int((Double(source.height) * scale).rounded()))
@@ -158,7 +195,7 @@ enum ImageUtilities {
             space: CGColorSpaceCreateDeviceRGB(),
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
         ) else { return nil }
-        context.interpolationQuality = .medium
+        context.interpolationQuality = .high
         context.draw(source, in: CGRect(x: 0, y: 0, width: width, height: height))
 
         struct Bucket {
@@ -282,7 +319,23 @@ enum ImageUtilities {
         let visibleRatio = Double(visibleCount) / Double(width * height)
         let centerArea = max(1, centerX.count * centerY.count)
         let centralVisibleRatio = Double(centralVisibleCount) / Double(centerArea)
-        guard (0.025...0.72).contains(visibleRatio), centralVisibleRatio >= 0.16,
+        var minimumX = width
+        var minimumY = height
+        var maximumX = -1
+        var maximumY = -1
+        for y in 0..<height {
+            for x in 0..<width where pixels[y * bytesPerRow + x * 4 + 3] > 115 {
+                minimumX = min(minimumX, x)
+                minimumY = min(minimumY, y)
+                maximumX = max(maximumX, x)
+                maximumY = max(maximumY, y)
+            }
+        }
+        let boundingArea = max(1, (maximumX - minimumX + 1) * (maximumY - minimumY + 1))
+        let boundingFillRatio = Double(visibleCount) / Double(boundingArea)
+        guard (0.025...0.72).contains(visibleRatio),
+              centralVisibleRatio >= 0.16,
+              boundingFillRatio >= 0.22,
               let masked = context.makeImage(),
               let cropped = croppedToVisibleAlpha(masked) else {
             return nil
@@ -291,7 +344,7 @@ enum ImageUtilities {
     }
 
     private static func transparentImageData(from image: UIImage) -> Data? {
-        let maximumDimension: CGFloat = 900
+        let maximumDimension: CGFloat = 1_200
         let scale = min(1, maximumDimension / max(image.size.width, image.size.height))
         let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
         let format = UIGraphicsImageRendererFormat()
@@ -642,6 +695,36 @@ enum ImageUtilities {
         let areaRatio = Double(count) / Double(width * height)
         let frameFillingPenalty = areaRatio > 0.65 ? 0.08 : 1
         return Double(count) * (1 + 0.75 * centrality / Double(count)) * frameFillingPenalty
+    }
+
+    static func maskHasCredibleGarmentCoverage(_ mask: [Bool], width: Int, height: Int) -> Bool {
+        guard width > 0, height > 0, mask.count == width * height else { return false }
+        var count = 0
+        var minimumX = width
+        var minimumY = height
+        var maximumX = -1
+        var maximumY = -1
+
+        for y in 0..<height {
+            for x in 0..<width where mask[y * width + x] {
+                count += 1
+                minimumX = min(minimumX, x)
+                minimumY = min(minimumY, y)
+                maximumX = max(maximumX, x)
+                maximumY = max(maximumY, y)
+            }
+        }
+
+        guard maximumX >= minimumX, maximumY >= minimumY else { return false }
+        let areaRatio = Double(count) / Double(width * height)
+        let widthRatio = Double(maximumX - minimumX + 1) / Double(width)
+        let heightRatio = Double(maximumY - minimumY + 1) / Double(height)
+        let boundingArea = max(1, (maximumX - minimumX + 1) * (maximumY - minimumY + 1))
+        let boundingFillRatio = Double(count) / Double(boundingArea)
+        return (0.045...0.76).contains(areaRatio) &&
+            widthRatio >= 0.18 &&
+            heightRatio >= 0.18 &&
+            boundingFillRatio >= 0.22
     }
 
     private static func eroded(_ mask: [Bool], width: Int, height: Int) -> [Bool] {

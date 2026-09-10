@@ -1,7 +1,7 @@
 # Architecture
 
 **Status:** Phase 0 implemented; local first release and gated post-release CloudKit social target approved
-**Last reviewed:** 2026-09-08
+**Last reviewed:** 2026-09-09
 
 ## 1. Purpose
 
@@ -64,15 +64,17 @@ Views do not own persistence encoding, weather transport, image sampling, or rec
 
 The store encodes `PersistedCloset` using `Codable` and writes atomically to Application Support. This is appropriate for the small expected audience. Before release, it still needs schema migration and recoverable corruption handling; it does not need synchronization.
 
+Closet items and outfit snapshots retain an optional specific `GarmentKind` alongside the existing broad category. Missing kinds decode as legacy generic categories; choosing a specific type updates editable name/season/formality defaults. The bundled taxonomy remains on-device. See [ADR-0005](decisions/0005-garment-types-and-jacket-composition.md).
+
 ### 3.3 Recommendation engine
 
 `OutfitEngine` is a stateless domain service. Its current pipeline is:
 
 1. Filter deleted/excluded/unavailable records.
 2. Validate locked-item availability and category conflicts.
-3. Select a valid base structure: top + bottom, or one-piece.
+3. Select a valid base structure: exactly one top or outerwear + bottom, or one-piece. Outerwear replaces the top in separates; a locked top prevents an added jacket, and simultaneous top/outerwear locks conflict.
 4. Add footwear when available.
-5. Add weather/season-relevant outerwear.
+5. Prefer weather/season-relevant outerwear as the upper-body piece for separates, or add it over a one-piece.
 6. Optionally add an accessory.
 7. Rank category candidates using season, formality, color compatibility, favorite state, and bounded variety. If no seasonal or formality match exists for a required slot, fall back to the best available owned piece rather than failing a structurally valid closet.
 8. For a full reroll, exclude replaceable pieces as a group and then individually until the engine finds a different valid look; locks and all hard constraints remain authoritative.
@@ -80,7 +82,7 @@ The store encodes `PersistedCloset` using `Codable` and writes atomically to App
 
 Hard constraints and soft scoring are intentionally separate. Tests assert that random selection never breaks locks, availability, exclusions, or structure.
 
-The Generate view starts with no required piece and treats occasion and formality as an optional compact visual brief. Once a look exists, users may lock generated pieces before rerolling. If the imported closet cannot form a valid top-and-bottom or one-piece base, the view reports the available category counts and routes the user to correct editable metadata instead of presenting a silent failure.
+The Generate view starts with no required piece and treats occasion and formality as an optional compact visual brief. Once a look exists, users may lock generated pieces before rerolling. Top and outerwear share an upper-body replacement slot; a single-piece reroll preserves all other pieces. If the closet cannot form a top-or-jacket with bottom or a one-piece base, the view reports available category counts and routes the user to editable metadata. The shared canvas preserves image proportions and gives footwear enough vertical space for tall shoe-pair cutouts.
 
 ### 3.4 Image pipeline
 
@@ -89,14 +91,14 @@ The Generate view starts with no required piece and treats occasion and formalit
 - decodes imported images;
 - resizes them to a 1,200-pixel maximum dimension;
 - compresses them to JPEG;
-- creates a trimmed transparent PNG rendition from the selected Vision foreground instance, with a conservative multi-color border fallback for runtimes where the OS model is unavailable;
+- creates a trimmed transparent PNG rendition from the selected Vision foreground instance only when its coverage and bounding-box fill are garment-like, with a conservative multi-color border fallback subject to the same spatial-coherence check for runtimes where the OS model is unavailable;
 - samples a 64 × 64 pixel grid from the isolated rendition when available, otherwise suppresses a visually consistent border background and omits untrusted accent suggestions;
 - maps pixels to a curated clothing palette;
 - returns editable dominant and accent suggestions.
 
-`ClothingTypeDetector` first maps descriptive filenames to specific garment kinds. When filenames are unavailable or machine-generated, it combines Apple's on-device foreground-instance mask with conservative semantic signals: silhouette structure drives top-versus-bottom separation, specific footwear labels receive precedence over generic clothing, and semantic labels are retained only where they proved dependable. `ImageUtilities` reuses the chosen mask for a local transparent rendition so palette sampling and body-aligned outfit composition can exclude the photographed background. When that OS model is unavailable, a multi-color border model removes only a credible centered foreground and rejects ambiguous output. `ClosetImageImporter` combines these signals into editable name, category, kind-aware season, formality, and color defaults plus separate review confidence for type, colour, and cutout. The Closet presentation layer owns transient batch progress, skip state, rotate/reset crop controls, import summaries, and review presentation; batch and single-item re-analysis reuse the same importer without changing persistence boundaries.
+`ClothingTypeDetector` first maps descriptive filenames to specific garment kinds. When filenames are unavailable or machine-generated, it combines Apple's on-device foreground-instance mask with conservative semantic signals: silhouette structure drives top-versus-bottom separation, specific footwear labels receive precedence over generic clothing, and semantic labels are retained only where they proved dependable. Automatic foreground analysis remains advisory for type and confidence suggestions; it is not allowed to define the imported rendition. `ClosetImageImporter` combines these signals into editable name, category, kind-aware season, formality, and preliminary color defaults plus separate review guidance. The Closet presentation layer owns transient batch progress, skip state, required-lasso state, rotation/reset controls, import summaries, and review presentation. Every new imported or replacement photo must pass through the same category-independent `GarmentOutlineEditor` before metadata can be confirmed. It records normalized finger points, closes the path on lift, shows a live shaded preview, rejects paths without meaningful enclosed area, and permits retracing or additional separate regions. `ImageUtilities` fills the accepted polygonal alpha mask, preserves all enclosed source pixels at the prepared resolution, makes the exterior transparent, trims only transparent outer bounds, and samples final colors from that user-authored rendition. Lasso points remain transient; only the original prepared image and transparent result enter the existing local persistence boundary. Batch and single-item re-analysis reuse the importer without changing that boundary.
 
-The remaining Phase 1 pipeline must calibrate photo/color confidence against a representative corpus, add brush-based mask correction, direct guided capture, physical-device qualification, and file-backed media persistence with schema migration.
+The remaining Phase 1 pipeline must calibrate photo/color confidence against a representative corpus, add point/edge refinement to the delivered closed-outline mask, direct guided capture, physical-device qualification, and file-backed media persistence with schema migration.
 
 ### 3.5 Weather pipeline
 

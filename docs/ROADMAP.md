@@ -1,6 +1,6 @@
 # Product and Engineering Roadmap
 
-**Baseline:** SRS 1.2
+**Baseline:** SRS 1.3
 **Current phase:** Phase 0 complete; Phase 1 in progress
 **Planning model:** exit-gate driven, not date-driven
 
@@ -67,7 +67,7 @@ Exit evidence: [Phase 0 document](phases/PHASE_0_LOCAL_PROTOTYPE.md) and [Protot
 
 ### Phase 1 — Capture and Wardrobe Quality
 
-The current slices save automatic Vision-isolated garment renditions, sample colors from the cutout, supply kind-aware seasons, report batch progress and per-result confidence, support skip plus rotate/reset crop recovery, summarize closet readiness, and offer batch or single-item re-analysis. Continue with direct guided camera capture, brush-adjustable masks, calibrated quality/confidence states, schema versioning, richer taxonomy, and capture accessibility. The result is a trustworthy private garment record.
+The current slices use Vision only for advisory detection, then require the user to lasso every new imported or replacement photo before metadata confirmation. The saved transparent rendition keeps the enclosed source area, excludes the photographed background, drives garment-only color sampling and body-aligned outfit composition, and supports retrace, multiple regions, rotate, and reset. The flow also supplies 29 persisted selectable garment types with matching editable name/season/formality defaults, specific-type filters, hold-menu deletion, shoe-pair outline guidance, batch progress, confidence guidance, skip recovery, import summaries, and batch or single-item re-analysis. Continue with direct guided camera capture, point/edge and undo refinement for lasso masks, calibrated quality/confidence states, schema and taxonomy versioning, and capture accessibility. The result is a trustworthy private garment record.
 
 Exit gate: supported garment categories meet agreed segmentation/color accuracy thresholds and users can recover every automated failure manually.
 
@@ -79,7 +79,7 @@ Exit gate if reactivated: multi-account isolation and deletion pass adversarial 
 
 ### Phase 3 — Recommendation Quality
 
-Deliver versioned on-device deterministic rules, richer weather/occasion inputs, explicit local feedback, preference controls, reproducible results, confidence/explanations, and provider-independent fallbacks.
+The current prototype implements the SRS 1.3 / ADR-0005 rule that a jacket replaces the top in separates, including locked-piece and reroll behavior. Phase 3 still needs versioned on-device deterministic rules, richer weather/occasion inputs, explicit local feedback, preference controls, reproducible results, confidence/explanations, and provider-independent fallbacks.
 
 Exit gate: locks/ownership/availability/structure remain invariant and beta users meet an approved acceptance-rate target.
 

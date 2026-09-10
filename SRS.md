@@ -2,7 +2,7 @@
 
 > **Working title:** myCloset (provisional; trademark and App Store name availability have not been confirmed)
 > **Document type:** Software Requirements Specification (SRS)
-> **Document version:** 1.2
+> **Document version:** 1.3
 > **Status:** Product baseline
 > **Target release:** Public iPhone App Store release
 > **Prepared:** July 14, 2026
@@ -20,6 +20,7 @@
 | 1.0 | 2026-07-14 | Product baseline | Initial enterprise-level requirements based on confirmed product decisions |
 | 1.1 | 2026-07-14 | Approved release amendment | First App Store release changed to local-only operation with no recurring service cost beyond the Apple Developer Program |
 | 1.2 | 2026-07-14 | Approved roadmap amendment | CloudKit profiles and following approved as a gated post-release addition; launch navigation restores a truthful Coming Soon tab |
+| 1.3 | 2026-09-09 | Approved wardrobe/composition amendment | Selectable local garment subtypes with editable defaults, long-press deletion, separate shoe outlining, and jackets replacing tops in generated separates, per product-owner requests and ADR-0005 |
 
 ### 1.2 Approval Roles
 
@@ -352,9 +353,9 @@ The Section 3.5 release-applicability matrix is normative. AUTH, ADM, convention
 |---|---|---|
 | ITEM-001 | P0 | The user shall select a clothing category before taking or importing an item photo. |
 | ITEM-002 | P0 | Supported top-level categories shall include tops, bottoms, dresses/one-piece outfits, outerwear, footwear, and accessories. |
-| ITEM-003 | P0 | The category taxonomy shall support administratively managed subcategories without requiring an iOS release for every taxonomy update. |
+| ITEM-003 | P0 | The local category taxonomy shall expose selectable, persisted garment subtypes including shorts, long sleeve, and jacket. Subtypes shall supply matching automatic names and editable season/formality defaults while retaining top-level categories for outfit structure. Remote administrative taxonomy updates remain deferred outside the local release. |
 | ITEM-004 | P0 | The camera shall present a category-appropriate framing outline or guidance overlay to help isolate the garment. |
-| ITEM-005 | P0 | Capture guidance shall instruct the user to use a plain contrasting background, adequate lighting, and a fully visible garment. |
+| ITEM-005 | P0 | Capture guidance shall instruct the user to use a plain contrasting background, adequate lighting, and a fully visible garment. For shoe pairs, outline guidance shall explain tracing each shoe as a separate area while excluding the space between them. |
 | ITEM-006 | P0 | The user shall be able to take a new photo or import an existing photo from the photo library. |
 | ITEM-007 | P0 | The system shall attempt to segment the selected garment and remove or crop the background. |
 | ITEM-008 | P0 | The user shall be able to adjust or approve the crop when automatic segmentation is uncertain or incorrect. |
@@ -385,7 +386,7 @@ The Section 3.5 release-applicability matrix is normative. AUTH, ADM, convention
 | CLO-006 | P0 | The user shall be able to mark an item available, temporarily unavailable, in laundry, packed, or archived. |
 | CLO-007 | P0 | The user shall be able to provide an optional availability-until date for a temporarily unavailable item. |
 | CLO-008 | P0 | Items not currently available shall be excluded from new recommendations by default. |
-| CLO-009 | P0 | The user shall be able to archive or permanently delete an item after confirmation. |
+| CLO-009 | P0 | The user shall be able to archive or permanently delete an item after confirmation. Delete shall be available in the item's long-press menu as well as its editor. |
 | CLO-010 | P0 | Deleting or editing an item shall not alter immutable snapshots attached to past worn outfits or posts. |
 | CLO-011 | P0 | The user shall be able to favorite an item for preference weighting without requiring it in every outfit. |
 | CLO-012 | P0 | Closet data and original item images shall not be visible through public profile, feed, search, or unauthenticated endpoints. |
@@ -441,8 +442,8 @@ The Section 3.5 release-applicability matrix is normative. AUTH, ADM, convention
 
 | ID | Priority | Requirement |
 |---|---|---|
-| COMP-001 | P0 | An outfit shall contain a structurally valid base: top plus bottom, or a one-piece garment, with footwear when appropriate. |
-| COMP-002 | P0 | Outerwear and accessories shall be included when relevant to weather, occasion, or user preference but shall not be required for every outfit. |
+| COMP-001 | P0 | An outfit shall contain a structurally valid base: exactly one top or outerwear item plus one bottom, or a one-piece garment, with footwear when appropriate. A jacket or other outerwear chosen for separates replaces the top; the generated look shall not include a hidden shirt. |
+| COMP-002 | P0 | Weather, occasion, or user preference may select outerwear as the upper-body piece for separates or as a layer over a one-piece. Accessories remain optional. A locked top shall be retained without adding outerwear; locking a top and outerwear together shall return an actionable conflict. |
 | COMP-003 | P0 | The generator shall use only active items belonging to the authenticated user's closet. |
 | COMP-004 | P0 | The generator shall exclude archived, deleted, in-laundry, packed-for-conflicting-trip, or unavailable items unless the user explicitly overrides the applicable state. |
 | COMP-005 | P0 | The generator shall enforce the user's locked pieces as hard constraints. |
@@ -606,9 +607,9 @@ The Section 3.5 release-applicability matrix is normative. AUTH, ADM, convention
 
 A structurally complete outfit normally consists of:
 
-- either one top and one bottom, or one dress/one-piece item;
+- either exactly one upper-body item (top or outerwear) and one bottom, or one dress/one-piece item;
 - footwear when the occasion conventionally requires it;
-- zero or more outerwear items;
+- at most one outerwear item; it replaces the top for separates and may accompany a one-piece;
 - zero or more accessories.
 
 The rule system may vary by occasion, culture-neutral user preference, and product configuration. It shall not assume that clothing categories imply a user's gender.

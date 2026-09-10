@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 private enum ImportReviewSection: Hashable {
     case top, photo, name, category, dominantColor, accentColor, seasons, formality
@@ -19,6 +20,7 @@ struct ClosetImportReviewBatch: Identifiable {
     let items: [ClosetItem]
     let uncertainItemIDs: Set<UUID>
     let assessments: [UUID: ImportReviewAssessment]
+    let initiallyOutlinedItemIDs: Set<UUID>
     let failures: Int
     let mode: Mode
 
@@ -26,23 +28,45 @@ struct ClosetImportReviewBatch: Identifiable {
         items: [ClosetItem],
         uncertainItemIDs: Set<UUID>,
         assessments: [UUID: ImportReviewAssessment] = [:],
+        initiallyOutlinedItemIDs: Set<UUID> = [],
         failures: Int,
         mode: Mode
     ) {
         self.items = items
         self.uncertainItemIDs = uncertainItemIDs
         self.assessments = assessments
+        self.initiallyOutlinedItemIDs = initiallyOutlinedItemIDs
         self.failures = failures
         self.mode = mode
     }
 
 #if DEBUG
     static var debugPreview: ClosetImportReviewBatch {
+        makeDebugPreview(itemsAlreadyOutlined: true)
+    }
+
+    static var debugOutlinePreview: ClosetImportReviewBatch {
+        makeDebugPreview(itemsAlreadyOutlined: false)
+    }
+
+    private static func makeDebugPreview(itemsAlreadyOutlined: Bool) -> ClosetImportReviewBatch {
         let navy = ClothingColor.palette.first { $0.name == "Navy" } ?? ClothingColor.palette[0]
         let beige = ClothingColor.palette.first { $0.name == "Beige" }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let debugPhoto = UIGraphicsImageRenderer(
+            size: CGSize(width: 240, height: 320),
+            format: format
+        ).image { context in
+            UIColor.systemGray5.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 240, height: 320))
+            UIColor.systemBlue.setFill()
+            context.fill(CGRect(x: 45, y: 40, width: 150, height: 240))
+        }.jpegData(compressionQuality: 0.9)
         let first = ClosetItem(
             name: "Navy Top 1",
             category: .top,
+            photoData: debugPhoto,
             dominantColor: navy,
             accentColor: beige,
             seasons: Set(WardrobeSeason.allCases),
@@ -51,6 +75,7 @@ struct ClosetImportReviewBatch: Identifiable {
         let second = ClosetItem(
             name: "Beige Footwear",
             category: .footwear,
+            photoData: debugPhoto,
             dominantColor: beige ?? navy,
             seasons: Set(WardrobeSeason.allCases),
             formalities: [.casual]
@@ -62,6 +87,7 @@ struct ClosetImportReviewBatch: Identifiable {
                 first.id: .init(type: .needsCheck, color: .needsCheck, cutout: .needsCheck),
                 second.id: .init(type: .strong, color: .strong, cutout: .strong)
             ],
+            initiallyOutlinedItemIDs: itemsAlreadyOutlined ? [first.id, second.id] : [],
             failures: 0,
             mode: .newImport
         )
@@ -77,10 +103,11 @@ struct ClosetImportReviewView: View {
     @State private var automaticallyNamedItemIDs: Set<UUID>
     @State private var automaticallySeasonedItemIDs: Set<UUID>
     @State private var assessments: [UUID: ImportReviewAssessment]
+    @State private var manuallyOutlinedItemIDs: Set<UUID>
     @State private var showingDiscardConfirmation = false
     @State private var showingSkipConfirmation = false
-    @State private var showingCropEditor = false
-    @State private var isProcessingCrop = false
+    @State private var showingOutlineEditor = false
+    @State private var isProcessingOutline = false
     @State private var scrollRequest: ImportReviewScrollRequest?
     @FocusState private var nameFieldIsFocused: Bool
 
@@ -110,6 +137,7 @@ struct ClosetImportReviewView: View {
             initialValue: batch.mode == .newImport ? Set(batch.items.map(\.id)) : []
         )
         _assessments = State(initialValue: batch.assessments)
+        _manuallyOutlinedItemIDs = State(initialValue: batch.initiallyOutlinedItemIDs)
     }
 
     var body: some View {
@@ -119,12 +147,14 @@ struct ClosetImportReviewView: View {
                     VStack(alignment: .leading, spacing: 22) {
                         reviewHeader.id(ImportReviewSection.top)
                         photoPreview.id(ImportReviewSection.photo)
-                        nameEditor.id(ImportReviewSection.name)
-                        categoryEditor.id(ImportReviewSection.category)
-                        dominantColorEditor.id(ImportReviewSection.dominantColor)
-                        accentColorEditor.id(ImportReviewSection.accentColor)
-                        seasonEditor.id(ImportReviewSection.seasons)
-                        formalityEditor.id(ImportReviewSection.formality)
+                        if !currentItemRequiresOutline {
+                            nameEditor.id(ImportReviewSection.name)
+                            categoryEditor.id(ImportReviewSection.category)
+                            dominantColorEditor.id(ImportReviewSection.dominantColor)
+                            accentColorEditor.id(ImportReviewSection.accentColor)
+                            seasonEditor.id(ImportReviewSection.seasons)
+                            formalityEditor.id(ImportReviewSection.formality)
+                        }
                     }
                     .padding(16)
                     .padding(.bottom, 92)
@@ -187,10 +217,10 @@ struct ClosetImportReviewView: View {
                      ? "This photo will not be added. The rest of the import will continue."
                      : "This piece will keep its existing details. The rest of the review will continue.")
             }
-            .sheet(isPresented: $showingCropEditor) {
+            .sheet(isPresented: $showingOutlineEditor) {
                 if let photoData = items[currentIndex].photoData {
-                    QuickGarmentCropEditor(imageData: photoData) { croppedData in
-                        applyCroppedPhoto(croppedData)
+                    GarmentOutlineEditor(imageData: photoData) { result in
+                        applyOutline(result)
                     }
                 }
             }
@@ -212,6 +242,17 @@ struct ClosetImportReviewView: View {
         )
     }
 
+    private var currentItemRequiresOutline: Bool {
+        batch.mode == .newImport && !manuallyOutlinedItemIDs.contains(items[currentIndex].id)
+    }
+
+    private var currentPreviewImageData: Data? {
+        if manuallyOutlinedItemIDs.contains(items[currentIndex].id) {
+            return items[currentIndex].isolatedPhotoData
+        }
+        return items[currentIndex].photoData
+    }
+
     private var reviewHeader: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -225,7 +266,14 @@ struct ClosetImportReviewView: View {
             ProgressView(value: Double(currentIndex + 1), total: Double(items.count))
                 .tint(ClosetTheme.accent)
 
-            if let assessment = currentAssessment {
+            if currentItemRequiresOutline {
+                Label(
+                    "Step 1 of 2 · Outline the item",
+                    systemImage: "hand.draw.fill"
+                )
+                .foregroundStyle(.orange)
+                .accessibilityIdentifier("import-review-outline-required")
+            } else if let assessment = currentAssessment {
                 confidenceSummary(assessment)
             } else if batch.uncertainItemIDs.contains(items[currentIndex].id) {
                 Label(
@@ -248,7 +296,7 @@ struct ClosetImportReviewView: View {
         VStack(alignment: .leading, spacing: 10) {
             ZStack {
                 ClosetTheme.card
-                if let data = items[currentIndex].outfitPhotoData,
+                if let data = currentPreviewImageData,
                    let image = UIImage(data: data) {
                     Image(uiImage: image)
                         .resizable()
@@ -256,8 +304,8 @@ struct ClosetImportReviewView: View {
                         .scaledToFit()
                         .padding(12)
                 }
-                if isProcessingCrop {
-                    ProgressView("Updating cutout…")
+                if isProcessingOutline {
+                    ProgressView("Preparing outline…")
                         .padding(14)
                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
                 }
@@ -269,25 +317,27 @@ struct ClosetImportReviewView: View {
                     .stroke(ClosetTheme.ink.opacity(0.12))
             }
 
-            HStack {
+            VStack(alignment: .leading, spacing: 10) {
                 Label(
-                    items[currentIndex].isolatedPhotoData == nil
-                        ? "Full photo — adjust crop if the garment is too small"
-                        : "Background-removed outfit preview",
-                    systemImage: items[currentIndex].isolatedPhotoData == nil
-                        ? "exclamationmark.triangle"
-                        : "checkmark.circle"
+                    currentItemRequiresOutline
+                        ? "Trace once around the item, then lift to close"
+                        : "Outline complete — background removed",
+                    systemImage: currentItemRequiresOutline
+                        ? "exclamationmark.triangle.fill"
+                        : "checkmark.circle.fill"
                 )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                Spacer()
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(currentItemRequiresOutline ? Color.orange : ClosetTheme.accent)
+
                 if items[currentIndex].photoData != nil {
-                    Button("Adjust crop", systemImage: "crop") {
-                        showingCropEditor = true
+                    Button(currentItemRequiresOutline ? "Outline item" : "Redo outline", systemImage: "lasso") {
+                        showingOutlineEditor = true
                     }
-                    .font(.caption.weight(.semibold))
-                    .disabled(isProcessingCrop)
-                    .accessibilityIdentifier("import-review-adjust-crop")
+                    .buttonStyle(.borderedProminent)
+                    .buttonBorderShape(.capsule)
+                    .frame(maxWidth: .infinity)
+                    .disabled(isProcessingOutline)
+                    .accessibilityIdentifier("import-review-outline-item")
                 }
             }
         }
@@ -326,15 +376,38 @@ struct ClosetImportReviewView: View {
                         icon: category.icon,
                         selected: items[currentIndex].category == category
                     ) {
-                        items[currentIndex].category = category
-                        refreshAutomaticSeasons()
-                        refreshAutomaticName()
-                        requestScroll(to: .dominantColor)
+                        selectType(.category(category))
                     }
                     .accessibilityIdentifier("import-review-category-\(category.rawValue)")
                 }
             }
+            Text("Specific type")
+                .font(.subheadline.weight(.semibold))
+            LazyVGrid(columns: categoryColumns, spacing: 8) {
+                ForEach(GarmentKind.allCases.filter { $0.category == items[currentIndex].category }) { kind in
+                    selectionButton(
+                        title: kind.title,
+                        icon: kind.category.icon,
+                        selected: items[currentIndex].garmentType.kind == kind
+                    ) {
+                        selectType(.kind(kind))
+                    }
+                    .accessibilityIdentifier("import-review-kind-\(kind.rawValue)")
+                }
+            }
+            Button("Continue to colours", systemImage: "arrow.down") {
+                requestScroll(to: .dominantColor)
+            }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.capsule)
+            .accessibilityIdentifier("import-review-type-continue")
         }
+    }
+
+    private func selectType(_ type: GarmentType) {
+        let id = items[currentIndex].id
+        items[currentIndex].applyType(type, updateName: automaticallyNamedItemIDs.contains(id))
+        automaticallySeasonedItemIDs.insert(id)
     }
 
     private var dominantColorEditor: some View {
@@ -484,7 +557,9 @@ struct ClosetImportReviewView: View {
     }
 
     private var currentItemIsValid: Bool {
-        !items[currentIndex].name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !currentItemRequiresOutline &&
+            !isProcessingOutline &&
+            !items[currentIndex].name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
             !items[currentIndex].seasons.isEmpty &&
             !items[currentIndex].formalities.isEmpty
     }
@@ -558,6 +633,7 @@ struct ClosetImportReviewView: View {
         confirmedItemIDs.remove(removedID)
         automaticallyNamedItemIDs.remove(removedID)
         automaticallySeasonedItemIDs.remove(removedID)
+        manuallyOutlinedItemIDs.remove(removedID)
         assessments[removedID] = nil
 
         if currentIndex >= items.count {
@@ -572,49 +648,59 @@ struct ClosetImportReviewView: View {
         guard automaticallyNamedItemIDs.contains(id) else { return }
         items[currentIndex].name = ClothingTypeDetector.metadataName(
             category: items[currentIndex].category,
-            dominantColor: items[currentIndex].dominantColor
+            dominantColor: items[currentIndex].dominantColor,
+            kind: items[currentIndex].garmentType.kind
         )
     }
 
     private func refreshAutomaticSeasons() {
         let id = items[currentIndex].id
         guard automaticallySeasonedItemIDs.contains(id) else { return }
-        items[currentIndex].seasons = ClosetImageImporter.defaultSeasons(
-            for: items[currentIndex].category
-        )
+        items[currentIndex].seasons = items[currentIndex].garmentType.kind?.suggestedSeasons
+            ?? items[currentIndex].category.suggestedSeasons
     }
 
     private func requestScroll(to section: ImportReviewSection) {
         scrollRequest = ImportReviewScrollRequest(section: section)
     }
 
-    private func applyCroppedPhoto(_ croppedData: Data) {
+    private func applyOutline(_ result: GarmentOutlineResult) {
         let itemID = items[currentIndex].id
-        isProcessingCrop = true
+        guard let index = items.firstIndex(where: { $0.id == itemID }) else { return }
+
+        items[index].photoData = result.sourceImageData
+        items[index].isolatedPhotoData = result.isolatedImageData
+        manuallyOutlinedItemIDs.insert(itemID)
+        if index == currentIndex {
+            refreshAutomaticSeasons()
+            refreshAutomaticName()
+        }
+        isProcessingOutline = true
+
         Task {
-            let result = await Task.detached(priority: .userInitiated) {
-                let isolated = ImageUtilities.isolatedGarmentData(from: croppedData)
-                let colors = ImageUtilities.suggestedColors(from: isolated ?? croppedData)
-                return (isolated, colors)
+            let processed = await Task.detached(priority: .userInitiated) {
+                ImageUtilities.suggestedColors(from: result.isolatedImageData)
             }.value
-            guard let index = items.firstIndex(where: { $0.id == itemID }) else { return }
-            items[index].photoData = croppedData
-            items[index].isolatedPhotoData = result.0
-            if let colors = result.1 {
+            guard let index = items.firstIndex(where: { $0.id == itemID }) else {
+                isProcessingOutline = false
+                return
+            }
+            if let colors = processed {
                 items[index].dominantColor = colors.dominant
                 items[index].accentColor = colors.accent
             }
-            if let existing = assessments[itemID] {
+            if assessments[itemID] != nil {
+                let previousType = assessments[itemID]?.type ?? .needsCheck
                 assessments[itemID] = ImportReviewAssessment(
-                    type: existing.type,
-                    color: result.1 == nil ? .needsCheck : (result.0 == nil ? .likely : .strong),
-                    cutout: result.0 == nil ? .needsCheck : .strong
+                    type: previousType,
+                    color: processed == nil ? .needsCheck : .strong,
+                    cutout: .strong
                 )
             }
             if index == currentIndex {
                 refreshAutomaticName()
             }
-            isProcessingCrop = false
+            isProcessingOutline = false
         }
     }
 

@@ -1,66 +1,6 @@
 import UIKit
 import Vision
 
-enum GarmentKind: String, CaseIterable, Equatable {
-    case tShirt, shirt, blouse, tankTop, sweater, hoodie
-    case trousers, jeans, shorts, skirt, leggings
-    case dress, jumpsuit
-    case coat, jacket, blazer, cardigan
-    case sneakers, shoes, loafers, boots, sandals
-    case watch, bag, scarf, belt, tie, hat
-
-    var title: String {
-        switch self {
-        case .tShirt: "T-Shirt"
-        case .tankTop: "Tank Top"
-        default: rawValue.capitalized
-        }
-    }
-
-    var category: ClothingCategory {
-        switch self {
-        case .tShirt, .shirt, .blouse, .tankTop, .sweater: .top
-        case .trousers, .jeans, .shorts, .skirt, .leggings: .bottom
-        case .dress, .jumpsuit: .onePiece
-        case .hoodie, .coat, .jacket, .blazer, .cardigan: .outerwear
-        case .sneakers, .shoes, .loafers, .boots, .sandals: .footwear
-        case .watch, .bag, .scarf, .belt, .tie, .hat: .accessory
-        }
-    }
-
-    var suggestedSeasons: Set<WardrobeSeason> {
-        switch self {
-        case .shorts, .tankTop, .sandals:
-            [.spring, .summer]
-        case .coat, .boots:
-            [.autumn, .winter]
-        case .sweater, .hoodie, .cardigan, .scarf:
-            [.spring, .autumn, .winter]
-        case .dress, .skirt:
-            [.spring, .summer, .autumn]
-        default:
-            Set(WardrobeSeason.allCases)
-        }
-    }
-
-    var suggestedFormalities: Set<FormalityLevel> {
-        switch self {
-        case .tShirt, .tankTop, .hoodie, .shorts, .leggings, .sneakers:
-            [.active, .veryCasual, .casual]
-        case .jeans, .sweater, .cardigan, .sandals, .hat, .bag:
-            [.veryCasual, .casual, .smartCasual]
-        case .shirt, .blouse, .trousers, .jacket, .shoes, .watch, .belt:
-            [.casual, .smartCasual, .business]
-        case .dress, .coat, .boots, .scarf:
-            [.casual, .smartCasual, .business, .formal]
-        case .jumpsuit, .skirt:
-            [.casual, .smartCasual, .business]
-        case .blazer, .loafers, .tie:
-            [.smartCasual, .business, .formal]
-        }
-    }
-}
-
 struct ClothingTypeDetection: Equatable {
     enum Source: Equatable {
         case filename
@@ -241,8 +181,9 @@ enum ClothingTypeDetector {
         return "Imported \(garmentName) \(index)"
     }
 
-    static func metadataName(category: ClothingCategory, dominantColor: ClothingColor) -> String {
-        "\(dominantColor.name) \(category.title)"
+    static func metadataName(category: ClothingCategory, dominantColor: ClothingColor, kind: GarmentKind? = nil) -> String {
+        let title = kind.flatMap { $0.category == category ? $0.title : nil } ?? category.title
+        return "\(dominantColor.name) \(title)"
     }
 
     private static func classify(_ data: Data) -> ClothingTypeDetection {
@@ -309,7 +250,7 @@ enum ClothingTypeDetector {
             guard let kind = match.kind else { return false }
             switch kind {
             case .dress, .jumpsuit, .watch, .bag, .scarf, .belt, .tie, .hat,
-                    .tShirt, .shirt, .blouse, .tankTop, .sweater:
+                    .tShirt, .longSleeve, .shirt, .blouse, .tankTop, .sweater:
                 return true
             case .trousers, .jeans, .shorts, .skirt, .leggings, .hoodie, .coat, .jacket,
                     .blazer, .cardigan, .sneakers, .shoes, .loafers, .boots, .sandals:
@@ -399,10 +340,12 @@ enum ClothingTypeDetector {
         }
 
         let kindRules: [(GarmentKind, [String])] = [
+            (.hoodie, ["hoodie", "hooded sweatshirt"]),
+            (.jacket, ["windbreaker", " jacket "]),
+            (.longSleeve, ["long sleeve", "longsleeve", "long sleeved"]),
             (.tShirt, ["t shirt", "tshirt", "tee shirt", " tee "]),
             (.tankTop, ["tank top", "singlet"]),
             (.blouse, ["blouse"]),
-            (.hoodie, ["hoodie", "hooded sweatshirt"]),
             (.sweater, ["sweater", "sweatshirt", "pullover", "jersey"]),
             (.shirt, ["dress shirt", "oxford shirt", " shirt "]),
             (.shorts, ["short pants", " shorts ", "swim trunks", "trunks"]),
@@ -414,7 +357,6 @@ enum ClothingTypeDetector {
             (.dress, ["shirt dress", " dress ", "gown"]),
             (.blazer, ["blazer", "sport coat"]),
             (.coat, ["overcoat", "raincoat", "trench", "parka", " coat "]),
-            (.jacket, ["windbreaker", " jacket "]),
             (.cardigan, ["cardigan"]),
             (.sneakers, ["sneaker", "trainer", "running shoe", "walking shoe", "tennis shoe", "athletic shoe", "basketball shoe", "cleat"]),
             (.loafers, ["loafer", "moccasin"]),
@@ -482,16 +424,17 @@ struct ImportedClosetPiece {
 }
 
 enum ClosetImageImporter {
-    static func makePiece(from rawData: Data, filename: String? = nil, index: Int) async -> ImportedClosetPiece? {
+    static func makePiece(
+        from rawData: Data,
+        filename: String? = nil,
+        index: Int,
+        confirmedOutlineData: Data? = nil
+    ) async -> ImportedClosetPiece? {
         guard let prepared = await Task.detached(priority: .userInitiated, operation: {
             ImageUtilities.preparedImageData(from: rawData)
         }).value else { return nil }
-        async let detectionTask = ClothingTypeDetector.detect(in: prepared, filename: filename)
-        async let isolationTask = Task.detached(priority: .userInitiated) {
-            ImageUtilities.isolatedGarmentData(from: prepared)
-        }.value
-        let (detection, isolatedPhotoData) = await (detectionTask, isolationTask)
-        let colorSource = isolatedPhotoData ?? prepared
+        let detection = await ClothingTypeDetector.detect(in: prepared, filename: filename)
+        let colorSource = confirmedOutlineData ?? prepared
         let colors = await Task.detached(priority: .userInitiated) {
             ImageUtilities.suggestedColors(from: colorSource)
         }.value
@@ -508,11 +451,12 @@ enum ClosetImageImporter {
         let item = ClosetItem(
             name: name,
             category: detection.category,
+            kind: detection.kind,
             photoData: prepared,
-            isolatedPhotoData: isolatedPhotoData,
+            isolatedPhotoData: confirmedOutlineData,
             dominantColor: dominantColor,
             accentColor: colors?.accent,
-            seasons: detection.kind?.suggestedSeasons ?? Set(WardrobeSeason.allCases),
+            seasons: detection.kind?.suggestedSeasons ?? detection.category.suggestedSeasons,
             formalities: detection.kind?.suggestedFormalities ?? defaultFormalities(for: detection.category)
         )
         return .init(
@@ -521,25 +465,16 @@ enum ClosetImageImporter {
             assessment: .make(
                 detection: detection,
                 foundColors: colors != nil,
-                isolatedGarment: isolatedPhotoData != nil
+                isolatedGarment: confirmedOutlineData != nil
             )
         )
     }
 
     static func defaultFormalities(for category: ClothingCategory) -> Set<FormalityLevel> {
-        switch category {
-        case .footwear: [.active, .veryCasual, .casual, .smartCasual]
-        case .outerwear: [.casual, .smartCasual, .business]
-        case .accessory: [.casual, .smartCasual, .business, .formal]
-        case .top, .bottom, .onePiece: [.veryCasual, .casual, .smartCasual]
-        }
+        category.suggestedFormalities
     }
 
     static func defaultSeasons(for category: ClothingCategory) -> Set<WardrobeSeason> {
-        switch category {
-        case .outerwear: [.spring, .autumn, .winter]
-        case .onePiece: [.spring, .summer, .autumn]
-        case .top, .bottom, .footwear, .accessory: Set(WardrobeSeason.allCases)
-        }
+        category.suggestedSeasons
     }
 }

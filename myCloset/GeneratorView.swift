@@ -181,7 +181,7 @@ struct GeneratorView: View {
                 readinessMetric("ONE-PIECE", count: availableCount(in: .onePiece))
             }
 
-            Text("A look needs a top and bottom, or one one-piece. In Closet, use the + menu’s Re-analyze photo details action to repair older automatic labels in one pass.")
+            Text("A look needs a top or jacket with a bottom, or one one-piece. In Closet, choose the specific type for each piece to keep its name and seasons accurate.")
                 .font(.caption)
                 .foregroundStyle(ClosetTheme.secondaryInk)
                 .fixedSize(horizontal: false, vertical: true)
@@ -300,7 +300,7 @@ struct GeneratorView: View {
                             Text(item.name)
                                 .font(.subheadline.weight(.semibold))
                                 .lineLimit(1)
-                            Text("\(item.category.title.uppercased()) / \(item.dominantColor.name.uppercased())")
+                            Text("\(item.typeTitle.uppercased()) / \(item.dominantColor.name.uppercased())")
                                 .font(.system(size: 8, weight: .medium, design: .monospaced))
                                 .tracking(0.8)
                                 .foregroundStyle(ClosetTheme.secondaryInk)
@@ -431,7 +431,7 @@ struct GeneratorView: View {
         )
 
         if case .success(let updated) = result,
-           store.resolve(updated).contains(where: { $0.category == item.category }) {
+           store.resolve(updated).contains(where: { $0.category.outfitSlot == item.category.outfitSlot }) {
             apply(result)
         } else {
             generationError = .noMatch
