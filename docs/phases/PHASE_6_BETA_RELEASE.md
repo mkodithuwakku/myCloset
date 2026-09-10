@@ -4,6 +4,8 @@
 **Primary SRS groups:** SEC, PRIV, A11Y, PERF, REL, OBS, COMPAT, STORE
 **Goal:** Turn the applicable local-only P0 product into a compliant public iPhone release with no backend operating bill.
 
+The product owner has selected App Store preparation for the current local version as the next milestone. Entry-gate assessment and release-scope confirmation are the first steps; this document remains **Planned** until that work starts.
+
 ## Entry criteria
 
 - Product owner confirms which SRS P0 features enter the release candidate.

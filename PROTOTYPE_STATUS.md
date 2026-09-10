@@ -87,7 +87,7 @@ xcodebuild -project myCloset.xcodeproj \
 
 ## Recommended next slice
 
-The next highest-value vertical slice is **complete garment capture and cleanup**:
+The next planned milestone is **qualifying this local version for TestFlight and the App Store**, starting with scope and release-gate assessment. Phase 1 capture and cleanup work still includes:
 
 1. direct camera capture with category-specific guides;
 2. outline-point/edge refinement, undo, and physical-device qualification building on the required closed-outline mask;

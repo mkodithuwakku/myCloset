@@ -200,3 +200,13 @@ Inventory is now **91 unit + 10 UI + 8 host checks**. This is an experimental Ph
 Preview-layout rerun: **1 targeted UI test passed**, `** TEST SUCCEEDED **`, result bundle `myClosetTests-1lniyn6e/Tests.xcresult`, log `/tmp/myCloset-refinement-layout-tests.log`. Exported comparison screenshots confirmed matching preview geometry. A hidden-text sizing aid was then replaced with identical visible guidance in both modes to keep all guidance visible; the final rerun is recorded below. Documentation link/status and `git diff --check` gates passed.
 
 Final comparison rerun: **1 targeted UI test passed**, `** TEST SUCCEEDED **`, result bundle `myClosetTests-0nmwtlb4/Tests.xcresult`, log `/tmp/myCloset-refinement-comparison-tests.log`. Both exported screenshots show the same garment position/scale, all shoe guidance, both version choices, and the corresponding apply action.
+
+
+## Publication and portfolio documentation
+
+The refinement slice was accepted for merge into `main`. The README was rewritten around the product, implemented features, source-linked engineering decisions, current architecture and tradeoffs, setup, test evidence, and the next TestFlight/App Store preparation milestone. Planning documents record that priority while keeping uncompleted release gates open.
+
+- Captured and inspected current Home and Generate screenshots from the signed refinement build using only the built-in 12-piece sample fixture on a newly created, disposable iPhone 17 Pro Simulator. The device was isolated from the interactive closet; no personal garment photos were published.
+- All **8 host-side launch-workflow checks** passed again.
+- Markdown links/status, README image targets/PNG signatures, and diff-whitespace checks passed.
+- No application source changed in this documentation update. App tests were not rerun; the earlier 91-unit/two-targeted-UI run and comparison reruns remain the evidence for the merged code. Physical-device and full UI release qualification remain open.

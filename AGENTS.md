@@ -180,7 +180,7 @@ Do not duplicate long specifications here. Update the authoritative document and
 
 ## 10. Phase 1 remaining priorities
 
-Unless the user reprioritizes, the highest-value next slice is:
+The product owner has prioritized qualifying the current local version for TestFlight and the App Store next. Start with release-scope and gate assessment in `docs/phases/PHASE_6_BETA_RELEASE.md`; do not infer that incomplete requirements are waived. Remaining Phase 1 work includes:
 
 1. direct camera capture with category-specific framing guides;
 2. outline-point/edge refinement, undo, and physical-device qualification building on the required closed-outline mask;

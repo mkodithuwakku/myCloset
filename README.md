@@ -1,202 +1,199 @@
 # myCloset
 
+**A native iPhone wardrobe app with on-device garment isolation and outfit recommendations.**
+
 [![iOS CI](https://github.com/mkodithuwakku/myCloset/actions/workflows/ios.yml/badge.svg)](https://github.com/mkodithuwakku/myCloset/actions/workflows/ios.yml)
 ![Platform](https://img.shields.io/badge/platform-iPhone-111111)
 ![iOS](https://img.shields.io/badge/iOS-17%2B-111111)
 ![Swift](https://img.shields.io/badge/Swift-5-orange)
-![Phase](https://img.shields.io/badge/phase-1%20in%20progress-c45f45)
+![Status](https://img.shields.io/badge/status-pre--release-c45f45)
 
-myCloset is a native SwiftUI iPhone application that turns a private wardrobe into practical outfit recommendations. Users can add clothing, confirm detected colors and metadata, generate outfits for an occasion and formality level, lock pieces they want to wear, reroll the remaining pieces, and retain saved or worn outfit history.
+myCloset turns photos of clothes into a private, searchable wardrobe and outfits built from pieces the user actually owns. Import a garment, refine its cutout, confirm its details, and generate a look for an occasion. Lock a favorite piece, swap the rest, and save what worked.
 
-> **Project status:** Phase 0 local functional prototype is complete and Phase 1 capture/wardrobe quality is in progress. The approved first App Store release remains account-free and local-only; Following is a truthful Coming Soon screen. If released users show interest, Phase 7 adds CloudKit profiles and following without uploading private closets or introducing a separate hosting subscription.
+The project brings together **SwiftUI interaction design, image processing, constrained recommendation logic, local persistence, and automated testing**. Clothing photos and outfit intelligence stay on-device; the core experience requires no account, backend, API key, or third-party package.
 
-![myCloset Home prototype](docs/assets/prototype-home.png)
+> **Status:** Phase 0 local functional prototype is complete; Phase 1 capture and wardrobe quality work is in progress. Version `0.1.0` runs locally. The next milestone is qualifying this version for TestFlight and the App Store; it has not been released on the App Store. Edge refinement is experimental, and physical-device qualification remains open.
 
-## Why this project exists
+[Features](#features) · [Engineering highlights](#engineering-highlights) · [Architecture](#architecture) · [Run locally](#run-locally) · [Tests](#tests-and-verification) · [Release roadmap](#release-roadmap)
 
-Choosing an outfit is a constraint problem: the pieces must belong to the user, be available, work together structurally, and feel coherent for the weather, season, and occasion. myCloset makes those constraints explicit while keeping the experience quick and understandable.
+## App preview
 
-The long-term product is designed around three principles:
+<table>
+  <tr><th>Outfit of the Day</th><th>Generate and refine a look</th></tr>
+  <tr>
+    <td><img src="docs/assets/prototype-home.png" alt="myCloset Home with a composed outfit from the built-in sample closet" width="280"></td>
+    <td><img src="docs/assets/prototype-generate.png" alt="myCloset Generate showing a seasonal outfit assembled from the built-in sample pieces" width="280"></td>
+  </tr>
+</table>
 
-1. **Private by default.** Closet, history, trips, preferences, and original garment images stay in the app container; later public social data is explicit and detached.
-2. **Explainable recommendations.** Hard rules remain deterministic; ranking and future AI assistance cannot bypass ownership, privacy, or outfit validity.
-3. **Zero-operated-backend core.** Core functionality runs on-device; optional post-release social uses CloudKit within Apple Developer Program membership.
+Screenshots show the current Simulator build using the built-in development sample closet. Real users start with an empty closet and import their own photos. Personal test photos are excluded from Git.
 
-## Current capabilities
+## Features
 
-| Area | Working in Phase 0 |
+| Area | Implemented behavior |
 |---|---|
-| Home | Minimal Outfit of the Day canvas that layers isolated garments in a body-aligned look, with compact weather context and secondary actions |
-| Closet | Local creation, bulk image import, 29 selectable garment types with matching automatic names and editable seasons/formality, type search/filtering, favorites, availability, archive, and Delete in the item hold menu |
-| Item intelligence | Visible batch-analysis progress, filename-first suggestions plus on-device foreground-shape analysis, expanded shoe and outerwear recognition, a required simple lasso for every imported or replacement photo, outline-guided edge refinement with a comparison preview and transparent garment renditions, garment-only perceptual color sampling, separate editable type/color/cutout guidance, kind-aware season defaults, skippable guided review, single-item re-analysis, metadata-synchronized default names, and an import/readiness summary |
-| Generator | Tighter body-aligned layered outfit composition with standardized footwear scale, automatic first look, visual occasion/formality brief, locked pieces, single-piece reroll, reliably different alternatives when the closet permits, and visible actionable feedback after every generation attempt |
-| Weather | Optional approximate current location, manual city lookup, Open-Meteo conditions, or date-derived season fallback |
-| History | Separate saved and worn outfit collections using immutable snapshots |
-| Profile | Local display name, handle, biography, and profile image editing |
-| Following | Minimal Coming Soon state for the gated post-release CloudKit social phase; no fake profiles or posts |
-| Persistence | Local JSON application-support storage that survives relaunches |
-| Tests | 91 unit tests and 10 end-to-end UI journey tests |
+| **Capture and import** | Photos and Files batches of up to 50 images, visible progress, per-photo skip/recovery, required outlining, guided metadata review, and import summaries |
+| **Garment cutouts** | Closed finger-drawn outlines, multiple regions, rotate/reset/retrace, transparent PNG output, and experimental automatic edge refinement with a **Refined / My outline** comparison |
+| **Editable suggestions** | Filename and on-device visual type suggestions, garment-only dominant/accent colors, separate confidence guidance, and automatic names that preserve manual edits |
+| **Clothing taxonomy** | 29 specific types—including Shorts, Long Sleeve, Jacket, Jeans, and Hoodie—with matching editable season/formality defaults; multiple seasons and formality levels per item |
+| **Closet management** | Create, edit, search, filter by type, favorite, archive, mark availability, show duplicate-name warnings, and delete from the long-press menu with confirmation |
+| **Outfit generation** | Daily looks, occasion briefs, six formality levels, explanations, piece locks, individual swaps, and full rerolls with closet-readiness recovery |
+| **Outfit presentation** | A shared image composition for Home and Generate, proportionate footwear, smaller tops/jackets, and limited waistband overlap; a jacket replaces the shirt in separates |
+| **Weather fallback** | Optional approximate location → manual city → date-derived season; live conditions use Open-Meteo through the weather service |
+| **History and profile** | Separate saved/worn outfit snapshots and an editable local profile; later closet edits and deletions preserve historical outfits |
+| **Offline core** | Closet, profile, history, and generation persist locally and work without live weather. Following is a clearly labeled **Coming Soon** screen |
 
-Hold a closet item and choose **Delete** to remove it after confirmation; saved and worn history stays intact. Import review and the item editor offer specific types such as **Shorts**, **Long Sleeve**, **Jacket**, **Jeans**, and **Hoodie**. Choosing a type updates its default name and seasons (for example, shorts use spring/summer; jackets use spring/autumn/winter). Custom names and all season choices remain editable.
+The [implementation status](PROTOTYPE_STATUS.md) distinguishes delivered features, prototype limitations, and deferred scope.
 
-For shoes, outline one shoe, choose **Add another area**, then outline the other; leave the space between them outside both areas. Home and Generate give footwear a larger proportional frame and keep tops/jackets smaller with limited waistband overlap so the pants remain visible. Generated separates contain a top **or** jacket with a bottom: selecting a jacket replaces the shirt, including during rerolls. Locked pieces are preserved, and a top/jacket double lock asks the user to resolve the conflict.
+## Engineering highlights
 
-The authoritative implementation boundary is maintained in [Prototype Status](PROTOTYPE_STATUS.md).
+### An imprecise outline becomes a reviewable cutout
 
-## Quick start
+A finger trace communicates which item the user wants. The image pipeline uses that outline to select relevant Vision foreground instances and look for nearby fabric edges. When Vision is unavailable or unsuitable, a local color model compares the garment interior with surrounding background in a narrow band around the outline. It can remove background included by the trace and recover small areas of fabric outside it.
 
-### Requirements
+The implementation checks each outlined region, rejects candidates that lose too much garment interior or expand into distant background, and removes disconnected specks. This matters for asymmetric hems and separate shoes: a plausible overall mask must not hide the loss of one region. Source images are normalized to at most 1,200 pixels; color refinement analyzes a bounded 600-pixel grid. Work runs off the main actor, and cancellation plus request IDs prevent stale results from replacing a new trace.
 
-- macOS with Xcode 26 or later recommended
-- An iPhone simulator running iOS 17 or later
-- No API keys, package manager, or backend
+Users compare **Refined** with **My outline** before applying a result. Manual recovery remains available. Similar colors, rugs, shadows, fine trim, and large tracing errors can still require correction. The implementation uses Apple Vision and local heuristics; no custom model training or cloud inference is claimed.
 
-### Run the app
+**Code:** [GarmentEdgeRefiner](myCloset/GarmentEdgeRefiner.swift), [outline editor](myCloset/GarmentOutlineEditor.swift), [image utilities](myCloset/ImageUtilities.swift), [regression tests](myClosetTests/GarmentEdgeRefinerTests.swift).
 
-1. Clone the repository.
-2. Open `myCloset.xcodeproj`.
-3. Select the shared `myCloset` scheme and an iPhone simulator.
-4. Press **Run**.
-5. Open **Closet → Import** and choose your own clothing images. The app intentionally starts empty—there is no demo wardrobe mixed into your items.
-6. Open Generate to see an automatic unlocked look. Open **Brief** only when you want to change the scene or dressed-up level, then choose **Another look** for a different valid combination when your closet has alternatives. You can lock a piece after it appears if you want it to stay during rerolls.
+### Recommendation variety within explicit rules
 
-### Seed a test closet from laptop images
+The outfit engine separates hard validity checks from soft preferences. Availability, exclusions, outfit structure, and locked-piece conflicts are handled before selection. Season and formality guide candidate pools; color compatibility, favorites, and randomized ranking provide variety among eligible pieces. A sparse closet falls back to available owned items with an explanation.
 
-1. Put up to 50 garment images in the repository's `TestClosetImages/` directory and boot the iPhone Simulator. These local images are ignored by Git. The loader transparently converts WebP files to temporary JPEG copies because Simulator Photos does not accept WebP directly.
-2. From the repository root, load the folder into the simulator's Photos library. On every run, the loader hashes the Simulator's actual camera-roll files and safely skips content already present, including same-content duplicates in the folder. Its saved markers are advisory only, so replacing or clearing app data cannot cause repeated imports or prevent a deliberately removed photo from being restored:
+Separates contain a top **or** outerwear plus a bottom. Jackets replace shirts, and rerolls preserve the other valid pieces. Repeated randomized tests check invariants rather than asserting one exact outfit.
+
+**Code:** [OutfitEngine](myCloset/OutfitEngine.swift), [engine tests](myClosetTests/OutfitEngineTests.swift), [constraint decision](docs/decisions/0002-hybrid-recommendation-engine.md), [garment and jacket rules](docs/decisions/0005-garment-types-and-jacket-composition.md).
+
+### Local data with stable history
+
+An observable `@MainActor` store coordinates app state and atomic Codable JSON writes in Application Support. Saved and worn looks copy garment details into immutable snapshots, so editing or deleting a closet item does not rewrite history. Optional garment subtypes retain compatibility with older generic records. Tests inject a temporary storage URL and verify reloads and snapshot behavior.
+
+**Code:** [ClosetStore](myCloset/ClosetStore.swift), [domain models](myCloset/Models.swift), [store tests](myClosetTests/ClosetStoreTests.swift).
+
+### Recovery is part of the interaction
+
+Image imports expose progress, uncertainty, explicit confirmation, and per-photo skipping. Type or color changes update suggested names while retaining custom names. Weather can fall back to a city or season. An incomplete closet explains what is missing and routes the user to corrections. Native controls, text labels, and accessibility identifiers support interaction and UI testing; a full accessibility audit remains a release gate.
+
+The development workflow also addresses a reproduced Simulator launch failure: the shared Run action waits for the selected Simulator and refreshes the signed installation without erasing closet data. Automated tests run on their own disposable Simulator.
+
+## Architecture
+
+| Layer | Technologies and responsibility |
+|---|---|
+| Presentation | SwiftUI, native navigation/forms, reusable garment composition and controls |
+| Image pipeline | Vision, UIKit, Core Graphics, Core Image, and Swift concurrency for normalization, masks, refinement, and palette suggestions |
+| Domain | Swift value types, explicit garment/outfit rules, soft scoring, and snapshots |
+| Persistence | Foundation/Codable, atomic local JSON, injected storage for tests |
+| Weather | Core Location, geocoding, URLSession/Open-Meteo, and season fallback |
+| Verification | XCTest/XCUITest, Python host checks, shared Xcode scheme/test plan, and GitHub Actions |
+
+```mermaid
+flowchart LR
+    Views["SwiftUI feature views"] --> Store["ClosetStore · MainActor"]
+    Store --> Engine["OutfitEngine · validity + ranking"]
+    Store --> Disk["Atomic local JSON · snapshots"]
+    Views --> Outline["GarmentOutlineEditor"]
+    Outline --> Refiner["GarmentEdgeRefiner · Vision + local color model"]
+    Views --> Importer["ClothingTypeDetector / ClosetImageImporter"]
+    Importer --> Images["ImageUtilities · renditions + colors"]
+    Refiner --> Images
+    Views --> Weather["WeatherService"]
+    Weather --> Location["Core Location / geocoding"]
+    Weather --> Conditions["Open-Meteo or season fallback"]
+```
+
+The current store combines state, persistence, and orchestration. That is deliberate prototype debt: schema versioning, file-backed image storage, and clearer repository boundaries remain planned. The weather service also needs stronger provider isolation and resilience tests. These tradeoffs and the approved local release boundary are documented in [Architecture](docs/ARCHITECTURE.md) and [ADR-0003](docs/decisions/0003-zero-backend-app-store-release.md).
+
+## Run locally
+
+**Requirements:** macOS, Xcode 26.x recommended, and an installed iPhone Simulator runtime. The project uses Swift 5 language mode and targets iOS 17.0 or later. Verification has used Xcode 26.3 and iOS 26.3.1 Simulator; the full supported-device matrix is not yet qualified.
+
+```sh
+git clone https://github.com/mkodithuwakku/myCloset.git
+cd myCloset
+open myCloset.xcodeproj
+```
+
+1. Select the shared **myCloset** scheme and an iPhone Simulator, then press **Run**.
+2. Open **Closet → Import** and choose your photos, or use **Closet → + → Import image files**.
+3. Trace near the garment edge, compare the proposed refinement, and apply the preferred cutout. For shoes, outline one shoe, choose **Add another area**, then outline the other, leaving the gap outside both outlines.
+4. Confirm name, type, colors, seasons, and formality. Suggestions remain editable; accidental photos can be skipped.
+5. Open **Generate**, choose a brief if desired, and lock or reroll pieces. Save a look or mark it worn to retain a snapshot.
+
+A top or jacket plus a bottom—or a one-piece—provides the base for a look; footwear is added when available. For a reproducible demo without importing photos, add `-loadPrototypeSamples` to the shared scheme's Run arguments in a separate development Simulator. This Debug-only fixture contains 12 sample pieces; it is not real-user onboarding.
+
+<details>
+<summary>Load local test images and retry analysis</summary>
+
+Put your own JPEG, PNG, HEIC, HEIF, or WebP files in the Git-ignored `TestClosetImages/` directory, boot the intended Simulator, then run:
 
 ```sh
 ./scripts/load_test_closet_images.sh
 ```
 
-3. In the app, open **Closet**, tap **Import**, and multi-select the images. A visible counter reports which image is being analyzed. Every selected image then starts with one required **Outline item** step: drag once just outside the clothing edge and lift to close the lasso automatically. The app then tries to refine nearby fabric edges on-device, removing background included by an imprecise trace and recovering small areas of fabric outside it. Compare **Refined** against **My outline** and inspect sleeves, hems and both shoes before choosing **Use refined cutout**. The checkerboard represents transparency. If the edge is ambiguous, the original outline remains available unchanged. **Use this outline** keeps the exact shaded area; **Clear and retrace**, **Add another area**, rotation and reset remain available. Refinement is experimental: similar colors, shadows, fine details, and large tracing errors can still require retracing. Metadata remains unavailable until that image has a valid outline. The app then proposes editable on-device name, type, dominant/accent color, season, and formality values, sampling colors from the outlined item rather than the floor. Skip accidental photos without cancelling the batch. The review advances through related fields and returns to the top for each next piece. Changing the suggested type or main color updates the default name automatically; typing a custom name keeps that name fixed. After confirmation, the summary shows imported category counts and whether the closet can generate an outfit. To repair all older imports, choose **Closet → + → Re-analyze photo details**; to retry only one piece, open its editor and choose **Re-analyze this photo**.
+The loader converts WebP for Simulator Photos and checks content hashes to avoid duplicate imports. For predictable filename suggestions, import descriptively named files such as `navy-shirt.jpg` or `black-jeans.png` through Files.
 
-For deterministic type detection, use descriptive names such as `navy-shirt.jpg`, `black-jeans.png`, `white-sneakers.jpeg`, `camel-coat.jpg`, and `silver-watch.png`, make those files available in the simulator's Files app (for example through iCloud Drive), then choose **Closet → + → Import image files**. Filename rules take priority over image classification.
+Use **Closet → + → Re-analyze photo details** for a batch, or open one item's editor and choose **Re-analyze this photo**. A new outline can replace an older cutout. Custom metadata remains editable throughout review.
 
-The shared Xcode Run action waits for the selected simulator to finish booting and refreshes the signed app installation before launching. This clears stale installation placeholders that cause “Busy / Application failed preflight checks,” while retaining the app’s stored closet data.
+</details>
 
-Command-line build (compile-only; do not install this unsigned product):
+Build, signing, launch-recovery, and debugging commands are in the [Development Guide](docs/DEVELOPMENT.md).
 
-```sh
-xcodebuild \
-  -project myCloset.xcodeproj \
-  -scheme myCloset \
-  -sdk iphonesimulator \
-  -destination 'generic/platform=iOS Simulator' \
-  -derivedDataPath /tmp/myClosetDerivedData \
-  CODE_SIGNING_ALLOWED=NO \
-  build
-```
+## Tests and verification
 
-### Run the tests
+**Inventory: 91 unit tests and 10 UI journey tests, plus 8 host-side launch-workflow checks.**
 
-Run tests on an automatically created, separate simulator so they cannot replace or reset the app you use in Xcode:
+| Coverage | Examples |
+|---|---|
+| Recommendation invariants | Repeated generation, availability/exclusions, locked pieces, jacket/top conflicts, and single/full replacements |
+| Persistence and history | Atomic save/reload, legacy subtype compatibility, deletion, and immutable saved/worn snapshots |
+| Image processing | Invalid/large input, transparent masks, orientation, asymmetric hems, separate shoes, color suggestions, refinement fallback, and cancellation |
+| UI journeys | Import/outline/review, correction and skip recovery, refinement comparison, closet editing/deletion, and generation |
+| Host tooling | Signed installation preparation, destination isolation, error propagation, and safe Simulator selection |
+
+Run from the repository root:
 
 ```sh
 ./scripts/test_ios.py
 python3 -m unittest discover -s scripts/tests -v
+./scripts/verify_docs.sh
 ```
 
-The runner deletes only its own temporary simulator after testing and retains the result bundle at the printed path. The eight host-side checks cover simulator launch preparation; the app inventory remains 91 unit tests and 10 UI tests.
+The app test runner creates and removes its own temporary Simulator, keeping reset fixtures away from the interactive closet, and retains its result bundle. Add `-only-testing:myClosetTests` or `-only-testing:myClosetUITests` for narrower runs.
 
-See [Testing](docs/TESTING.md) for unit-only, UI-only, CI, coverage, troubleshooting, and test-quality guidance.
+**Latest evidence:** the refinement change passed all 91 unit tests and two targeted UI journeys, with additional successful comparison-layout reruns and visual inspection. The complete 10-test UI suite and physical-device matrix were not rerun for that slice. See the [dated execution report](docs/testing/TEST_EXECUTION_2026-09-09.md) for commands, results, initial failures, and remaining qualification. Inventory is not a claim that every test ran in the latest session.
 
-## Architecture at a glance
+[GitHub Actions](.github/workflows/ios.yml) is configured to build and run the full app test plan, check documentation, and run the host checks on pushes and pull requests to `main`. Detailed strategy and coverage mappings are in [Testing](docs/TESTING.md) and [Requirements Traceability](docs/REQUIREMENTS_TRACEABILITY.md).
 
-```mermaid
-flowchart LR
-    UI["SwiftUI feature views"] --> Store["ClosetStore"]
-    UI --> Weather["WeatherService"]
-    Store --> Engine["OutfitEngine"]
-    Store --> Disk["Local Codable persistence"]
-    UI --> Images["ImageUtilities + ClothingTypeDetector"]
-    Weather --> Location["Core Location / Geocoder"]
-    Weather --> Forecast["No-charge live weather or season fallback"]
-    Engine --> Rules["Structure + availability + locks"]
-    Engine --> Score["Season + formality + colors + favorites"]
-```
+## Release roadmap
 
-The current build and first release are deliberately local-only. Persistence evolution and the launch boundary are documented in [Architecture](docs/ARCHITECTURE.md) and [ADR-0003](docs/decisions/0003-zero-backend-app-store-release.md); [ADR-0004](docs/decisions/0004-post-release-cloudkit-social.md) governs the later CloudKit social addition.
+The next planned milestone is preparing the current local app for **TestFlight and an App Store release**. Release scope and acceptance criteria will be confirmed against the existing requirements before submission.
 
-## Repository structure
-
-```text
-.
-├── myCloset/                     SwiftUI application and domain logic
-├── myClosetTests/                Deterministic model, engine, store, and image tests
-├── myClosetUITests/              End-to-end iPhone UI smoke tests
-├── myCloset.xcodeproj/           Shared Xcode project and scheme
-├── docs/
-│   ├── phases/                   One implementation contract per roadmap phase
-│   ├── decisions/                Architecture decision records
-│   ├── ARCHITECTURE.md
-│   ├── DEVELOPMENT.md
-│   ├── ROADMAP.md
-│   ├── TESTING.md
-│   └── REQUIREMENTS_TRACEABILITY.md
-├── .github/                      CI, issue forms, and pull-request template
-├── SRS.md                        Enterprise product requirements baseline
-├── PROTOTYPE_STATUS.md           Current implementation boundary
-└── CHANGELOG.md                  User- and maintainer-visible changes
-```
-
-## Roadmap
-
-| Phase | Outcome | Status |
-|---:|---|---|
-| 0 | Local functional prototype and engineering foundation | **Complete** |
-| 1 | Production-quality garment capture and wardrobe data | **In progress** |
-| 2 | Conventional identity, backend, sync, and hosted media | **Superseded reference** |
-| 3 | Local recommendation quality, feedback, weather resilience, and explainability | Planned |
-| 4 | Conventional server-based social architecture | **Superseded reference** |
-| 5 | Local trip outfits, packing, and availability conflicts | Planned |
-| 6 | TestFlight, privacy/security hardening, and zero-backend App Store release | Planned |
-| 7 | Post-release CloudKit profiles, following, controlled outfit posts, and safety | Planned after release; gated |
-| 8 | Scale, localization, advanced personalization, and measured evolution | Future |
-
-Read the [Master Roadmap](docs/ROADMAP.md) and the linked phase documents for entry criteria, workstreams, test obligations, exit gates, risks, and deliverables.
-
-## Documentation
-
-| Document | Purpose |
+| Milestone | Work remaining |
 |---|---|
-| [Software Requirements Specification](SRS.md) | Full product, data, security, privacy, reliability, and release requirements |
-| [Documentation Index](docs/README.md) | Ownership and navigation for all project documents |
-| [Codex Repository Context](AGENTS.md) | Durable product, architecture, testing, and handoff context for coding agents |
-| [Architecture](docs/ARCHITECTURE.md) | Current design, production target, boundaries, and data flow |
-| [Roadmap](docs/ROADMAP.md) | Sequenced delivery phases and release gates |
-| [Testing](docs/TESTING.md) | Automated/manual strategy, commands, matrices, and quality gates |
-| [Latest Test Execution](docs/testing/TEST_EXECUTION_2026-09-08.md) | Environment, commands, results, fixes, and remaining qualification work |
-| [Development Guide](docs/DEVELOPMENT.md) | Setup, workflow, conventions, and debugging |
-| [Requirements Traceability](docs/REQUIREMENTS_TRACEABILITY.md) | SRS-to-phase-to-test mapping |
-| [Contributing](CONTRIBUTING.md) | Branch, change, review, and documentation rules |
-| [Security Policy](SECURITY.md) | Private vulnerability reporting and supported state |
-| [Changelog](CHANGELOG.md) | Versioned project changes |
+| Capture and data quality | Qualify refinement on physical devices; improve difficult-photo recovery; validate photo metadata removal and image lifecycle; add persistence versioning/recovery |
+| Release qualification | Confirm included P0 requirements, run the full device/OS and accessibility matrix, test clean-install/permission/offline flows, and gather performance and reliability evidence |
+| Store preparation | Finalize identity/icon, signing and bundle configuration, support/privacy materials, store screenshots and disclosures, and TestFlight feedback |
+| Later local features | Guided camera capture, point/undo editing, richer recommendation feedback, and trip/packing workflows remain tracked scope; inclusion depends on the release decision |
+| Post-release social | CloudKit profiles, following, and controlled outfit posts are gated future work; Following currently has no social service |
 
-## Documentation maintenance policy
+The [Roadmap](docs/ROADMAP.md), [Phase 1 contract](docs/phases/PHASE_1_CAPTURE_WARDROBE.md), and [release gates](docs/phases/PHASE_6_BETA_RELEASE.md) contain the full plan. Future social must follow [ADR-0004](docs/decisions/0004-post-release-cloudkit-social.md). The first release remains account-free, with local wardrobe data and no cloud AI or developer-operated media backend.
 
-The README is a living project entry point. Every pull request that changes behavior, scope, setup, testing, architecture, or phase status must update the relevant documentation in the same change.
+## Repository guide
 
-At minimum:
+| Path | Purpose |
+|---|---|
+| [`myCloset/`](myCloset/) | Application, views, domain logic, and services |
+| [`myClosetTests/`](myClosetTests/) / [`myClosetUITests/`](myClosetUITests/) | Unit, integration, image, and UI tests |
+| [`scripts/`](scripts/) | Isolated testing, Simulator launch preparation, image loading, and documentation checks |
+| [`myCloset.xcodeproj/`](myCloset.xcodeproj/) / [`myCloset.xctestplan`](myCloset.xctestplan) | Shared project, scheme, and test configuration |
+| [`docs/`](docs/README.md) | Architecture, decisions, phase contracts, development guides, and test evidence |
+| [`SRS.md`](SRS.md) / [`PROTOTYPE_STATUS.md`](PROTOTYPE_STATUS.md) | Product requirements and the current implementation boundary |
+| [`CHANGELOG.md`](CHANGELOG.md) / [`AGENTS.md`](AGENTS.md) | Change history and durable repository context |
 
-- user-visible behavior changes update **Current capabilities** and `CHANGELOG.md`;
-- phase progress updates `docs/ROADMAP.md`, the phase document, and `PROTOTYPE_STATUS.md`;
-- architecture changes add or update an ADR and `docs/ARCHITECTURE.md`;
-- test changes update `docs/TESTING.md` and the suite counts above;
-- setup changes update **Quick start** and `docs/DEVELOPMENT.md`.
+## Privacy, contributions, and licensing
 
-CI verifies that required documents and phase files remain present. Reviewers enforce correctness, because documentation presence alone does not guarantee accuracy.
+Private wardrobe/profile media and saved history stay in the app container. Live weather is optional and makes a provider request; core wardrobe and outfit functions do not require that request. The current app has no account, cloud recovery, public posting, or cross-device sync.
 
-## Contributing
-
-Start with [CONTRIBUTING.md](CONTRIBUTING.md). Small, reviewable branches with tests and documentation are preferred. CloudKit social must follow ADR-0004 and Phase 7; do not add a conventional backend, private-closet upload, cloud AI, paid API, or broader public media without a new product-owner decision.
-
-## Privacy and safety
-
-The current prototype stores wardrobe and profile content locally in the app container. Location is optional and used only for an explicit weather request. The app removes the need for weather access by supporting a date-derived season fallback.
-
-The first release keeps private content in the iOS app container and performs clothing/outfit intelligence on-device. It has no account, cloud recovery, public posting, or developer-operated media service. Later CloudKit social may publish only explicit detached public records and must never expose the closet. See the [SRS](SRS.md) and [Security Policy](SECURITY.md).
-
-## License
-
-No open-source license has been selected yet. Until a license file is added, the source is publicly viewable but no permission is granted to copy, modify, or redistribute it. A project owner should make an explicit licensing decision before inviting broad external contributions.
+See [Contributing](CONTRIBUTING.md) for the change workflow and [Security Policy](SECURITY.md) for vulnerability reporting. Behavior, architecture, test, or setup changes include corresponding documentation updates. No open-source license has been selected; the repository currently contains no license grant.

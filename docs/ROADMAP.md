@@ -19,6 +19,8 @@ The roadmap sequences myCloset so that each phase produces a testable product in
 
 ## 3. Phase overview
 
+**Next milestone:** qualify the current local app, including outline-guided refinement, for TestFlight and an App Store release. This is the product owner's next priority after merging the refinement slice. Release preparation will confirm included SRS requirements and close or formally resolve applicable gates; it does not mark unfinished phases complete or activate social/cloud scope.
+
 | Phase | Name | Primary outcome | Status | Depends on |
 |---:|---|---|---|---|
 | 0 | Local Prototype and Foundation | Validate the wardrobe-to-outfit loop | Complete | SRS baseline |
