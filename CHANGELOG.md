@@ -36,6 +36,7 @@ All notable changes to myCloset are recorded here. The project follows a lightwe
 
 ### Added
 
+- Added experimental on-device outline-guided edge refinement: correct small inward/outward tracing errors, preview transparency, compare Refined with My outline, and explicitly apply the chosen result. Uncertain analysis preserves the manual outline; rotation, retrace, extra regions, cancel, and reset discard stale suggestions.
 - Added Delete to each closet card's hold menu with confirmation and cancellation.
 - Exposed 29 persisted garment types in import review and the item editor, including Long Sleeve, Shorts, Jacket, Jeans, and Hoodie, with matching automatic names, editable season/formality defaults, and specific-type closet filtering/search.
 - Added shoe-pair outline guidance: trace one shoe, tap Add another area, and trace the other while excluding the gap.

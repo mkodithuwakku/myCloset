@@ -17,7 +17,7 @@
 - See a category-specific accessible camera guide.
 - Capture or import a garment.
 - Outline every imported item with one simple lasso before metadata confirmation.
-- See the enclosed area and correct the outline when needed.
+- Compare refined fabric edges against the hand-drawn outline, approve the preferred cutout, and retrace when needed.
 - Confirm dominant/accent colors sampled only from the garment.
 - Confirm name, category, seasons, multiple formality levels, and availability.
 - Recover manually from every processing failure.
@@ -25,6 +25,8 @@
 ## Workstreams
 
 ### Delivered in the current slice
+
+- Experimental outline-guided edge refinement using Vision instance overlap and a conservative color fallback in a narrow boundary band; per-region retention guards protect separate shoes and garment interiors. Refined/My outline comparison, checkerboard transparency, explicit acceptance, asynchronous processing, cancellation, and stale-result rejection preserve manual recovery. Physical-device accuracy and performance remain unqualified.
 
 - Persisted selectable garment types, including shorts, long sleeve, jacket, and 26 other specific choices, with synchronized default names, editable season/formality defaults, specific-type search/filtering, and legacy-record compatibility.
 - Delete from the closet card's long-press menu with cancellation/confirmation and preserved saved/worn snapshots.

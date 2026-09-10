@@ -76,7 +76,7 @@ Important boundaries:
 
 - `ClosetStore` currently combines observable application state, persistence, and recommendation orchestration. This is accepted prototype debt, not the production service shape.
 - `OutfitEngine` is a stateless domain service. Keep hard filtering/validation separate from soft scoring.
-- `ClosetImageImporter` coordinates editable name/category/season/formality/color defaults and review-confidence assessments. `ClothingTypeDetector` uses deterministic filename rules, Apple Vision foreground-instance masks for structural top/bottom analysis, and explicit outerwear signals. `ImageUtilities` handles decoding, higher-quality resizing, rotation, closed-lasso alpha compositing, automatic-mask coverage/coherence rejection, compression, garment-only sampling, perceptual palette mapping, and insignificant-accent suppression. `GarmentOutlineEditor` is the only image-import isolation UI: it closes a finger-traced lasso, previews and keeps the enclosed source pixels, removes the exterior, and supports retrace, multiple regions, rotation, and reset. Metadata confirmation is gated until each new image has a valid saved lasso; outline-point refinement and production confidence calibration remain Phase 1 work.
+- `ClosetImageImporter` coordinates editable name/category/season/formality/color defaults and review-confidence assessments. `ClothingTypeDetector` uses deterministic filename rules, Apple Vision foreground-instance masks for structural top/bottom analysis, and explicit outerwear signals. `ImageUtilities` handles decoding, higher-quality resizing, rotation, closed-lasso alpha compositing, automatic-mask coverage/coherence rejection, compression, garment-only sampling, perceptual palette mapping, and insignificant-accent suppression. `GarmentOutlineEditor` is the only image-import isolation UI: it closes a finger-traced lasso, previews and keeps the enclosed source pixels, removes the exterior, and supports retrace, multiple regions, rotation, and reset. Metadata confirmation is gated until each new image has a valid saved lasso; `GarmentEdgeRefiner` optionally refines nearby edges on-device after tracing, with Vision instance overlap, per-region retention guards, a conservative local color fallback, and explicit Refined/My outline comparison and application. Cancellation and request IDs reject stale results; manual output remains available. Point editing, physical-device accuracy, and production confidence calibration remain Phase 1 work.
 - `WeatherService` owns location/city/provider behavior. Do not spread transport code into views.
 - Views may own temporary UI state but should not own persistence, transport, or recommendation rules.
 
@@ -138,7 +138,7 @@ Load Git-ignored project-local garment images into a booted Simulator with:
 ./scripts/load_test_closet_images.sh
 ```
 
-Current automated inventory: 83 unit tests and 9 UI tests, plus 8 host-side launch-workflow checks (`python3 -m unittest discover -s scripts/tests -v`). The latest recorded execution evidence is [docs/testing/TEST_EXECUTION_2026-09-09.md](docs/testing/TEST_EXECUTION_2026-09-09.md).
+Current automated inventory: 91 unit tests and 10 UI tests, plus 8 host-side launch-workflow checks (`python3 -m unittest discover -s scripts/tests -v`). The latest recorded execution evidence is [docs/testing/TEST_EXECUTION_2026-09-09.md](docs/testing/TEST_EXECUTION_2026-09-09.md).
 
 Debug-only UI launch arguments are:
 
@@ -147,6 +147,7 @@ Debug-only UI launch arguments are:
 - `-openPrototypeGenerator`
 - `-openPrototypeImportReview`
 - `-openPrototypeImportOutline`
+- `-previewPrototypeRefinedOutline` (combine with the import-outline argument for a seeded comparison/recovery UI fixture)
 - `-generatePrototypeOutfit`
 
 Keep test data isolated through an injected `ClosetStore(storageURL:)`; never use a developer's real Application Support data in tests.

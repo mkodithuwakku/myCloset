@@ -1,10 +1,10 @@
 # Testing Strategy and Guide
 
-**Current automated inventory:** 83 unit tests + 9 UI tests; 8 host-side launch-workflow checks
+**Current automated inventory:** 91 unit tests + 10 UI tests; 8 host-side launch-workflow checks
 **Current verified environment:** Xcode 26.3, iPhone 17 simulator, iOS 26.3.1
 **Minimum deployment target:** iOS 17.0
 
-Latest recorded evidence: [Test Execution Report — 2026-09-09](testing/TEST_EXECUTION_2026-09-09.md) (92 distinct app tests passed across the full suite and targeted UI reruns; details and initial failures are recorded there).
+Latest recorded evidence: [Test Execution Report — 2026-09-09](testing/TEST_EXECUTION_2026-09-09.md) (the outline-refinement experiment passed 91 unit tests and two targeted UI tests; the full 10-test UI suite was not rerun. Earlier complete-slice results and initial failures remain recorded there).
 
 ## 1. Objectives
 
@@ -122,7 +122,7 @@ The suite keeps OS-owned Vision at the boundary and tests the deterministic stru
 | Missing-bottom summary gives an actionable recovery | REC-016 |
 | Jacket + bottom reports ready without a shirt | COMP-001–COMP-002 |
 
-### 3.6 `MyClosetUITests` — 9 tests
+### 3.6 `MyClosetUITests` — 10 tests
 
 | Journey | Primary assertion |
 |---|---|
@@ -135,6 +135,13 @@ The suite keeps OS-owned Vision at the boundary and tests the deterministic stru
 | Following tab → Coming Soon | Social roadmap is visible without fake profiles, posts, or service behavior |
 | Hold closet item → Delete → cancel/confirm → relaunch | Cancellation retains the item; confirmed deletion survives relaunch |
 | Specific import type → colors/seasons → save → editor | Shorts retain matching automatic name and spring/summer defaults in saved metadata |
+| Rough outline → Refined/My outline → apply → retrace/rotate | The selected version reaches metadata review and old suggestions disappear when the outline changes |
+
+### 3.7 `GarmentEdgeRefinerTests` — 8 tests
+
+Covers recovering fabric outside a rough lasso while removing included floor pixels, asymmetric hem/source-color alignment, two separate shoes with an excluded distractor, ambiguous-color manual recovery, rejection of missing regions and distant background, per-outline Vision instance selection, invalid/large image bounds, and cancellation. Synthetic fixtures exercise the deterministic fallback without relying on OS model labels.
+
+The UI suite also compares Refined/My outline, applies the refined cutout into metadata review, and clears/rotates back to tracing without retaining a stale suggestion. `-previewPrototypeRefinedOutline`, combined with `-openPrototypeImportOutline`, seeds a rough polygon solely in Debug for this comparison/recovery test.
 
 ## 4. Running tests
 

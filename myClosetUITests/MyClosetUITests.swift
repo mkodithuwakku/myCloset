@@ -177,6 +177,41 @@ final class MyClosetUITests: XCTestCase {
         app.navigationBars["Outline item"].buttons["Cancel"].tap()
     }
 
+    func testRefinedOutlineCanBeComparedAppliedAndClearedForRetracing() {
+        app.launchArguments = ["-resetPrototypeData", "-openPrototypeImportOutline", "-previewPrototypeRefinedOutline"]
+        app.launch()
+        XCTAssertTrue(app.buttons["import-review-outline-item"].waitForExistence(timeout: 5))
+        app.buttons["import-review-outline-item"].tap()
+        let versions = app.segmentedControls["outline-version"]
+        XCTAssertTrue(versions.waitForExistence(timeout: 30))
+        XCTAssertEqual(app.buttons["apply-item-outline"].label, "Use refined cutout")
+        let refinedPreview = XCTAttachment(screenshot: app.screenshot())
+        refinedPreview.name = "Refined edges preview"
+        refinedPreview.lifetime = .keepAlways
+        add(refinedPreview)
+        versions.buttons["My outline"].tap()
+        XCTAssertEqual(app.buttons["apply-item-outline"].label, "Use this outline")
+        let manualPreview = XCTAttachment(screenshot: app.screenshot())
+        manualPreview.name = "Original outline comparison"
+        manualPreview.lifetime = .keepAlways
+        add(manualPreview)
+        versions.buttons["Refined"].tap()
+        app.buttons["apply-item-outline"].tap()
+        XCTAssertTrue(app.textFields["import-review-name"].waitForExistence(timeout: 10))
+        app.swipeDown()
+        app.buttons["import-review-outline-item"].tap()
+        XCTAssertTrue(versions.waitForExistence(timeout: 30))
+        app.buttons["outline-clear"].tap()
+        XCTAssertTrue(app.otherElements["outline-canvas"].waitForExistence(timeout: 3))
+        XCTAssertFalse(versions.exists)
+        XCTAssertFalse(app.buttons["apply-item-outline"].isEnabled)
+        app.buttons["outline-rotate-right"].tap()
+        XCTAssertFalse(versions.exists)
+        XCTAssertFalse(app.buttons["apply-item-outline"].isEnabled)
+        app.navigationBars["Outline item"].buttons["Cancel"].tap()
+        XCTAssertTrue(app.otherElements["import-review-screen"].waitForExistence(timeout: 3))
+    }
+
     func testLongPressDeleteCanBeCancelledThenPersistsAfterRelaunch() {
         app.launchArguments = ["-resetPrototypeData", "-loadPrototypeSamples"]
         app.launch()

@@ -1,6 +1,6 @@
 # Test Execution Report — 2026-09-09
 
-The latest wardrobe and composition verification is recorded in the final section. Earlier sections retain the evidence for the outline and launch repairs.
+The latest outline-guided refinement verification is recorded in the final section. Earlier sections retain the evidence for the outline and launch repairs.
 
 ## Initial outline verification
 
@@ -177,3 +177,26 @@ The shared Home/Generate canvas now uses smaller upper-body frames and places th
 - Result bundle: `/var/folders/n0/dpwsbz2j2fzfgzdq641t_l7h0000gn/T/myClosetTests-5x0ij2tp/Tests.xcresult` (local only).
 - Signed build and Command-R launch succeeded; visually checked Home with the existing denim jacket, dark trousers, and white shoe pair. The jacket is smaller and substantially more of the pants is visible.
 - Documentation and diff-whitespace checks passed. Test inventory remains 83 unit + 9 UI + 8 host checks; this layout-only follow-up reran the 26-test model/image suite. Full UI suite and physical-device testing were not rerun. Generate uses the same shared canvas; an additional interactive tab check was unavailable when the computer-use service lost its window handle during disposable-simulator cleanup.
+
+
+## Experiment: outline-guided edge refinement
+
+Branch: `codex/outline-guided-refinement`, based on `e54b75be950d49d639c536fc174da2cbc9882fdf`.
+
+The outline editor now tries an on-device refinement after a valid trace. A user can compare Refined/My outline and explicitly apply either version, or keep the manual outline while processing. Vision instances are selected using every outlined region. Coverage guards reject missing regions, lost interiors, and distant background; the local color fallback changes only a narrow boundary band and removes unsupported disconnected specks. Small additional areas are included in validation even below the main-lasso area minimum. Cancellation/request IDs prevent old suggestions from replacing a retraced or rotated image.
+
+Verification on Xcode 26.3 / iPhone 17 Pro Simulator, iOS 26.3.1:
+
+- Generic unsigned Simulator compilation passed; runnable tests used local signing on disposable simulators.
+- Final regression command ran **91 unit tests and 2 targeted UI tests**, all passing with `** TEST SUCCEEDED **`. Result bundle: `myClosetTests-6z5uf3bu/Tests.xcresult` in the host temporary directory; command log `/tmp/myCloset-refinement-final-tests.log`.
+- The eight new deterministic image tests cover inward/outward correction, source orientation and asymmetric hems, two separate shoes and a distractor, ambiguous-color manual recovery, lost-region/background rejection (including tiny extra areas), instance selection by outline, malformed/large input and 1,200-pixel output bounds, and cancellation.
+- The targeted UI journeys cover the existing mandatory-lasso gate and the new comparison/apply/retrace/rotation flow. Successful screenshots were retained for visual inspection. A subsequent layout correction uses identical guidance in comparison modes so the preview stays in place; its targeted UI rerun is recorded below.
+- An initial test compile failed on an ambiguous Swift `.nan` literal; spelling `CGFloat.nan` fixed the test. The first complete run then found a real corner case: a few floor pixels inside a concave lasso contaminated the foreground color palette, preventing refinement. Ignoring insignificant sample buckets fixed it; all eight refinement tests passed on rerun and in the final regression run.
+- A temporary local-only trial ran two existing Git-ignored clothing photos (dark shirt on a plain floor and sweatshirt on a patterned rug). Both produced cutouts. Visual inspection found substantially cleaner plain-floor edges and better rug removal after the palette fix; the patterned rug still affected some fine trim. The temporary trial test was removed, and photos/output were not added to the repository. Outputs remain under `/tmp/myCloset-refinement-trial` for local review.
+- The full 10-test UI suite, physical-device Vision quality, VoiceOver, large Dynamic Type, minimum-iOS coverage, and oldest-device performance were **not** run for this experiment. Simulator results do not qualify Apple's model on physical devices. Similar colors, textured backgrounds, shadows, fine trim, and large tracing errors can still need manual correction.
+
+Inventory is now **91 unit + 10 UI + 8 host checks**. This is an experimental Phase 1 slice, not a claim of universal segmentation accuracy.
+
+Preview-layout rerun: **1 targeted UI test passed**, `** TEST SUCCEEDED **`, result bundle `myClosetTests-1lniyn6e/Tests.xcresult`, log `/tmp/myCloset-refinement-layout-tests.log`. Exported comparison screenshots confirmed matching preview geometry. A hidden-text sizing aid was then replaced with identical visible guidance in both modes to keep all guidance visible; the final rerun is recorded below. Documentation link/status and `git diff --check` gates passed.
+
+Final comparison rerun: **1 targeted UI test passed**, `** TEST SUCCEEDED **`, result bundle `myClosetTests-0nmwtlb4/Tests.xcresult`, log `/tmp/myCloset-refinement-comparison-tests.log`. Both exported screenshots show the same garment position/scale, all shoe guidance, both version choices, and the corresponding apply action.

@@ -356,7 +356,7 @@ enum ImageUtilities {
         }.pngData()
     }
 
-    private static func croppedToVisibleAlpha(_ image: CGImage) -> CGImage? {
+    static func croppedToVisibleAlpha(_ image: CGImage) -> CGImage? {
         let width = image.width
         let height = image.height
         let bytesPerRow = width * 4

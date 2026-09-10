@@ -40,6 +40,12 @@ struct GarmentOutlineEditor: View {
     @State private var selections: [GarmentLassoSelection] = []
     @State private var activeSelectionID: UUID?
     @State private var isTracing = true
+    @State private var refinement: GarmentEdgeRefinement?
+    @State private var isRefining = false
+    @State private var refinementAttempted = false
+    @State private var useRefinedEdges = true
+    @State private var refinementTask: Task<Void, Never>?
+    @State private var refinementID = UUID()
 
     let imageData: Data
     let onApply: (GarmentOutlineResult) -> Void
@@ -53,7 +59,11 @@ struct GarmentOutlineEditor: View {
         _workingImageData = State(initialValue: imageData)
     }
 
-    private var image: UIImage? { UIImage(data: workingImageData) }
+    private var showingRefinement: Bool { useRefinedEdges && refinement != nil && !isTracing }
+    private var image: UIImage? {
+        if showingRefinement, let refinement { return UIImage(data: refinement.previewImageData) }
+        return UIImage(data: workingImageData)
+    }
 
     var body: some View {
         NavigationStack {
@@ -62,7 +72,11 @@ struct GarmentOutlineEditor: View {
 
                 GeometryReader { _ in
                     ZStack {
-                        Color.black.opacity(0.92)
+                        if showingRefinement {
+                            TransparencyGrid()
+                        } else {
+                            Color.black.opacity(0.92)
+                        }
                         if let image {
                             Image(uiImage: image)
                                 .resizable()
@@ -70,7 +84,9 @@ struct GarmentOutlineEditor: View {
                                 .scaledToFit()
                                 .overlay {
                                     GeometryReader { imageProxy in
-                                        GarmentLassoOverlay(selections: selections)
+                                        if !showingRefinement {
+                                            GarmentLassoOverlay(selections: selections)
+                                        }
 
                                         if isTracing {
                                             Color.clear
@@ -83,6 +99,7 @@ struct GarmentOutlineEditor: View {
                                                         .onEnded { _ in
                                                             activeSelectionID = nil
                                                             isTracing = false
+                                                            startRefinement()
                                                         }
                                                 )
                                                 .accessibilityLabel("Trace around the outside edge of the item")
@@ -101,6 +118,7 @@ struct GarmentOutlineEditor: View {
                     }
                 }
 
+                refinementControls
                 controls
             }
             .padding(16)
@@ -109,7 +127,7 @@ struct GarmentOutlineEditor: View {
                 Button {
                     applyOutline()
                 } label: {
-                    Label("Use this outline", systemImage: "checkmark")
+                    Label(showingRefinement ? "Use refined cutout" : "Use this outline", systemImage: "checkmark")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 5)
@@ -117,8 +135,8 @@ struct GarmentOutlineEditor: View {
                 .buttonStyle(.borderedProminent)
                 .buttonBorderShape(.roundedRectangle(radius: 14))
                 .tint(ClosetTheme.accent)
-                .disabled(!hasValidSelection)
-                .accessibilityHint("Keeps the shaded area and removes everything outside it")
+                .disabled(!hasValidSelection || isTracing || isRefining)
+                .accessibilityHint(showingRefinement ? "Keeps the cutout shown on the checkerboard" : "Keeps the shaded area and removes everything outside it")
                 .accessibilityIdentifier("apply-item-outline")
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
@@ -133,6 +151,21 @@ struct GarmentOutlineEditor: View {
             }
         }
         .accessibilityIdentifier("outline-editor")
+        .onDisappear { cancelRefinement() }
+#if DEBUG
+        .onAppear {
+            // Repeatable comparison/recovery UI coverage without synthesizing a
+            // multi-segment finger gesture. Normal imports always start empty.
+            if ProcessInfo.processInfo.arguments.contains("-previewPrototypeRefinedOutline"), selections.isEmpty {
+                selections = [.init(points: [
+                    CGPoint(x: 0.17, y: 0.11), CGPoint(x: 0.83, y: 0.11),
+                    CGPoint(x: 0.83, y: 0.89), CGPoint(x: 0.17, y: 0.89)
+                ])]
+                isTracing = false
+                startRefinement()
+            }
+        }
+#endif
     }
 
     private var instructionCard: some View {
@@ -142,7 +175,7 @@ struct GarmentOutlineEditor: View {
                 .foregroundStyle(hasValidSelection ? ClosetTheme.accent : Color.orange)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(hasValidSelection ? "Outline ready" : "Trace the item once")
+                Text(showingRefinement ? "Check the refined edges" : hasValidSelection ? "Outline ready" : "Trace the item once")
                     .font(.headline)
                 Text(instructionText)
                     .font(.subheadline)
@@ -158,14 +191,85 @@ struct GarmentOutlineEditor: View {
         .background(ClosetTheme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
+    private var refinedInstruction: String {
+        "Compare both versions and check sleeves, hems and shoes. Shading shows your outline; the checkerboard shows transparent areas."
+    }
+
     private var instructionText: String {
         if isTracing {
-            return "Start anywhere, drag once just outside the item's edge, then lift. The app closes the loop for you."
+            return "Trace close to the item's edge, then lift. It doesn't need to be perfect — we'll look for the nearby fabric edge."
+        }
+        // Both comparison modes use identical guidance so toggling cannot
+        // resize or move the photo while the user compares its edges.
+        if refinement != nil {
+            return refinedInstruction
         }
         if hasValidSelection {
             return "The shaded area is what will remain. Everything outside it will be transparent."
         }
         return "That outline did not enclose an area. Clear it and trace around the item again."
+    }
+
+    @ViewBuilder
+    private var refinementControls: some View {
+        if hasValidSelection && !isTracing {
+            if isRefining {
+                HStack {
+                    ProgressView("Finding the fabric edge…")
+                        .font(.caption)
+                        .accessibilityIdentifier("outline-refining")
+                    Spacer()
+                    Button("Keep my outline") { cancelRefinement() }
+                        .font(.caption.weight(.semibold))
+                        .accessibilityIdentifier("outline-cancel-refinement")
+                }
+            } else if refinement != nil {
+                Picker("Cutout version", selection: $useRefinedEdges) {
+                    Text("Refined").tag(true)
+                    Text("My outline").tag(false)
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("outline-version")
+            } else if refinementAttempted {
+                Text("Couldn't confidently refine these edges. Your outline is unchanged; you can use it or retrace.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("outline-refinement-unavailable")
+            }
+        }
+    }
+
+    private func startRefinement() {
+        cancelRefinement()
+        guard hasValidSelection else { return }
+        isRefining = true
+        let requestID = refinementID
+        let data = workingImageData
+        let outlines = selections.map(\.points)
+        refinementTask = Task { @MainActor in
+            let worker = Task.detached(priority: .userInitiated) {
+                GarmentEdgeRefiner.refine(from: data, normalizedOutlines: outlines)
+            }
+            let result = await withTaskCancellationHandler {
+                await worker.value
+            } onCancel: {
+                worker.cancel()
+            }
+            guard !Task.isCancelled, refinementID == requestID else { return }
+            refinement = result
+            refinementAttempted = true
+            isRefining = false
+        }
+    }
+
+    private func cancelRefinement() {
+        refinementTask?.cancel()
+        refinementTask = nil
+        refinementID = UUID()
+        refinement = nil
+        refinementAttempted = false
+        isRefining = false
+        useRefinedEdges = true
     }
 
     private var controls: some View {
@@ -192,6 +296,7 @@ struct GarmentOutlineEditor: View {
                 HStack(spacing: 10) {
                     if hasValidSelection && !isTracing {
                         Button("Add another area", systemImage: "plus.circle") {
+                            cancelRefinement()
                             isTracing = true
                             activeSelectionID = nil
                         }
@@ -239,17 +344,19 @@ struct GarmentOutlineEditor: View {
     }
 
     private func clearAndRetrace() {
+        cancelRefinement()
         selections = []
         activeSelectionID = nil
         isTracing = true
     }
 
     private func applyOutline() {
-        guard hasValidSelection else { return }
-        guard let isolated = ImageUtilities.outlinedCutoutData(
+        guard hasValidSelection, !isTracing, !isRefining else { return }
+        guard let isolated = showingRefinement ? refinement?.isolatedImageData : ImageUtilities.outlinedCutoutData(
             from: workingImageData,
             normalizedOutlines: selections.map(\.points)
         ) else { return }
+        cancelRefinement()
         onApply(.init(sourceImageData: workingImageData, isolatedImageData: isolated))
         dismiss()
     }
@@ -279,6 +386,22 @@ private struct GarmentLassoOverlay: View {
             }
         }
         .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+private struct TransparencyGrid: View {
+    var body: some View {
+        Canvas { context, size in
+            let side: CGFloat = 12
+            for row in 0...Int(size.height / side) {
+                for column in 0...Int(size.width / side) {
+                    let rect = CGRect(x: CGFloat(column) * side, y: CGFloat(row) * side, width: side, height: side)
+                    context.fill(Path(rect), with: .color((row + column).isMultiple(of: 2)
+                        ? Color(white: 0.93) : Color(white: 0.83)))
+                }
+            }
+        }
         .accessibilityHidden(true)
     }
 }

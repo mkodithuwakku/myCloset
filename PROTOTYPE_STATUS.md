@@ -17,7 +17,7 @@ This slice provides a genuinely usable local wardrobe and outfit-generation loop
 | Local closet | CLO-001–CLO-011 | Starts empty for real users; create, bulk-import, edit, metadata-aware search, specific-type filter, favorite, archive, set availability, and confirmed deletion from the hold menu or editor |
 | Clothing metadata | ITEM-001–ITEM-018 | 29 specific garment types, broad categories, matching automatic names, editable type-specific seasons/formalities, colors, and confirmation form; old generic records still load |
 | Duplicate-name warning | ITEM-013–ITEM-014 | Case- and whitespace-normalized warning without blocking save |
-| Photo import | ITEM-006–ITEM-019 | Up to 50 Photos/Files images per batch with live analysis progress, filename-first and on-device suggestions, a required simple lasso before each new photo's metadata can be confirmed, transparent renditions made from the enclosed area, foreground-only color sampling, separate editable confidence guidance, kind-aware defaults, skippable guided review, metadata-synchronized names, batch or single-item re-analysis, and a post-import category/readiness summary |
+| Photo import | ITEM-006–ITEM-019 | Up to 50 Photos/Files images per batch with live analysis progress, filename-first and on-device suggestions, a required simple lasso before each new photo's metadata can be confirmed, reviewable outline-guided edge refinement and transparent renditions, foreground-only color sampling, separate editable confidence guidance, kind-aware defaults, skippable guided review, metadata-synchronized names, batch or single-item re-analysis, and a post-import category/readiness summary |
 | Capture guidance preview | ITEM-004–ITEM-005 | Trace/lift guidance, shaded lasso preview, and instructions to outline each shoe separately using Add another area; direct camera guidance remains deferred |
 | Weather fallback | WEA-001–WEA-011 | Current foreground location, manually entered city, or date-derived season |
 | Outfit of the Day | HOME-001–HOME-009 | Isolated garments layered into a body-aligned visual look, compact weather context, explanation, refresh, save, and mark worn |
@@ -30,13 +30,13 @@ This slice provides a genuinely usable local wardrobe and outfit-generation loop
 | Following roadmap state | SOC | Minimal Coming Soon screen; no fake profiles, posts, or service behavior |
 | Accessibility foundations | A11Y | Dynamic native controls, text color names, accessibility labels on key icon controls, and no color-only status |
 | Local persistence | OFF-001 | Codable application-support storage survives relaunches |
-| Automated verification | ENG-004–ENG-006 | Shared scheme with automatic Simulator installation preparation, 83 unit tests, 9 UI tests, 8 host-side launch checks, isolated CLI test simulator, and GitHub Actions CI |
+| Automated verification | ENG-004–ENG-006 | Shared scheme with automatic Simulator installation preparation, 91 unit tests, 10 UI tests, 8 host-side launch checks, isolated CLI test simulator, and GitHub Actions CI |
 
 ## Partial or prototype-only
 
 | Capability | Current limitation |
 |---|---|
-| Garment isolation | Every new imported or replacement photo requires a valid user-drawn lasso. The saved mask uses the same top-to-bottom orientation as the preview, preserving asymmetric hems, sleeves, and separate regions. The app closes the loop, keeps the enclosed source pixels, makes the exterior transparent, trims transparent bounds, and supports retracing, multiple regions, rotation, and reset. Vision remains advisory for pre-review suggestions; point refinement and physical-device qualification remain |
+| Garment isolation | Every new imported or replacement photo requires a valid user-drawn lasso. The saved mask uses the same top-to-bottom orientation as the preview, preserving asymmetric hems, sleeves, and separate regions. The app closes the loop, keeps the enclosed source pixels, makes the exterior transparent, trims transparent bounds, and supports retracing, multiple regions, rotation, and reset. After a valid outline, optional on-device edge refinement uses Vision instances selected by outline overlap, with conservative local color refinement when needed. A same-position Refined/My outline comparison requires explicit application; ambiguous results preserve the original lasso. Changes are limited to nearby edges and each region must survive. Fine details, similar colors, shadows, large tracing errors, point editing, and physical-device qualification remain |
 | Camera guidance | The lasso editor handles library/files photos, but direct camera capture is deferred |
 | Color extraction | Samples the saved transparent rendition when available, suppresses frame/background colors and untrusted accents, classifies hue and neutrals perceptually, and flags weak full-photo results for review; editable masks and calibrated production confidence remain |
 | Clothing-type detection | Filename rules remain deterministic; Apple's visual labels and silhouettes are best-effort, with expanded shoe terms and explicit jacket/hoodie outerwear handling. Generic results are explicitly uncertain, and every imported piece requires user confirmation before persistence |
@@ -69,7 +69,9 @@ CloudKit profiles and following are approved only as the gated post-release Phas
 6. Relaunched the installed app and verified local persistence.
 7. Opened Generate through a debug smoke-test launch argument and verified the automatic editorial outfit board rendered with piece-level lock and reroll controls.
 8. Exercised the visual outfit brief through the UI journey and verified a Work brief produced a rendered outfit.
-9. Ran all 83 unit tests and all nine end-to-end UI tests successfully, including the mandatory pre-metadata lasso gate, invalid-line rejection, closed-outline interior retention and exterior transparency, guided metadata progression, confidence guidance, skip recovery, import summary/readiness, next-piece top reset, and preservation of a manually edited import name.
+9. Before the refinement experiment, ran all 83 unit tests and all nine end-to-end UI tests successfully, including the mandatory pre-metadata lasso gate, invalid-line rejection, closed-outline interior retention and exterior transparency, guided metadata progression, confidence guidance, skip recovery, import summary/readiness, next-piece top reset, and preservation of a manually edited import name.
+
+10. For the outline-refinement experiment, ran 91 unit tests and two targeted UI journeys successfully, plus local photo trials. The full 10-test UI suite and physical-device Vision qualification were not rerun; see the latest execution report.
 
 Build command:
 
